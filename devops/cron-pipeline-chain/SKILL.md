@@ -291,6 +291,87 @@ def cleanup_previous():
         os.remove(f)
 ```
 
+### 🔴 Pitfall 8: rsync --delete wipes the stage's .git/ (mirror-push scripts, 2026-07-09)
+
+**Symptom:** Mirror-push pattern (`git clone --bare` → `git clone` → `rsync --delete` from local fs) reports `SKIP: stage is not a git repo (bare clone / init required)` on every sub-step, even though the previous log line shows `Cloning into 'stage'... done.`
+
+**Root cause:** `rsync -a --delete` syncs the source fs into the stage dir. If source fs is a **plain directory** (e.g. `~/.hermes/skills/` — no `.git` of its own), rsync's `--delete` removes files in the stage that don't exist in source — including the `.git/` that the prior `git clone` step just created. The next sub-step then sees no `.git/` and reports the stage isn't a repo.
+
+**Fix**: Add `.git` to rsync excludes — and use the glob form, since rsync needs all 3 patterns to catch directory + contents:
+```bash
+rsync -a --delete \
+  --exclude '.git' --exclude '.git/' --exclude '.git/**' \
+  --exclude '__pycache__' --exclude '*.pyc' \
+  --exclude '.DS_Store' \
+  src/ stage/
+```
+
+**Verification**: After fix, stage `.git/HEAD` and `.git/config` should still exist post-rsync.
+
+### 🔴 Pitfall 9: rsync source = HERMES_HOME → infinite recursion (mirror-push, 2026-07-09)
+
+**Symptom:** Mirror-push script hangs/times out with `rsync error: received SIGINT (code 20)` and `file has vanished` messages for every file in `~/.hermes/`. Cron log shows it's been running 60+ seconds with no progress.
+
+**Root cause:** Generic `ensure_mirror_stage` was called with `src=${HERMES_HOME}` to sync the whole Hermes config dir into the config mirror. But `HERMES_HOME` contains `.mirror/` (the very dirs the rsync is writing to), `.git/`, `wiki/`, etc. — all of which rsync reads back into itself, then re-reads the new copies, etc. → infinite recursion / timeout.
+
+**Fix**: Don't use generic rsync mirror for the config step. Build a **selective copy** of only the desired files (memory snapshot with secrets redacted, cron jobs meta JSON, config.yaml, .env.example). Add strong `.gitignore` in the stage:
+```bash
+# In the stage's .gitignore:
+.env
+*.token
+*.pem
+memories/memory-current.md
+cron/jobs.json          # raw jobs not for public record
+cron/output/            # delivery logs not for record
+.mirror/                # never commit the mirror itself
+.git/
+```
+
+**Generalization**: Any time the mirror's source could plausibly contain the mirror's destination, hand-pick the files instead of using a generic rsync-with-excludes pattern.
+
+## 🪞 Pattern: GitHub Mirror-Push (local → GitHub "기록용")
+
+**Use case**: Push local `~/.hermes/{wiki,skills,scripts,cron,memories}` to GitHub for **record-only** persistence. Single-direction (local → GitHub), no drift correction, no pull. User principle: "github은 기록용" — push is automatic.
+
+**Reference implementation**: `~/.hermes/scripts/hermes_config_sync.sh` (cron `91059d1e3d31`)
+
+**4+1 sub-step architecture**:
+```
+ensure_mirror_stage(label, mirror.git, stage/, src/, repo, [excludes...])
+  1. bare clone origin (200) OR bare init (404)
+  2. stage clone from bare (origin URL fixed)
+  3. rsync src → stage (--delete, .git EXCLUDED — see Pitfall 8)
+  4. sync_substep: stage에서 git add → commit → push
+
+config step: ensure_mirror_stage 우회 (Pitfall 9)
+  → 선별 파일만 manual cp + 강화된 .gitignore
+```
+
+**DRY-first vs push-first (사용자 결정, 2026-07-09)**:
+- ❌ DRY-first: cron logs only, push requires user confirm → forever no push
+- ✅ push-first: cron pushes automatically, `DRY_RUN=1` env for 1-shot preview
+- "github은 기록용" principle ⇒ **push must be automatic**
+
+**Setup sequence (5 steps)**:
+1. Create 5 repos via `curl POST /user/repos {auto_init:true}`:
+   - `hermes-wiki` (existing — direct push from `~/.hermes/wiki`)
+   - `hermes-skills`, `hermes-scripts`, `hermes-config` (mirror via bare clone + rsync)
+2. Store `GITHUB_TOKEN` in `~/.hermes/.env` (PAT, `repo` scope)
+3. `DRY_RUN=1 bash ~/.hermes/scripts/hermes_config_sync.sh` — preview what would be pushed
+4. `DRY_RUN=0 bash ~/.hermes/scripts/hermes_config_sync.sh` — first real push
+5. Verify drift: `local SHA == remote SHA` for all 4 repos
+
+**Validation (post-push drift check)**:
+```bash
+TOK=$(grep ^GITHUB_TOKEN= ~/.hermes/.env | cut -d= -f2-)
+for repo in hermes-wiki hermes-skills hermes-scripts hermes-config; do
+  remote=$(curl -s -H "Authorization: token $TOK" \
+    "https://api.github.com/repos/mybotagent/$repo/commits?per_page=1" | \
+    python3 -c "import sys,json;print(json.load(sys.stdin)[0]['sha'])")
+  echo "$repo: remote=$remote"
+done
+```
+
 ## Best Practices
 
 1. **All intermediate data in `data/` directory** — convention-based, easy to clean

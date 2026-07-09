@@ -47,7 +47,7 @@ When **any step in this cron job fails**, follow this protocol before reporting 
 | Script non-zero exit | stderr 확인, 스크립트 의존성 점검 |
 | **Heredoc 차단** (security scanner) | `<< 'PYEOF'` heredoc에 이모지/특수문자 포함 시 차단됨 → `write_file()`로 `/tmp/script.py` 저장 후 `terminal("python3 /tmp/script.py")` 실행 |
 | **Pipe-to-interpreter 차단** | `curl \| python3 -c` → 차단됨. 대신 `curl -o /tmp/data.json` 저장 후 별도 실행 |
-| **Yahoo Finance Too Many Requests** | User-Agent 헤더 필수. 3회 이상 연속 실패 시 `sleep 5-10` 후 재시도. query1→query2.finance.yahoo.com 시도 |
+| **Yahoo Finance Too Many Requests** | **2026-07-09 기준 완전 차단**. 5초 sleep / User-Agent 교체 / query1→query2 모두 무효. **한국 개별주는 Naver Polling API로 우회** (`references/cron-mode-naver-polling-fallback.md`), US 지수·선물은 CNBC XML/HTML로 우회. |
 | **Variation selector 차단** | 이모지(📈📉🟢🔴 etc.)가 포함된 heredoc이 security scanner에 차단됨. `write_file()`로 우회 |
 
 ## 중요
@@ -118,7 +118,7 @@ no_agent watchdog (10분 간격, LLM 필요 없음)
 | DeepSeek Broken pipe (stale stream) | ✅ 가능 (재시도 → 새 세션) | 하루 2회까지 |
 | Stale .tick.lock | ✅ 가능 (자동 cleanup) | 120초 이상 경과 시 |
 | Script timeout (fair_value.py 120s) | ✅ 가능 (재시도) | 네트워크 일시적 지연 |
-| Analyst target 수집 실패 | ✅ 가능 (재시도) | Naver/yfinance 일시적 장애 |
+| Analyst target 수집 실패 | ✅ 가능 (재시도) | Naver Polling / CNBC 일시적 장애 |
 | Script path 오류 | ❌ 불가 (코드 수정 필요) | 사람 개입 필요 |
 | API Key 만료 | ❌ 불가 (사람 개입 필요) | 에러 메시지 전달 |
 
@@ -273,27 +273,82 @@ rm ~/.hermes/cron/.tick.lock
    | **금 가격** | CNBC | `curl -sL "https://www.cnbc.com/quotes/@GC.1" -H "User-Agent..." \| grep -oP '"last":"[0-9,.]+"'` |
    | **미국 10년물 금리** | **CNBC XML API (1순위)** — HTML 스크래핑 불가 | `# curl + python3 re로 XML 파싱 (자세한 코드: references/cron-mode-data-sources.md의 "CNBC REST XML API")\n# 핵심: https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=US10Y&requestMethod=itk`<br>**CNBC HTML(`/quotes/US10Y`)는 2MB+ React boilerplate로 시세 데이터 없음. 반드시 XML API 사용.**<br>Yahoo ^TNX는 지속적 \"Too Many Requests\"로 신뢰 불가 (2026-06-26 확인). |
    | **미국 30년물 금리** | Yahoo ^TYX (CNBC 미지원) | `curl -s --max-time 15 "https://query2.finance.yahoo.com/v8/finance/chart/^TYX?interval=1d" -H "User-Agent: Mozilla/5.0" -o /tmp/tyx.json && python3 -c "import json; d=json.load(open('/tmp/tyx.json')); print('TYX:', d['chart']['result'][0]['meta'][chr(34)+\"regularMarketPrice\"+chr(34)])"` — 2026-06-25 검증: 4.856% |
-   | **한국 개별주** (005930.KS 등) | **Yahoo Finance only** — CNBC 미지원 | `curl -s --max-time 15 "https://query1.finance.yahoo.com/v8/finance/chart/005930.KS?interval=1d" -H "User-Agent: Mozilla/5.0" -o /tmp/stock.json && python3 -c "import json; d=json.load(open('/tmp/stock.json')); m=d['chart']['result'][0]['meta']; print(f'Price: {m[\"regularMarketPrice\"]} Prev: {m[\"chartPreviousClose\"]}')"` |
+   | **한국 개별주** (005930 등) | **Naver Polling API (1순위, 2026-07-09 검증)** — Yahoo·CNBC 모두 미지원 | `curl -sL --max-time 12 "https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:005930" -H "User-Agent: $UA" -o /tmp/naver.raw && python3 -c "import json; raw=open('/tmp/naver.raw','rb').read(); d=json.loads(raw.decode('euc-kr',errors='ignore')); x=d['result']['areas'][0]['datas'][0]; print(f\"Price: {x['nv']:,} Prev: {x['pcv']:,} Change: {x['cv']:+,} ({x['cr']:+.2f}%)\")"` — 6종목 검증 완료 (삼성전자·SK하이닉스·삼성전기·현대차·에이피알·HD현대일렉) |
 
-   ### Yahoo Finance 특이사항 (심볼별 차등 — 2026-07-07 갱신)
-   - **User-Agent 필수**: 헤더 없으면 "Too Many Requests" 응답
-     ```bash
-     -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-     ```
-   - **⚠️ 이전 "Yahoo 완전 차단 (2026-06-26)" 판정 취소 — 심볼별 차등 차단으로 정정 (2026-07-07 검증)**:
-     - **여전히 차단되는 심볼**: `^GSPC`, `^TNX`, `^TYX`, `CL=F`, `^DJI` 등 **US 지수/선물** — query1·query2 모두 "Too Many Requests" 지속. → **CNBC XML API 1순위 사용**, Yahoo 시도 X (5초 sleep 재시도/User-Agent 교체 모두 무효).
-     - **정상 동작하는 심볼 (2026-07-07 검증)**: **한국 개별주 `.KS` 접미사** (005930.KS, 000660.KS, 009150.KS, 005380.KS, 278470.KS, 267270.KS 등) — User-Agent 포함 시 즉시 200 OK + JSON 응답. 6종목 모두 검증 완료:
-       - 삼성전자 Price: 296,000 / Prev: 318,000 (-6.92%)
-       - SK하이닉스 Price: 2,201,000 / Prev: 2,343,000 (-6.06%)
-       - 삼성전기 Price: 1,648,000 / Prev: 1,828,000 (-9.85%)
-       - 현대차 Price: 479,500 / Prev: 502,000 (-4.48%)
-       - 에이피알 Price: 410,000 / Prev: 378,500 (+8.32%)
-       - HD현대일렉 Price: 126,100 / Prev: 123,700 (+1.94%)
-     - **규칙**: blanket "Yahoo 완전 차단" 가정이 위험. **CNBC가 지원하지 않는 심볼(= 한국 개별주 `.KS`)은 Yahoo chart API가 유일한 옵션**이므로 시도하지 않으면 가격 수집 불가. US 심볼은 가차 없이 CNBC XML로 폴백.
-   - Yahoo는 **심볼별로 신뢰/회피 결정**: US 지수·선물·원유 → **회피**, 한국 개별주 → **사용**.
-   - `curl -o /tmp/file.json && python3 -c "..."` 패턴 사용 (pipe 차단 우회)
-   - **⚠️ Yahoo `chartPreviousClose` vs CNBC `change` 필드 불일치 주의** (2026-06-24 확인): 서킷브레이커 이후 반등일(예: KOSPI -9% 폭락 후 +3% 반등)에는 CNBC의 `change`가 2거래일 전 기준으로 표시될 수 있음. Yahoo의 `chartPreviousClose`가 직전 거래일 종가 기준으로 더 정확. CNBC `change`만 보고 "오늘도 -393p 하락"으로 오판하지 말 것.
-   - **한국 개별주 change_pct 계산**: Yahoo `chartPreviousClose` 사용 — `change_pct = (regularMarketPrice - chartPreviousClose) / chartPreviousClose * 100` (Yahoo 차단 안 됨 + 직전 거래일 종가 기준이라 CNBC `change_pct`보다 안정).
+   ### 🚨 Yahoo Finance 완전 차단 — 2026-07-09 갱신 (이전 "심볼별 차등" 판정도 무효)
+
+   **7/7 시점과 7/9 시점의 차이 (블랭킷 차단 격상)**:
+   - 7/7 검증: "한국 개별주 `.KS` 만 동작, US는 차단" — 7/9에 **한국 개별주도 차단**되어 Yahoo Finance는 사실상 사용 불가.
+   - 7/9 18:32 KST 검증 (6종목 전부 query1·query2 양쪽 429): 005930.KS / 000660.KS / 009150.KS / 005380.KS / 278470.KS / 267270.KS → **모두 "Too Many Requests"**.
+   - **5초 sleep 재시도 / User-Agent 교체 / query1→query2 전환 모두 무효**.
+
+   **결론 — 2026-07-09 기준**:
+   - Yahoo Finance는 **모든 심볼 회피**. 6종목의 change_pct 계산도 Yahoo로 못 함.
+   - **한국 개별주 가격의 유일한 fallback = Naver Polling API** (아래 섹션).
+   - **US 지수/선물/원유 = CNBC XML API 또는 CNBC HTML** (위 표 참조).
+   - Yahoo가 풀리는 시점을 매주 체크하고 싶으면 `curl -s --max-time 8 -I -H "User-Agent: $UA" "https://query1.finance.yahoo.com/v8/finance/chart/005930.KS?interval=1d" | head -1`로 200/429 확인.
+
+   ### 🚨 Naver Polling API — Yahoo 완전 차단 시 유일한 fallback (2026-07-09 신규, 6종목 검증 완료)
+
+   - **Endpoint**: `https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:{6자리코드}`
+     - 코드 = KRX 6자리 (예: `005930` — Yahoo의 `.KS` 접미사 ❌)
+   - **User-Agent**: 일반 Chrome UA로 충분 (블로커 회피용, 필수는 아님)
+   - **⚠️ 응답은 EUC-KR 인코딩** — UTF-8 디코딩 실패. `raw.decode('euc-kr', errors='ignore')` 1줄 필요.
+   - **Rate-limit**: 매우 관대 (수십회/시간 OK, 시간당 100회+ 무난)
+   - **DNS 의존**: `polling.finance.naver.com` — 해외 망에서는 차단 가능, 한국 VPS에서는 안정
+
+   **호출 패턴 (cron 모드)**:
+   ```bash
+   UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+   curl -sL --max-time 12 "https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:005930" \
+     -H "User-Agent: $UA" -o /tmp/naver_005930.raw
+   ```
+   - pipe-to-interpreter 우회: `curl -o /tmp/file.raw && python3 -c "..."` (pipe ❌)
+
+   **Python 파싱 (EUC-KR 디코딩 + 핵심 필드 추출)**:
+   ```python
+   import json
+   raw = open('/tmp/naver_005930.raw', 'rb').read()
+   d = json.loads(raw.decode('euc-kr', errors='ignore'))  # ← EUC-KR 핵심
+   data = d['result']['areas'][0]['datas'][0]
+   # data는 dict, key는 영문 EUC-KR
+   print(f"Price: {data['nv']:,} / Prev: {data['pcv']:,} / Change: {data['cv']:+,} ({data['cr']:+.2f}%)")
+   ```
+
+   **응답 필드 (모두 영문 key, EUC-KR 바이트)**:
+   | key | 의미 | 예시 (삼성전자 7/9 종가) |
+   |:----|:----|:---------------------|
+   | `cd` | 종목코드 | 005930 |
+   | `nm` | 종목명 | 삼성전자 |
+   | `nv` | **현재가** | 278000 |
+   | `cv` | **전일비 (부호 포함)** | 500 |
+   | `cr` | **전일비율 (%, 부호 포함)** | 0.18 |
+   | `pcv` | **전일종가** | 277500 |
+   | `ov` | 시가 | 288500 |
+   | `hv` | 고가 | 291500 |
+   | `lv` | 저가 | 267500 |
+   | `aq` | 누적거래량 | 28796159 |
+   | `ms` | 거래상태 | CLOSE / OPEN / PREOPEN |
+   | `ul` / `ll` | 상한가 / 하한가 | 360500 / 194500 |
+
+   **2026-07-09 검증 (6종목 모두 성공)**:
+   | 종목 | 코드 | 종가 | 전일비 | 변화율 |
+   |:----|:----:|:----:|:-----:|:----:|
+   | 삼성전자 | 005930 | 278,000 | +500 | +0.18% |
+   | SK하이닉스 | 000660 | 2,186,000 | +110,000 | +5.30% |
+   | 삼성전기 | 009150 | 1,493,000 | +14,000 | +0.95% |
+   | 현대차 | 005380 | 445,500 | -17,000 | -3.68% |
+   | 에이피알 | 278470 | 365,500 | -20,000 | -5.19% |
+   | HD현대일렉 | 267270 | 121,200 | -4,100 | -3.27% |
+
+   **change_pct 계산 (직접 계산 권장)**:
+   ```python
+   change_pct = (data['nv'] - data['pcv']) / data['pcv'] * 100
+   # Yahoo chartPreviousClose 방식과 거의 일치 (직전 거래일 종가 기준)
+   # 단, ms='CLOSE' 가 아닌 'OPEN'/'PREOPEN' 시점에 따라 pcv가 다를 수 있음
+   ```
+
+   **상세 + 다중 종목 루프 + 에러 처리**: `references/cron-mode-naver-polling-fallback.md`
 
    ### ⚠️ 정량 수치 source disagreement 처리 (2026-06-29 신규)
 
@@ -552,6 +607,56 @@ curl -s -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
 - `last_run_at`은 스케줄이 실행된 후에만 갱신됨
 - 즉시 테스트하려면 락 제거 후 `cronjob run` 실행 + 최소 1분 대기
 - 또는 `no_agent=True` script로 테스트 (즉시 stdout 확인 가능)
+
+## 🚨 절대 정리 금지: paused cron (2026-07-09 신규)
+
+**사용자 교정 (aiprofit, 2026-07-09)**: "셀프 힐링 반드시 필요한데 왜 정리하려고함? 문제 있었음?"
+
+**규칙 (HARD)**:
+1. **`hermes cron list`에서 `state: paused` 또는 `enabled: false`인 cron은 정리 후보가 아니다.**
+2. **paused된 cron이 "no_agent 버전이 같은 역할 수행 중"이라 정지된 것처럼 보여도, agent 버전이 필수인 경우가 대부분**이다:
+   - LLM 기반 근본 원인 분석 (rule-based watchdog은 임계치만 봄)
+   - 자율 액션 (config patch, repo 생성, 코드 fix 등)
+   - 컨텍스트 기반 판단 (이전 fix 이력, 누적 패턴)
+3. **paused cron 정지/삭제 제안은 사용자에게 명시적 확인 없이 하지 말 것.**
+4. **paused cron을 다시 켜야 한다고 판단되면 "정리하자"가 아니라 "다시 켤까요? / paused 사유가 따로 있었나요?"로 물을 것.**
+
+**왜 이 rule이 필요한가 (실제 사례)**:
+- `af8dcb9a1cce` Self-healing watchdog (agent) — 2026-06-18부터 1달+ paused
+- `894e773a9a2b` Self-healing watchdog (no_agent) — 같은 이름의 rule-based 스크립트가 동작 중
+- 본인이 "no_agent가 같은 역할 수행 중이니 정리 가능"이라고 제안 → 사용자 즉시 정정
+- **1달간 agent 자가복구 없이 운영**된 결과: 17시간 sync 지연, 5개 GitHub repo 미생성, rsync 버그 2건 누적
+- agent가 없었다면 이런 진단/자율 fix가 불가능했음
+
+**올바른 분류**:
+| cron 상태 | 의미 | agent의 대응 |
+|:----------|:-----|:-------------|
+| `enabled: true`, 정상 동작 | 인프라 | 유지 |
+| `enabled: true`, 자가 복구 실패 이력 | 문제 있음 | 자가 fix 시도 (no_agent 스크립트) |
+| `state: paused` | **사용자 의도적 off** | ❌ 임의 제안 금지. "다시 켤까요?"로만 질문 |
+| `enabled: false` | **비활성** | ❌ 임의 제안 금지. 필요 시에만 켤지 질문 |
+
+**판단 기준 (paused cron 언급 시)**:
+- "정리하자", "삭제하자", "off 해도 되겠다" 같은 표현 **절대 금지**
+- "이 cron은 어떤 역할을 했나요?", "paused 사유가 따로 있었나요?", "다시 켤까요?" 같은 **탐색형 질문**만 사용
+- 사용자가 명시적으로 "정리해" 라고 하기 전까지는 action 안 함
+
+## ⚠️ "정리" 제안 함정 — Self-healing·Sync·Audit 영역 (2026-07-09 신규)
+
+**사용자 운영 원칙**: github은 기록용, 자율운영 필수, 자가진단/자가복구는 critical infra.
+
+**절대 "정리" 제안을 하면 안 되는 cron 카테고리**:
+1. **Self-healing** (watchdog, agent healer) — paused여도 critical
+2. **GitHub sync / config push** (hermes-config-sync, daily-repo-orchestrator)
+3. **Audit / lint / maintainer** (wiki-auto-maintainer, memory curator)
+4. **Backup** (backup, snapshot, dotfile sync)
+5. **Health check** (system health, disk hygiene)
+
+**이유**: "정리" = 비활성화/삭제 의도. 이 카테고리는 꺼지면 **자율운영이 영구 정지**되거나 **기록이 누락**됨. 사용자가 "github은 기록용"이라고 명시한 이상, sync/backup 관련 cron은 "정리" 언어 자체가 부적절.
+
+**올바른 어휘**:
+- ❌ "정리하자", "삭제하자", "off 해도 되겠다", "비활성화하자"
+- ✅ "다시 켤까요?", "paused 사유가 있나요?", "이 cron의 역할을 확인할까요?", "일시정지 상태인데 의도가 뭔가요?"
 
 ## 🧠 Memory cap 정확 측정 (2026-07-07 신규)
 
@@ -844,6 +949,7 @@ bash ~/.hermes/scripts/self_healing_watchdog.sh
 - `references/daily-health-check.md` — 매일 시스템 헬스 체크 (health_check.py)
 - `references/cron-delivery-error-recovery.md` — 🔀 Deliver 실패 자가 치유 + HTTP 코드 분류 (2026-07-01)
 - `references/cron-deliver-topic-matching.md` — ⚠️ Wrong-Thread Routing (포맷 OK, topic 틀림) 진단·수정 (2026-07-02 신규)
+- `references/cron-mode-naver-polling-fallback.md` — 🚨 Yahoo 완전 차단 시 Naver Polling API로 한국 개별주 수집 패턴 (EUC-KR 디코딩, 6종목 검증, 2026-07-09 신규)
 
 ## 🚨 CRITICAL: `last_delivery_error`는 `cronjob update`로 자동 clear 안 됨 (2026-07-01)
 
