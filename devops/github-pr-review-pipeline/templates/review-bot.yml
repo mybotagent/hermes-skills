@@ -1,0 +1,60 @@
+# Drop-in workflow template: review-bot
+# Save as .github/workflows/review-bot.yml
+
+name: review-bot
+
+# Comment-on-PR-only: posts verdict comment via MiniMax; never merges.
+# Trigger uses pull_request_target so same-repo PRs fire (see skill
+# "Pitfall 1: pull_request does not fire for same-repo PRs").
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to review"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    name: hermes review (MiniMax)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            N="${{ github.event.inputs.pr_number }}"
+          else
+            N="${{ github.event.pull_request.number }}"
+          fi
+          echo "number=${N}" >> "$GITHUB_OUTPUT"
+
+      - name: Run review script
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+          MINIMAX_BASE_URL: ${{ secrets.MINIMAX_BASE_URL }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 scripts/review_pr.py

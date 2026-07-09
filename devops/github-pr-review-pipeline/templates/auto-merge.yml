@@ -1,0 +1,158 @@
+# Drop-in workflow template: auto-merge gate — v2 race-hardened
+# Save as .github/workflows/auto-merge.yml
+# See references/auto-merge-v2-pitfalls.md for v1 vs v2 diff and the
+# "stuck auto-merge, what now?" triage flowchart.
+
+name: auto-merge
+
+# v2 changes from v1:
+#   - concurrency group per PR (cancels older runs)
+#   - newest-sha verdict selection (NOT worst-of; the v1 worst-of bug
+#     masked fix re-reviews for 6+ minutes)
+#   - live head_sha fetch on workflow_dispatch path
+#   - timeout 10 min (was 15)
+#
+# v1 removed: worst-of polling. See auto-merge-v2-pitfalls.md for the
+# exact regression.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to gate"
+        required: false
+        type: string
+
+# v2 addition: cancel any older auto-merge run for the same PR before
+# starting a new one. Newest push wins.
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  smoke:
+    name: ci / smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Python import smoke
+        run: |
+          python3 -c "import json,pathlib; print('python OK', pathlib.Path('.').resolve().name)"
+      - name: Workflow files present
+        run: |
+          test -d .github/workflows
+          test -f .github/workflows/review-bot.yml
+          test -f .github/workflows/auto-merge.yml
+          echo "structure OK"
+
+  auto-merge:
+    name: auto-merge gate
+    runs-on: ubuntu-latest
+    needs: [smoke]
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Resolve PR number + head sha
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            N="${{ github.event.inputs.pr_number }}"
+          else
+            N="${{ github.event.pull_request.number }}"
+          fi
+          echo "number=${N}" >> "$GITHUB_OUTPUT"
+          echo "number=${N}" >> "$GITHUB_ENV"
+          # v2: workflow_dispatch path has empty head.sha in event payload;
+          # fetch live from the API. Same fallback for empty payloads.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ -z "${{ github.event.pull_request.head.sha }}" ]; then
+            HEAD_SHA=$(gh api "repos/${REPO}/pulls/${N}" --jq '.head.sha')
+          else
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          fi
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_ENV"
+
+      - name: Wait for review-bot verdict (NEWEST sha, NOT worst-of)
+        id: wait
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          # v2: prefer comment matching current HEAD sha (review_pr.py
+          # can stamp `<!-- sha: <sha> -->` for ideal commit-by-commit
+          # verdict matching). Fall back to the latest verdict line
+          # from ANY github-actions[bot] comment — one bot comment per
+          # push, latest push wins, fix re-reviews count.
+          for i in $(seq 1 30); do
+            http_code=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              --include -o /tmp/_comments.json -w "%{http_code}" 2>/dev/null || echo "0")
+            if [ "$http_code" = "403" ] || [ "$http_code" = "429" ]; then
+              echo "[poll $i/30] rate-limited (HTTP $http_code), backing off 30s"
+              sleep 30
+              continue
+            fi
+            # Strategy 1: comment body contains sha: <HEAD_SHA> marker
+            matched=$(jq -r --arg sha "$HEAD_SHA" \
+              '.[] | select(.body | contains("<!-- sha: " + $sha + " -->")) | .body' \
+              /tmp/_comments.json 2>/dev/null \
+              | grep -oE '\*\*Verdict:\*\*\s*(Approve|Changes Requested|Blocked)' \
+              | tail -1 | awk '{print $NF}' || echo "")
+            if [ -z "$matched" ]; then
+              # Strategy 2: latest verdict line from any github-actions[bot] comment
+              matched=$(jq -r '.[] | select(.user.login == "github-actions[bot]") | .body' \
+                /tmp/_comments.json 2>/dev/null \
+                | grep -oE '\*\*Verdict:\*\*\s*(Approve|Changes Requested|Blocked)' \
+                | tail -1 | awk '{print $NF}' || echo "")
+            fi
+            if [ -n "$matched" ]; then
+              echo "matched verdict: $matched (head=$HEAD_SHA, poll=$i)"
+              echo "VERDICT=$matched" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "[poll $i/30] no verdict for head=$HEAD_SHA yet"
+            sleep 10
+          done
+          echo "VERDICT=<timeout>" >> "$GITHUB_OUTPUT"
+
+      - name: Verdict + mergeable check
+        env:
+          VERDICT: ${{ steps.wait.outputs.VERDICT }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          echo "Final verdict: $VERDICT"
+          if [ "$VERDICT" != "Approve" ]; then
+            msg="🤖 auto-merge: review verdict is \`$VERDICT\` (not Approve). Skipping auto-merge. Human review required."
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -f body="$msg" >/dev/null
+            exit 1
+          fi
+          resp=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.mergeable_state')
+          echo "mergeable_state=$resp"
+          case "$resp" in
+            clean|unstable|behind) echo "OK" ;;
+            *) echo "::error::mergeable_state blocked/dirty: $resp"; exit 1 ;;
+          esac
+
+      - name: Squash-merge
+        env:
+          VERDICT: ${{ steps.wait.outputs.VERDICT }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        if: env.VERDICT == 'Approve'
+        run: |
+          echo "auto-merging PR #$PR_NUMBER (squash)"
+          gh api -X PUT "repos/${REPO}/pulls/${PR_NUMBER}/merge" \
+            -F commit_title="merge: auto squash #$PR_NUMBER via auto-merge v2" \
+            -F commit_message="auto-merge: review verdict=Approve + mergeable clean (race-condition hardened v2)" \
+            -F squash=true

@@ -1,0 +1,170 @@
+/*
+  wiki-to-slides custom.css template
+
+  Verified working 2026-07-01.
+
+  EDIT POINTS:
+  - :root custom properties at the top — change 4 brand colors, everything cascades
+  - .index-grid / .index-card — adjust grid-template-columns (e.g. repeat(3, 1fr) for 3-col)
+  - .reveal pre — adjust font-size / max-height for code blocks
+
+  ANATOMY:
+  - Brand color tokens
+  - Reveal base overrides (h1, h2, h3, p, li, code, pre, table)
+  - .mermaid container style
+  - .tldr (callout box)
+  - .index-grid + .index-card (first-slide navigation hub — see SKILL.md "Card-Format Index" section)
+  - .hero-title / .hero-sub (title slide specific)
+*/
+
+:root {
+  --hermes-primary: #00d4ff;     /* accent / heading / borders */
+  --hermes-secondary: #ff6b9d;   /* callouts / table header alt */
+  --hermes-accent: #ffd93d;      /* hover / highlights */
+  --hermes-bg: #0a0e27;          /* slide background (set on body via Reveal theme) */
+  --hermes-text: #e8eaf6;        /* body text */
+  --hermes-dim: #8b92b8;         /* secondary text, footers */
+}
+
+.reveal {
+  font-family: 'Pretendard', 'Inter', 'Helvetica Neue', sans-serif;
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+  color: var(--hermes-primary);
+  text-transform: none;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.reveal h1 {
+  background: linear-gradient(135deg, var(--hermes-primary), var(--hermes-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.reveal h2 {
+  border-bottom: 3px solid var(--hermes-primary);
+  padding-bottom: 0.2em;
+  margin-bottom: 0.6em;
+}
+
+.reveal h3 { color: var(--hermes-accent); }
+
+.reveal p, .reveal li {
+  color: var(--hermes-text);
+  line-height: 1.5;
+}
+
+.reveal strong { color: var(--hermes-accent); font-weight: 600; }
+.reveal em { color: var(--hermes-secondary); }
+
+.reveal code {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--hermes-primary);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+.reveal pre {
+  width: 100%;
+  background: #1a1e3a;
+  border-left: 4px solid var(--hermes-primary);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.reveal table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+.reveal table th {
+  background: var(--hermes-primary);
+  color: var(--hermes-bg);
+  padding: 0.4em 0.6em;
+  text-align: left;
+  font-weight: 700;
+}
+.reveal table td {
+  padding: 0.3em 0.6em;
+  border-bottom: 1px solid rgba(139, 146, 184, 0.2);
+}
+.reveal table tr:nth-child(even) { background: rgba(0, 212, 255, 0.05); }
+
+/* mermaid container — scrollable + centered, max-height prevents overflow */
+.mermaid {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1em;
+  margin: 1em 0;
+  display: flex;
+  justify-content: center;
+  max-height: 600px;
+  overflow: auto;
+}
+
+.mermaid svg { max-width: 100%; height: auto; }
+
+.reveal blockquote {
+  background: rgba(0, 212, 255, 0.08);
+  border-left: 4px solid var(--hermes-accent);
+  padding: 0.8em 1.2em;
+  font-style: italic;
+}
+
+/* TL;DR callout box */
+.reveal .tldr {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 107, 157, 0.1));
+  border: 1px solid var(--hermes-primary);
+  border-radius: 8px;
+  padding: 1em 1.5em;
+  margin: 1em 0;
+}
+
+.reveal .tldr h3 { margin-top: 0; color: var(--hermes-primary); }
+
+.reveal .small { font-size: 0.5em; color: var(--hermes-dim); }
+.reveal .big   { font-size: 1.4em; color: var(--hermes-accent); font-weight: 700; }
+
+/* ========================================================
+   CARD-FORMAT INDEX (use as the FIRST SLIDE)
+   Replace text-table-of-contents with this for 6+ sections.
+   See SKILL.md "Card-Format Index" section.
+   ======================================================== */
+
+.reveal .index-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8em;
+  margin: 1em 0;
+}
+
+.reveal .index-card {
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid var(--hermes-primary);
+  border-radius: 12px;
+  padding: 1em 0.6em;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.reveal .index-card:hover {
+  background: rgba(0, 212, 255, 0.22);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+  border-color: var(--hermes-accent);
+}
+
+.reveal .index-card .card-icon  { font-size: 2.2em; line-height: 1; }
+.reveal .index-card .card-num   { color: var(--hermes-accent); font-weight: 700; letter-spacing: 0.1em; }
+.reveal .index-card .card-title { font-size: 0.8em; font-weight: 600; margin: 0.4em 0; }
+.reveal .index-card .card-desc  { color: var(--hermes-dim); font-size: 0.55em; font-style: italic; }
+.reveal .index-card .card-meta  { color: var(--hermes-secondary); font-size: 0.5em; font-weight: 600; }
+
+.reveal .hero-title { font-size: 2.6em; margin-bottom: 0.2em; }
+.reveal .hero-sub   { font-size: 1em; color: var(--hermes-dim); }
+
+.reveal .click-hint { font-size: 0.5em; color: var(--hermes-dim); font-style: italic; }

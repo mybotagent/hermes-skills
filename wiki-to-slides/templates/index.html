@@ -1,0 +1,137 @@
+<!--
+  wiki-to-slides index.html template
+
+  Verified working 2026-07-01 (mybotagent/hermes-architecture-deck, 28 slides, 10 mermaid diagrams).
+
+  USAGE:
+  1. Copy to your repo root as index.html
+  2. Edit each <section data-markdown="slides/NN-name.md"> block to match your file names
+  3. Adjust the brand-color CSS custom properties in custom.css
+  4. Verify locally:
+       python3 -m http.server 8000
+       # open http://localhost:8000/
+
+  KEY FEATURES (and WHY):
+  - Reveal.js 5.1 + markdown plugin loads each slides/*.md file
+  - mermaid.js 10.9 as ESM (mermaid 10.x ESM import is the cleanest CDN path)
+  - Post-processing pattern in renderMermaid() — see references/mermaid-integration.md
+  - 1500ms setTimeout on ready + 500ms on slidechanged — gives md fetch + render time to complete
+  - Visible red error boxes on the slide itself when mermaid parsing fails — saves a round-trip to DevTools
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slides Title</title>
+  <meta name="description" content="">
+
+  <!-- Reveal.js 5.x (CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="assets/css/custom.css">
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Replace each data-markdown path with your slides/*.md file names.
+           The separator regex determines how slides split:
+             --- (3 dashes) = new horizontal slide
+             ---- (4 dashes) = new vertical sub-slide
+             Note:         = speaker notes (shown via S key) -->
+      <section data-markdown="slides/00-hero.md"
+               data-separator="^---$"
+               data-separator-vertical="^----$"
+               data-separator-notes="^Note:">
+      </section>
+
+      <section data-markdown="slides/01-section-one.md"
+               data-separator="^---$"
+               data-separator-vertical="^----$"
+               data-separator-notes="^Note:">
+      </section>
+
+      <!-- Add more sections here -->
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/markdown/markdown.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+
+  <!-- mermaid.js (ESM) — see references/mermaid-integration.md for rationale -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      fontFamily: 'system-ui, sans-serif',
+      flowchart: { curve: 'basis', padding: 10 },
+      gantt: { useMaxWidth: true }
+    });
+
+    const renderMermaid = async () => {
+      const codes = document.querySelectorAll(
+        '.reveal pre code.language-mermaid, .reveal pre code.lang-mermaid'
+      );
+      if (codes.length === 0) return;
+
+      // Pre-build replacement divs but defer insertion until we know we're ready to call mermaid.run()
+      // (avoiding partial DOM mutations if run() rejects)
+      const replacements = [];
+      for (let i = 0; i < codes.length; i++) {
+        const code = codes[i];
+        if (code.parentElement.classList.contains('mermaid')) continue;
+        const source = code.textContent;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = source;
+        div.id = `mermaid-graph-${i}`;
+        replacements.push({ div, pre: code.parentElement });
+      }
+
+      try {
+        // Replace pre blocks with mermaid divs in one pass
+        replacements.forEach(({ div, pre }) => pre.replaceWith(div));
+        await mermaid.run({ querySelector: '.mermaid' });
+      } catch (err) {
+        console.error('Mermaid render error:', err);
+        // VISIBLE ERROR: render a red box on the failed slide so the user
+        // can see the parse message without opening DevTools.
+        const msg = (err && err.message) ? err.message : String(err);
+        document.querySelectorAll('.mermaid').forEach((d) => {
+          if (!d.querySelector('svg')) {
+            d.innerHTML = '<div style="background:#5c1a1a;border:2px solid #ff4444;color:#ffaaaa;padding:0.8em;border-radius:6px;font-size:0.55em;font-family:monospace;">⚠️ <strong>Mermaid parse error</strong><br><pre style="white-space:pre-wrap;margin:0.4em 0 0 0;">'
+              + msg.replace(/</g,'&lt;') + '</pre></div>';
+          }
+        });
+      }
+    };
+
+    // setTimeout is critical: Reveal.on('ready') fires before async md fetch completes.
+    // 1500ms is enough for ~10 md files on a typical CDN; increase if you have 20+ slides.
+    Reveal.on('ready', () => setTimeout(renderMermaid, 1500));
+    // slidechanged fires on horizontal nav — horizontal slides are NOT pre-rendered by default,
+    // so the newly visible md file's ```mermaid block needs rendering now.
+    Reveal.on('slidechanged', () => setTimeout(renderMermaid, 500));
+
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      slideNumber: 'c/t',        // current/total style
+      overview: true,
+      center: true,
+      transition: 'slide',
+      transitionSpeed: 'fast',
+      plugins: [ RevealMarkdown, RevealNotes, RevealHighlight ],
+      markdown: { smartypants: false, gfm: true }
+    });
+  </script>
+</body>
+</html>

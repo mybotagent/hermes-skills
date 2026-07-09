@@ -1,0 +1,332 @@
+><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Cache busting -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <title>Deck Title</title>
+  <meta name="description" content="One-line description for SEO.">
+
+  <!-- Reveal.js with version-buster -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css?v=N">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css?v=N">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+
+  <style>
+    /* ============================================
+       APPLE DESIGN TOKENS — paste once, edit colors per project
+       ============================================ */
+    :root {
+      --primary:           #0066cc;
+      --primary-focus:     #0071e3;
+      --primary-on-dark:   #2997ff;
+      --ink:               #1d1d1f;
+      --body:              #1d1d1f;
+      --body-muted:        #6e6e73;
+      --canvas:            #ffffff;
+      --canvas-parchment:  #f5f5f7;
+      --divider:           #d2d2d7;
+      --surface-black:     #000000;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--canvas);
+      color: var(--body);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.01em;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    /* === Reveal container: flat (no transform) === */
+    .reveal { width: 100%; height: 100%; position: relative; background: var(--canvas); }
+    .reveal .slides {
+      width: 100% !important; height: 100% !important;
+      transform: none !important; inset: 0 !important;
+      text-align: center !important; position: absolute;
+    }
+    .reveal .slides > section {
+      width: 100% !important; height: 100% !important;
+      position: absolute !important; top: 0 !important; left: 0 !important;
+      display: none !important;
+      padding: 3vh 3.5vw !important;
+      text-align: center !important;
+      overflow-y: auto !important; overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch;
+      background: var(--canvas);
+    }
+    .reveal .slides > section.present { display: block !important; }
+
+    /* Keep tables and code within section */
+    .reveal .slides > section > * { max-width: 100%; }
+    .reveal .slides > section pre,
+    .reveal .slides > section table {
+      max-width: 100%; display: block; overflow-x: auto;
+    }
+
+    /* === Apple Typography === */
+    .reveal h1, .reveal h2, .reveal h3 { text-align: center !important; }
+    .reveal h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 600;
+      line-height: 1.07; letter-spacing: -0.035em;
+      color: var(--ink); margin: 0 auto 0.5em; max-width: 16ch;
+    }
+    .reveal h2 {
+      font-size: clamp(1.4rem, 3.5vw, 2.2rem); font-weight: 600;
+      line-height: 1.1; letter-spacing: -0.025em;
+      color: var(--ink); margin: 0 auto 0.5em; max-width: 90%;
+    }
+    .reveal h3 {
+      font-size: clamp(1rem, 2.2vw, 1.3rem); font-weight: 600;
+      color: var(--ink); margin: 0.5em auto 0.4em; max-width: 90%;
+    }
+    .reveal p, .reveal li {
+      font-family: -apple-system, "SF Pro Text", sans-serif;
+      font-size: clamp(0.85rem, 1.7vw, 1.05rem); line-height: 1.5;
+      letter-spacing: -0.01em; color: var(--body);
+      text-align: left; max-width: 70ch;
+      margin: 0 auto 0.7em;
+    }
+    .reveal strong { font-weight: 600; color: var(--ink); }
+    .reveal em { font-style: italic; color: var(--primary); }
+
+    /* === Code === */
+    .reveal code {
+      background: var(--canvas-parchment); color: var(--primary);
+      padding: 0.1em 0.45em; border-radius: 6px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 0.88em; font-weight: 500;
+    }
+    .reveal pre {
+      background: var(--canvas-parchment);
+      border: 1px solid #e0e0e0; border-radius: 14px;
+      padding: 1em 1.4em; width: 95%; max-width: 800px;
+      box-shadow: none; font-size: clamp(0.6rem, 1.2vw, 0.78rem);
+      line-height: 1.55; text-align: left; margin: 0.5em auto 1em;
+    }
+    .reveal pre code { background: transparent; color: var(--body); padding: 0; font-size: inherit; }
+
+    /* === Blockquote === */
+    .reveal blockquote {
+      background: var(--canvas-parchment);
+      border-left: 3px solid var(--primary);
+      padding: 1em 1.4em; font-style: italic;
+      border-radius: 0 14px 14px 0;
+      max-width: 65ch; margin: 1em auto; text-align: left;
+      color: var(--body);
+    }
+
+    /* === Tables === */
+    .reveal table {
+      font-size: clamp(0.7rem, 1.4vw, 0.85rem);
+      border-collapse: separate; border-spacing: 0;
+      margin: 1em auto; max-width: 800px;
+      border: 1px solid var(--divider); border-radius: 14px;
+      overflow: hidden; width: 100%;
+    }
+    .reveal th {
+      background: var(--canvas-parchment); color: var(--ink);
+      padding: 0.7em 1em; text-align: left; font-weight: 600;
+      border-bottom: 1px solid var(--divider);
+    }
+    .reveal td {
+      padding: 0.55em 1em;
+      border-bottom: 1px solid #e0e0e0;
+      color: var(--body);
+    }
+    .reveal tr:last-child td { border-bottom: none; }
+    .reveal tr:nth-child(even) { background: rgba(0,0,0,0.015); }
+
+    /* === Apple Card === */
+    .reveal .card {
+      background: var(--canvas-parchment);
+      border: 1px solid #e0e0e0; border-radius: 18px;
+      padding: 1.4em 1.8em; margin: 1em auto;
+      max-width: 780px; text-align: left;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+    .reveal .tldr {
+      background: linear-gradient(135deg, rgba(0,102,204,0.06) 0%, rgba(0,113,227,0.02) 100%);
+      border: 1px solid rgba(0,102,204,0.18);
+      border-radius: 18px; padding: 1.4em 1.8em;
+      margin: 1em auto; max-width: 720px; text-align: left;
+    }
+    .reveal .tldr h3 { color: var(--primary); margin-top: 0; }
+
+    .small {
+      display: block; font-size: 0.7em; color: var(--body-muted);
+      font-weight: 300; text-align: center !important;
+      margin: 0.8em auto 0; max-width: 70ch;
+    }
+
+    /* === Flow chart (inline-block; never flexbox) === */
+    .flow-chart { text-align: center !important; margin: 1.2em auto; max-width: 880px; font-size: 14px; }
+    .flow-row { text-align: center !important; line-height: 2.4; font-size: 1em; margin: 0.4em 0; word-spacing: 0.4em; }
+    .flow-group {
+      display: block; background: var(--canvas-parchment);
+      border: 1px solid var(--divider); border-radius: 18px;
+      padding: 1em 1.4em; margin: 0.7em auto; max-width: 820px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .flow-group-label {
+      display: block; font-size: 0.7em; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--body-muted);
+      font-weight: 500; margin-bottom: 0.6em; text-align: center;
+    }
+    .flow-node {
+      display: inline-block !important; vertical-align: middle !important;
+      padding: 0.6em 1.1em; border-radius: 12px; font-size: 0.85em;
+      font-weight: 500; text-align: center !important;
+      line-height: 1.35; margin: 0.3em 0.3em;
+      max-width: 240px; word-wrap: break-word;
+      background: #ffffff; border: 1px solid var(--divider);
+      color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .flow-node .node-label {
+      display: block !important; font-size: 1em;
+      font-weight: 600; margin-bottom: 0.2em; color: var(--ink);
+    }
+    .flow-node .node-sub {
+      display: block !important; font-size: 0.78em;
+      font-weight: 400; color: var(--body-muted); margin-top: 0.2em;
+    }
+    .flow-node.long-term { border-color: var(--primary); background: rgba(0,102,204,0.04); }
+    .flow-node.long-term .node-label { color: var(--primary); }
+    .flow-node.tooling { border-color: #ff9500; background: rgba(255,149,0,0.04); }
+    .flow-node.tooling .node-label { color: #b86e00; }
+    .flow-node.compute { border-color: #5856d6; background: rgba(88,86,214,0.04); }
+    .flow-node.compute .node-label { color: #5856d6; }
+    .flow-node.data { border-color: #af52de; background: rgba(175,82,222,0.04); }
+    .flow-node.data .node-label { color: #af52de; }
+    .flow-node.output { border-color: #34c759; background: rgba(52,199,89,0.04); }
+    .flow-node.output .node-label { color: #2a7d3e; }
+    .flow-node.simple { border-color: var(--divider); }
+    .flow-node.simple .node-label { color: var(--ink); }
+
+    /* === Flow connector — CSS line + arrowhead (no Unicode) === */
+    .flow-arrow {
+      display: block !important;
+      width: 2px; height: 28px;
+      background: var(--primary); margin: 6px auto !important;
+      position: relative; vertical-align: middle;
+    }
+    .flow-arrow::before { content: "" !important; }
+    .flow-arrow::after {
+      content: "";
+      position: absolute; bottom: -1px; left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--primary);
+    }
+    .flow-row > .flow-arrow {
+      display: inline-block !important;
+      width: 28px; height: 2px;
+      background: var(--primary); margin: 0 6px !important;
+      vertical-align: middle;
+    }
+    .flow-row > .flow-arrow::after {
+      content: "";
+      position: absolute; top: 50%; right: -1px;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid var(--primary);
+    }
+    .flow-row > .flow-arrow.left::after {
+      right: auto; left: -1px;
+      border-left: none; border-right: 6px solid var(--primary);
+    }
+    .flow-arrow.up {
+      display: inline-block !important;
+      width: 2px; height: 28px;
+      background: var(--primary); margin: 0 6px !important;
+      vertical-align: middle; position: relative;
+    }
+    .flow-arrow.up::after {
+      content: "";
+      position: absolute; top: -1px; left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 6px solid var(--primary); border-top: none;
+    }
+
+    /* === SVG / image fit === */
+    .reveal .slides > section img {
+      display: block !important;
+      max-width: 100% !important;
+      max-height: calc(100vh - 16vh) !important;
+      width: auto !important; height: auto !important;
+      margin: 0.6em auto !important; object-fit: contain;
+    }
+
+    /* === Reveal chrome === */
+    .reveal .progress { background: rgba(0,0,0,0.06); height: 3px; }
+    .reveal .progress span { background: var(--primary); transition: width 0.3s ease; }
+    .reveal .controls { color: var(--primary); opacity: 0.6; }
+    .reveal .controls button { opacity: 0.7; }
+    .reveal .controls button:hover { opacity: 1; }
+
+    /* === Mobile === */
+    @media (max-width: 600px) {
+      .reveal .slides > section { padding: 3vh 4vw !important; }
+      .flow-node { font-size: 0.7em; padding: 0.45em 0.8em; max-width: 170px; }
+      .reveal h1 { font-size: 1.7rem; }
+      .reveal h2 { font-size: 1.2rem; }
+    }
+    @media (max-height: 500px) and (orientation: landscape) {
+      .reveal .slides > section { padding: 2vh 4vw !important; }
+      .flow-node { font-size: 0.65em; padding: 0.35em 0.7em; }
+      .reveal h1 { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <section data-markdown="slides/all-slides.md"
+               data-separator="^---$"
+               data-separator-vertical="^----$"
+               data-separator-notes="^Note:">
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js?v=N"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/markdown/markdown.js?v=N"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js?v=N"></script>
+
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      slideNumber: 'c/t',
+      overview: true,
+      center: false,
+      disableLayout: true,         // <-- CRITICAL for iOS Safari
+      transition: 'slide',
+      transitionSpeed: 'fast',
+      plugins: [ RevealMarkdown, RevealNotes ],
+      markdown: { smartypants: false, gfm: true }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "date": "YYYY-MM-DD",
+    "evaluator": "...",
+    "domain": "...",
+    "system_environment": {
+      "model_version": "...",
+      "embedding_model": "...",
+      "embedding_dim": 0,
+      "total_pages": 0,
+      "total_edges": 0
+    },
+    "grading_scale": {
+      "3": "Highly relevant (exact topic match)",
+      "2": "Partially relevant (related content)",
+      "1": "Marginally relevant (mentioned but not core)",
+      "0": "Not relevant"
+    }
+  },
+  "queries": [
+    {
+      "id": "Q1",
+      "q": "query string here",
+      "intent": "concept | how-to | relationship | plugin | topic | architecture",
+      "description": "What this query is testing",
+      "relevant": [
+        {"match": "title_keyword_or_path", "grade": 3},
+        {"match": "another_match", "grade": 2},
+        {"match": "marginal_mention", "grade": 1}
+      ]
+    }
+  ]
+}

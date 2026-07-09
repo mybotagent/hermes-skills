@@ -1,0 +1,90 @@
+># Concrete Title — Deck Subtitle
+
+<p class="small">One line about scope. Optional.</p>
+
+---
+
+# Slide 2 — h1 is the slide topic
+
+<p>First paragraph is body content. Keep it short — one paragraph.</p>
+
+<pre><code># code blocks render with the canvas-parchment
+# background and Action Blue keywords
+model: deepseek-chat
+temperature: 0.3</code></pre>
+
+<p>Second paragraph is another short block. Tables, lists, images can go between paragraphs.</p>
+
+---
+
+# Diagram via SVG image
+
+<p>Reference the SVG by relative path. SVG files live in <code>assets/img/</code> at the deck root.</p>
+
+<p><img src="../../assets/img/example.svg" alt="Diagram description (also used by screen readers)" style="max-width:100%;height:auto;"></p>
+
+<table>
+<thead>
+<tr><th>Header A</th><th>Header B</th><th>Header C</th></tr>
+</thead>
+<tbody>
+<tr><td>Row 1 A</td><td>Row 1 B</td><td>Row 1 C</td></tr>
+<tr><td>Row 2 A</td><td>Row 2 B</td><td>Row 2 C</td></tr>
+</tbody>
+</table>
+
+---
+
+# HTML/CSS flow chart (when SVG is overkill)
+
+<p><strong>Use HTML flow when</strong>: small (≤4 nodes), single direction, no precise layout needed.</p>
+
+<div class="flow-chart">
+  <div class="flow-row">
+    <div class="flow-node long-term"><span class="node-label">Input</span></div>
+    <div class="flow-arrow right"></div>
+    <div class="flow-node data"><span class="node-label">Process</span></div>
+    <div class="flow-arrow right"></div>
+    <div class="flow-node output"><span class="node-label">Output</span></div>
+  </div>
+</div>
+
+<p><strong>Use SVG when</strong>: 5+ nodes, branching, color-coded categories, anything that needs to look polished.</p>
+
+---
+
+# Section opener style (optional)
+
+<section class="section-opener" style="display:none;"></section>
+
+<p>Or just use h2 + content. Section opener wrappers are unnecessary since CSS handles centering.</p>
+
+<h3>Sub-heading inside a slide</h3>
+
+<p>Body content under sub-heading.</p>
+
+<ul>
+<li>Bullet 1</li>
+<li>Bullet 2</li>
+</ul>
+
+<blockquote>
+
+> Use blockquote for one-line callouts. Apple-style: parchment bg, left border in Action Blue.
+
+</blockquote>
+
+---
+
+# Code block + prose
+
+<p>Real files from the actual system being described:</p>
+
+<pre><code># config/something.yaml
+key: value
+nested:
+  - one
+  - two
+  - three</code></pre>
+
+<p>This is what the file looks like in production.</p>
