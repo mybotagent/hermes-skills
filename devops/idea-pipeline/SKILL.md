@@ -1,13 +1,13 @@
 ---
 name: idea-pipeline
-description: Class-level skill for the "매일 자동 기획안 시스템" (hermes-ideas). Daily auto-generated ideas for monetization/business insight/tech trends — 운영 cron + manual approve/execute/reject + GitHub private repo backlog. Use when (a) setting up or modifying the daily idea generation cron, (b) processing an idea file (approve/execute/reject), (c) handling idea evolution (v1→v2→v3 within same day), (d) integrating Korea-specific SaaS domain (카카오/네이버/토스 + 세금 + 장바구니 + 분석), or (e) any task touching ~/projects/ideas/, mybotagent/hermes-ideas repo, or cron job d95b9ed4f208.
+description: Class-level skill for the "매일 자동 기획안 시스템" (hermes-ideas). Daily auto-generated ideas for monetization, business insight, and tech trends. 운영 cron + manual approve/execute/reject + GitHub private repo backlog. Use when (a) setting up or modifying the daily idea generation cron, (b) processing an idea file (approve/execute/reject), (c) handling idea evolution (v1 to v2 to v3 within same day), (d) integrating Korea-specific SaaS domain (카카오/네이버/토스 + 세금 + 장바구니 + 분석), or (e) any task touching ~/projects/ideas/ or mybotagent/hermes-ideas repo. **Note (2026-07-09) — cron d95b9ed4f208 referenced in older versions is not registered; cron + repo + directory are all unimplemented. See SKILL.md infra manifest and the "미구현 상태" section for the 5-step recovery plan.**
 when_to_use: |
-  - cron d95b9ed4f208 (💡 매일 기획안) setup/modification
   - ~/projects/ideas/ 디렉토리 운영 (pending/approved/in_progress/rejected)
   - idea_move.sh 상태 전환 호출
   - 한국형 SaaS 보일러플레이트 도메인 (결제3종/장바구니/세금/분석)
-  - 같은 세션 내 기획안 v1→v2→v3 빠른 진화
+  - 같은 세션 내 기획안 v1 to v2 to v3 빠른 진화
   - "승인 + 기존과 다르게" 제약이 있을 때
+  - **매일 기획안 cron 신규 등록 작업** (2026-07-09 진단 — skill v0.1 작성됐지만 cron 미등록 상태)
 allowed-tools: Read Write Glob Bash AskUserQuestion TodoWrite
 related_skills: [project-harness, daily-task-suggestion, kanban-orchestrator]
 metadata:
@@ -28,19 +28,55 @@ metadata:
 
 **stage 1/5 로드맵**: 아이디어 포착 → 기획 자동화 → 빌드 자동화 → 마케팅 자동화 → 매출 추적
 
-## 인프라 매니페스트 (Single Source of Truth)
+## 인프라 매니페스트 (Single Source of Truth) — ⚠️ 부분 미구현 (2026-07-09)
 
-| 항목 | 값 |
-|---|---|
-| **cron job_id** | `d95b9ed4f208` |
-| **이름** | 💡 매일 기획안 (수익화+비즈니스+기술 트렌드) |
-| **스케줄** | 평일 19:30 KST (`30 11 * * 1-5`) |
-| **deliver** | `local` (Discord 알림 ❌) |
-| **GitHub** | `https://github.com/mybotagent/hermes-ideas` (private) |
-| **로컬 루트** | `~/projects/ideas/` |
-| **PAT 위치** | `~/.git-credentials` (자동 인증, GH_TOKEN env ❌) |
-| **default branch** | `main` |
-| **위키** | `~/.hermes/wiki/infra/hermes-ideas.md` |
+| 항목 | 값 | 상태 |
+|---|---|---|
+| **cron job_id** | `d95b9ed4f208` | ❌ **미등록** (2026-07-09 진단, jobs.json에 없음) |
+| **이름** | 💡 매일 기획안 (수익화+비즈니스+기술 트렌드) | — |
+| **스케줄** | 평일 19:30 KST (`30 11 * * 1-5`) | 미사용 |
+| **deliver** | `local` (Discord 알림 ❌) | 미사용 |
+| **GitHub** | `https://github.com/mybotagent/hermes-ideas` (private) | ❌ **repo 없음** (2026-07-09 진단, 7개 repo 목록에 없음) |
+| **로컬 루트** | `~/projects/ideas/` | ❌ **디렉토리 없음** (2026-07-09 진단) |
+| **PAT 위치** | `~/.git-credentials` (자동 인증, GH_TOKEN env ❌) | — |
+| **default branch** | `main` | — |
+| **위키** | `~/.hermes/wiki/infra/hermes-ideas.md` | ❌ 미작성 |
+| **skill** | `devops/idea-pipeline` v0.1 (7-04 작성) | ✅ 존재 |
+
+## ⚠️ 미구현 상태 (2026-07-09 신규) — "약속 vs 실제" 갭
+
+**사용자가 받은 약속**: "매일 기획안 1건 (수익화+비즈니스+기술 트렌드 통합) 자동 생성"
+
+**2026-07-09 22:00 KST 진단 결과 (실제 상태)**:
+- ❌ cron `d95b9ed4f208` — `~/.hermes/cron/jobs.json` (42개 jobs) 안에 **없음**
+- ❌ `mybotagent/hermes-ideas` GitHub repo — mybotagent 7개 repo 목록에 **없음**
+- ❌ `~/projects/ideas/` 디렉토리 — **존재 안 함**
+- ❌ `~/.hermes/wiki/infra/hermes-ideas.md` — 미작성
+- ❌ `idea_move.sh` — 미작성
+- ❌ `~/.hermes/cron/2f553ea20e27_jobs.json` 의 42 jobs 중 "기획" / "idea" / "hermes-idea" / "newsletter" 단어 0건
+- ✅ `devops/idea-pipeline` skill v0.1 (7-04 작성) 만 존재
+
+**즉, skill만 작성됐고 그 외 모든 인프라가 0인 상태**. 사용자 약속 = 0회 이행. 이 사실은 2026-07-09 aiprofit "매일 뉴스레터 발송 안 됨, 매일 기획안 안 옴, GitHub issue 자동도 안 됨" 항의로 진단됨.
+
+### "약속 vs 실제" 갭이 발생하지 않게 하는 규칙 (aiprofit 운영 원칙)
+
+1. **skill 작성 = 약속 아님**. skill 작성 = "이런 게 가능하다는 설계도". 운영 = cron 등록 + repo 생성 + 디렉토리 생성 + 자동화 코드.
+2. **사용자가 "매일 X" 약속하면 즉시 5단계 인프라 생성**:
+   - (a) cron 등록 (jobs.json에 추가 + 즉시 1회 dry-run)
+   - (b) 디렉토리 생성
+   - (c) GitHub repo 생성 (private, master → main)
+   - (d) 자동화 스크립트 작성 (idea_move.sh / publish.sh / create_issue.sh 등)
+   - (e) 위키 페이지 작성 (SOP / 운영 매뉴얼)
+3. **모든 단계 완료 전까지 "준비됨" 보고 ❌** — "5/5 완료" 만 보고
+4. **다음 세션에서 재개 가능 상태로 memory.md에 progress 기록** — "1/5 cron만 등록, repo 없음" 같은 식
+
+### 복구 절차 (다음 세션에서)
+
+1. **cron 등록**: `hermes cron create --title "💡 매일 기획안 ..." --schedule "30 11 * * 1-5" --deliver local ...`
+2. **디렉토리**: `mkdir -p ~/projects/ideas/{pending,approved,in_progress,rejected}`
+3. **GitHub repo**: `curl -X POST -H "Authorization: token $TOK" -d '{"name":"hermes-ideas","private":true,"auto_init":true}' https://api.github.com/user/repos`
+4. **local clone + DESIGN.md + idea_move.sh 작성** (skill v0.1 참조)
+5. **위키**: `~/.hermes/wiki/infra/hermes-ideas.md` 작성 (단일공식 5단계 + 5Stage 로드맵)
 
 ## 디렉토리 구조
 

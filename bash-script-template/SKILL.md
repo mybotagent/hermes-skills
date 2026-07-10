@@ -183,6 +183,104 @@ fi
 | placeholder comment ("단순 휴리스틱") | 정확한 측정 후속 또는 `NOTE:` 로 한계 명시 |
 | README emoji 과다 | 사용자 패턴 따르기 (보통 moderate) |
 | `\|\| echo ""` in `[ -x "$(... \|\| echo)" ]` | 명확한 `command -v` 또는 단축 평가 |
+| **`python3 -c "..."` heredoc 안에 Python f-string (`{name}` 등)** | **bash wrapper = python 호출만, 본체는 별도 `.py` 파일**. 아래 "🐍 bash + Python pitfall" 섹션 참조. |
+
+## 🐍 bash + Python pitfall — `python3 -c "..."` 안에 f-string 넣지 말 것 (2026-07-10 신규)
+
+**증상** (실측 2026-07-10, self_healing_watchdog.sh 1차 구현):
+```bash
+python3 -c "
+import json
+data = {
+    'job': f'{name}',  # bash가 {name}을 brace expansion으로 해석
+    'err': f'**status**: {status}',  # 또 brace expansion
+}
+"
+```
+
+출력:
+```
+line 57: {name}: command not found
+line 57: {jid[:12]}: command not found
+line 57: {status}: command not found
+```
+
+Python 자체는 동작하지만 stderr에 noise. **원인**: bash의 brace expansion은 큰따옴표 안에서도 발생 (`{a,b}` 같은 콤마 패턴). `{name}`처럼 단일 변수도 큰따옴표 안에서 bash가 command로 해석 시도.
+
+### 더 위험한 함정들
+
+| 패턴 | 증상 | 원인 |
+|:-----|:-----|:-----|
+| f-string 안에 `\`backtick\`` | `command not found` (bash가 backtick을 command substitution으로 해석) | bash는 backtick = `$(...)`과 동치 |
+| f-string 안에 `{"예" if ... else "아니오"}` | `SyntaxError: f-string: unmatched ('"')` | f-string expression 안의 quote 충돌 |
+| heredoc 안 `'{"key": "val"}'` 한 줄 | bash가 `"`를 따옴표 매칭으로 오해, syntax error | 큰따옴표 escape 미흡 |
+| heredoc 안 `f'''...{var}...'''` | `SyntaxError: unterminated triple-quoted string literal` | bash가 triple-quote를 닫지 못함 |
+
+### 해결 (검증된 패턴): bash wrapper = python 호출만, 본체는 별도 `.py`
+
+```bash
+# ~/.hermes/scripts/self_healing_watchdog.sh
+#!/bin/bash
+# bash wrapper — python 호출만
+HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
+SCRIPT_DIR="$HERMES_HOME/scripts"
+python3 "$SCRIPT_DIR/self_healing_watchdog.py"
+exit 0
+```
+
+```python
+# ~/.hermes/scripts/self_healing_watchdog.py (별도 .py)
+import json, urllib.request
+
+def call_llm_analyze(jid, name, deliver, status, last_error, recent_history, api_key):
+    # prompt를 list + '\n'.join()으로 빌드 (큰따옴표 0개)
+    prompt_lines = [
+        '너는 시스템 자동복구 분석가다.',
+        f'- id: {jid}',  # Python f-string OK, bash 간섭 없음
+        f'- name: {name}',
+        f'- status: {status}',
+        f'- deliver: {deliver}',
+        f'- last_error: {last_error[:300]}',
+        '',
+        '응답: root_cause, fix_action, auto_fixable(bool), confidence JSON',
+    ]
+    prompt = '\n'.join(prompt_lines)
+    ...
+```
+
+### bash heredoc 안 Python이 정말 필요할 때 (극히 드묾)
+
+부득이하게 inline python이 필요한 경우 (예: 빠른 일회성 스크립트), prompt 변수를 **heredoc 외부에서 미리 export**:
+
+```bash
+# ⚠️ 권장 안 함. 임시 디버깅용.
+export PROMPT="Job: ${JOB_NAME}, Status: ${STATUS}"
+python3 <<'PYEOF'
+import os
+prompt = os.environ['PROMPT']
+# Python 내부에서 prompt 사용
+PYEOF
+```
+
+`<<'PYEOF'` (single-quoted) = 변수 확장 X. 모든 입력은 env var로 받음. 그래도 inline은 디버깅 외엔 안티패턴 — 별도 `.py`가 정답.
+
+### 검증 명령
+
+```bash
+# bash syntax
+bash -n script.sh && echo "[bash OK]"
+
+# Python syntax
+python3 -c "import ast; ast.parse(open('script.py').read()); print('[py OK]')"
+```
+
+두 명령 모두 PASS면 inline 또는 분리된 python 어느 쪽이든 OK. 둘 다 PASS인데 실행 시 brace expansion noise 나오면 inline 구조 의심.
+
+### 이 rule의 출처
+
+- `self_healing_watchdog.sh` 1차 구현 (2026-07-10): 222줄 bash 안에 150줄 python heredoc → 3가지 syntax error 연쇄
+- 해결: bash wrapper 14줄로 축소, 본체 360줄을 `self_healing_watchdog.py`로 분리
+- 결과: syntax OK + f-string 자유 + 이모지 OK + 디버깅 쉬움
 
 ## Examples (3 reference scripts)
 

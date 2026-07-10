@@ -150,3 +150,28 @@
 - P1: assume-unchanged 인덱스 오염 — `hermes-trading-hub.md`가 58ddec3에서 삭제됐는데 index에 assume-unchanged로 남음.
 - P2: dawn-wiki-auto-stash 잔재.
 - 2a-bis: 깨진 markdown 링크 검사 추가.
+
+## 2026-07-09 (P14 검증 + 신규 untracked 등록)
+
+**사전 점검 (3종 audit 스크립트):**
+- wikilink-audit.py: 0 broken, 4 cross-domain (P7, 의도된 외부 참조), 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: 1 REAL MISSING — `raw/2026-W28-weekly-recap-draft.md`.
+
+**발견:**
+- `git status`에 `?? raw/2026-W28-weekly-recap-draft.md` (untracked) — 2026-W28 주간 회고 자동 생성 초안.
+- raw/ 섹션은 PAT B (plain text bullet) 형식 — P14 false-positive 후보였지만 실제로는 진짜 미등록.
+- index-md-audit.py의 PAT A+B+C 통합 매치가 raw/ 섹션의 PAT B도 정상 커버 → P14 fix 검증 성공.
+
+**적용:**
+- index.md raw/ 섹션에 PAT B 형식으로 등록: `- 2026-W28-weekly-recap-draft (raw/2026-W28-weekly-recap-draft.md) — 🆕 2026-W28 주간 회고 초안 (publish 전 사용자 확인 대기)`
+- commit `1a17ddb auto-sync 2026-07-09 21:00 KST: register raw/2026-W28-weekly-recap-draft in index.md` (2 files, +28).
+- push 성공 (774fe69..1a17ddb).
+
+**Cross-domain (유지):** 4개 (harness-engineering-hub, macro-strategy, macro-indicators-hub, schedule-calendar-hub).
+
+**Wiki 상태 (2026-07-09):**
+- 65개 wiki 페이지 (submodule 제외), index.md 등록 64.
+- 0 broken wikilink, 0 broken markdown link, 0 P11 sibling cross-ref.
+- 1 untracked → 등록 처리.
+- 0 stale (30일+) — 신규 draft만 +0일.

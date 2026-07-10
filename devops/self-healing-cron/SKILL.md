@@ -16,22 +16,46 @@ When **any step in this cron job fails**, follow this protocol before reporting 
 4. **자동수정**: 명백한 원인이면 직접 수정 (파일 없음 → 생성, 경로 오류 → 수정, 패키지 없음 → pip install)
 5. **보고**: 모든 시도 실패 시 → 에러 내용 + 시도한 조치 + 추정 원인 포함해 보고
 
-## 🚨 사용자 정책: 3회 이상 에러 → 근본 원인 자동 해결 (2026-07-01)
+## 🚨 사용자 정책: 3회 이상 에러 → 근본 원인 자동 해결 (2026-07-01, 2026-07-10 강화)
 
 **User-stated policy (aiprofit)**: "3회 이상 에러나면 근본 원인을 찾아서 해결해"
+**2026-07-10 확장 (aiprofit)**: "재시도 초과 하면 셀프 힐링 반복만하지 말고 근본 원인 찾아서 해결하라고. 재시도-> 원인 디스코드애 보내기 => 근본 원인 해결 스스로 llm호출해서 해결"
 
-이는 단순 retry 정책이 아니다. **3회 누적 시 retry로 해결 안 되면 → 패턴 분석 → 자동 fix 시도 → 알림** 사이클을 의미한다. 이 정책이 self-healing-cron의 404 deliver 자동 fix 구현의 근거다.
+이는 단순 retry 정책이 아니다. **재시도 누적 시 retry로 해결 안 되면 → 패턴 분석 → 자동 fix 시도 → LLM 분석 → 알림** 사이클을 의미한다. 이 정책이 self-healing-cron의 404 deliver 자동 fix 구현의 근거다.
 
 | 누적 횟수 | 동작 | 의미 |
 |:---------:|:-----|:----|
 | 1회 | retry + 로그 | 일시적 오류일 수 있음 (transient) |
 | 2회 | retry + 누적 카운트 증가 | 패턴 반복 → 설정 문제 가능성 |
-| **3회 도달** | **자동 fix (config patch) + 알림** | **설정 문제 확정 → 사람이 할 일을 시스템이** |
-| 4회+ | 이미 fix됨 (재발 시 별도 escalation) | fix 실패 시 운영자 개입 |
+| **재시도 초과** | **자동 fix 시도 → 안되면 LLM 근본 원인 분석 → Discord 통보** | **원인 확정 → 시스템이 직접 추론 + 사람에게 보고** |
+| fix 성공 | retry 카운터 리셋 | 다음 cycle 자연 재시도 |
+| fix 실패 (auto=False) | LLM 권고 + Discord 통보 → **사람 결정 영역** | 명시적 확인 전까지 다음 cycle에서 재분석 안 함 (TTL 캐시) |
 
-**적용 범위**: 단순 cron retry가 아니라 **모든 자가 치유 워크플로**에 적용. Subagent 데이터 환각, API 키 만료, 파이프라인 path 오류 등 어떤 자가 치유 시나리오든 "3회 → 근본 원인" 패턴을 따를 것.
+**3-layer escalation (2026-07-10 신규, `self_healing_watchdog.py`)**:
+
+```
+재시도 ≥ 2회 누적
+   │
+   ├─ Layer 1: 패턴 매칭 → 즉시 fix 가능한가?
+   │   • 404 + 위험 deliver → jobs.json deliver=origin
+   │   • stale .tick.lock (30분+) → 강제 rm
+   │   • rate limit (429) → 자연 cooldown 60분
+   │   • module not found → venv/path 확인 권고
+   │
+   ├─ Layer 2: LLM 근본 원인 분석 (DeepSeek API, 1-shot curl)
+   │   • prompt: cron 메타 + last_error + recent_history → JSON 4필드
+   │   • root_cause / fix_action / auto_fixable(bool) / confidence
+   │   • 6시간 캐시 (같은 cron은 같은 LLM 호출 안 함)
+   │
+   └─ Layer 3: Discord webhook 통보 (embed)
+       • 자동 fix 가능 여부 + LLM 권고 → 사람 결정 영역 명시
+```
+
+**적용 범위**: 단순 cron retry가 아니라 **모든 자가 치유 워크플로**에 적용. Subagent 데이터 환각, API 키 만료, 파이프라인 path 오류 등 어떤 자가 치유 시나리오든 "재시도 초과 → 근본 원인" 패턴을 따를 것.
 
 **이 정책을 구현한 첫 사례**: 404 + 위험 deliver 패턴 → 3회 누적 시 `jobs.json` atomic patch (아래 "🔧 404 + 위험 deliver 자동 fix" 섹션). 새 자가 치유 로직을 추가할 때 이 임계값을 기본으로 삼을 것.
+
+**2026-07-10 신규 사례**: 재시도 2회 초과 시 LLM이 직접 cron 메타 + last_error를 받아 root_cause 분석. 사용자가 "스스로 llm호출해서 해결" 명시 → 사람 호출 ❌, 시스템 자가 분석 ✅. cron `894e773a9a2b` (no_agent watchdog) 안에서 DeepSeek API 1회 호출. LLM 키 없으면 graceful fallback (webhook만, root_cause='LLM 키 미설정').
 
 ## 자주 발생하는 오류 대처
 
@@ -950,6 +974,175 @@ bash ~/.hermes/scripts/self_healing_watchdog.sh
 - `references/cron-delivery-error-recovery.md` — 🔀 Deliver 실패 자가 치유 + HTTP 코드 분류 (2026-07-01)
 - `references/cron-deliver-topic-matching.md` — ⚠️ Wrong-Thread Routing (포맷 OK, topic 틀림) 진단·수정 (2026-07-02 신규)
 - `references/cron-mode-naver-polling-fallback.md` — 🚨 Yahoo 완전 차단 시 Naver Polling API로 한국 개별주 수집 패턴 (EUC-KR 디코딩, 6종목 검증, 2026-07-09 신규)
+- `references/hermes-config-sync-bugs.md` — 🚨 hermes_config_sync.sh 2 critical bugs (rsync wipe + config recursion) + fix (2026-07-09 신규)
+- `references/llm-root-cause-analysis.md` — 🧠 재시도 초과 시 LLM 근본 원인 분석 패턴 (3-layer escalation, prompt 템플릿, 캐시 schema, env keys, 2026-07-10 신규)
+
+## 🚨 `hermes_config_sync.sh` 2 Critical Bugs (2026-07-09 발견+수정, HARD PITFALL)
+
+**`hermes_config_sync.sh`** 는 사용자가 "github은 기록용"이라 정의한 5개 sub-step 단방향 push 스크립트. `91059d1e3d31` (매일 KST 22:30 = UTC 13:30) cron으로 발화. **이 스크립트의 2가지 버그가 17시간 sync 지연의 진짜 원인**이었음.
+
+### Bug #1 — `ensure_mirror_stage` rsync가 stage의 `.git/` 을 매번 wipe (HARD PITFALL)
+
+**증상**:
+- 첫 실행: `git clone --bare ... $mirror` + `git clone $mirror $stage` → stage에 `.git/` 살아있음 → sync OK
+- 두 번째 실행: rsync `--delete`로 `src` (예: `~/.hermes/skills/`)의 내용을 stage에 동기화하면서 **stage의 `.git/` 까지 삭제** → `sync_substep`이 "is not a git repo" 판단 → SKIP
+- 결과: 첫 push만 되고 그 후 영원히 mirror 레포에 push 안 됨
+
+**원인**:
+```bash
+# ❌ 기존 — stage의 .git이 rsync --delete로 wipe됨
+rsync -a --delete \
+  --exclude '.bundled_manifest' \
+  --exclude '__pycache__' --exclude '*.pyc' \
+  --exclude '.DS_Store' \
+  "$src"/ "$stage"/
+```
+
+**Fix (3가지 exclude 추가)**:
+```bash
+# ✅ 1차 fix — stage의 .git은 src가 만든 게 아니라 clone이 만든 거니까 절대 지우면 안 됨
+rsync -a --delete \
+  --exclude '.git' --exclude '.git/' --exclude '.git/**' \
+  --exclude '.bundled_manifest' \
+  --exclude '__pycache__' --exclude '*.pyc' \
+  --exclude '.DS_Store' \
+  "$@" \
+  "$src"/ "$stage"/
+```
+
+### Bug #2 — config step이 `~/.hermes` 전체를 rsync하여 무한 재귀 (HARD PITFALL)
+
+**증상**:
+- `ensure_mirror_stage "config" ... "$HERMES_HOME" "mybotagent/hermes-config"` 호출
+- rsync가 `~/.hermes/` → `~/.hermes/.mirror/config-stage/` 동기화
+- `config-stage/` 자체가 `~/.hermes/.mirror/` 안에 있음 → `stage/.mirror/...` 디렉토리가 자기 안에 생기거나 `.git/`, `wiki/`, `skills/` 등이 stage에 들어감
+- 결과: `file has vanished` 연쇄 에러 + timeout (60s+ 실행)
+
+**원인**:
+- `ensure_mirror_stage`는 `$src`를 그대로 rsync. config의 src는 `~/.hermes` 전체라 stage 자신을 재귀 포함
+- `.gitignore`만으로는 한계 (`.mirror/`, `wiki/`, `.git/` 등을 다 exclude 못 함)
+
+**Fix (config step 전용 manual 빌드로 우회)**:
+- `ensure_mirror_stage` 호출 ❌ → config는 `git clone`으로 stage만 만들고 rsync ❌
+- **선별된 파일만 수동 cp**:
+  - `memories/memory-current.md` (memory.md의 secret line redact)
+  - `cron/jobs.meta.json` (jobs.json에서 메타만 추출 — prompt/delivery/job_id/last_run 제외)
+  - `config.yaml` (그대로)
+  - `.env.example` (key만, 값 ❌)
+- `.gitignore` 강화:
+  ```
+  .env
+  *.token
+  *.pem
+  memories/memory-current.md
+  cron/output/
+  cron/jobs.json
+  cron/jobs.json.*
+  cron/ticker_*
+  cron/.*.lock
+  .mirror/
+  .git/
+  ```
+
+**Config step 새 코드 패턴** (2026-07-09 적용):
+```bash
+mkdir -p "$CONFIG_MIRROR_STAGE"
+if [ ! -d "$CONFIG_MIRROR_STAGE/.git" ]; then
+  git clone "https://github.com/mybotagent/hermes-config.git" "$CONFIG_MIRROR_STAGE" >>"$LOG_FILE" 2>&1 || true
+  (cd "$CONFIG_MIRROR_STAGE"; git checkout -B main; git remote set-url origin ...)
+fi
+# 선별 파일 cp (rsync ❌)
+(
+  cd "$CONFIG_MIRROR_STAGE"
+  cat > .gitignore <<'GI'
+.env / *.token / *.pem / memories/memory-current.md
+cron/output/ / cron/jobs.json / cron/jobs.json.* / cron/ticker_* / cron/.*.lock
+.mirror/ / .git/
+GI
+  mkdir -p memories cron
+  [ -f "$HERMES_HOME/memories/memory.md" ] && cp "$HERMES_HOME/memories/memory.md" memories/memory-current.md
+  # secret line redact
+  sed -E -i 's/(api_key|token|secret)=[^[:space:]]*/\1=<REDACTED>/g' memories/memory-current.md
+  # cron meta 추출 (jobs.json에서 name/schedule/script/enabled/no_agent만)
+  python3 -c "import json,os; ..."  # heredoc
+  [ -f "$HERMES_HOME/config.yaml" ] && cp "$HERMES_HOME/config.yaml" .
+  [ -f "$HERMES_HOME/.env" ] && awk -F= '/^[A-Z_]+=/{print $1"="}' "$HERMES_HOME/.env" > .env.example
+)
+sync_substep "config-stage" "$CONFIG_MIRROR_STAGE" "mybotagent/hermes-config" "main"
+```
+
+### 진단 4단계 (mirror sync 안 될 때 즉시 적용)
+
+```bash
+# ① stage에 .git/ 있는지 확인 — 없으면 Bug #1 (rsync wipe)
+ls -la ~/.hermes/.mirror/{wiki,skills,scripts,config}-stage/.git 2>&1
+
+# ② sync log 최근 — Bug #1 = "is not a git repo" / Bug #2 = "file has vanished" + "rsync SIGINT"
+tail -30 ~/.hermes/cron/output/hermes-config-sync-*.log
+
+# ③ drift 확인 — 4개 레포 모두 local = remote SHA 일치해야 정상
+grep 'drift\|local=\|remote=' ~/.hermes/cron/output/hermes-config-sync-*.log | tail -10
+
+# ④ GitHub API로 각 레포 last commit 시각 확인
+TOK=$(grep ^GITHUB_TOKEN= ~/.hermes/.env 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'")
+for r in hermes-wiki hermes-skills hermes-scripts hermes-config; do
+  curl -s --max-time 5 -H "Authorization: token $TOK" "https://api.github.com/repos/mybotagent/$r/commits?per_page=1" | head -c 200
+  echo
+done
+```
+
+### 운영 rule (2026-07-09 사용자 결정 — 영구 HARD RULE)
+
+- **`hermes_config_sync.sh`의 `DRY_RUN` default = 0 (push-first)**. cron이 push까지 끝냄. 사용자가 `DRY_RUN=1 bash ~/.hermes/scripts/hermes_config_sync.sh` 로 1회 preview만 가능.
+- **github은 기록용** (사용자 원칙) → push는 자동. DRY-first는 사용자가 명시 요청한 1회 preview에만.
+- **4개 sub-step + 2개 archived**: wiki + skills-stage + scripts-stage + config-stage + (memories/cron stage — 2026-07-09 사용자가 `mybotagent/hermes-memories` + `mybotagent/hermes-cron` GitHub archive 처리해서 영구 미사용)
+
+### 4+2개 mirror 레포 매니페스트 (2026-07-09 기준)
+
+| 로컬 src | GitHub repo | stage 경로 | 비고 |
+|---|---|---|---|
+| `~/.hermes/wiki` | `mybotagent/hermes-wiki` | 직접 (stage 없음) | 기존 push, sub_step 직접 |
+| `~/.hermes/skills` | `mybotagent/hermes-skills` | `~/.hermes/.mirror/skills-stage/` | Bug #1 fix 적용 |
+| `~/.hermes/scripts` | `mybotagent/hermes-scripts` | `~/.hermes/.mirror/scripts-stage/` | Bug #1 fix 적용 |
+| `~/.hermes/{memories,cron,config.yaml,.env}` | `mybotagent/hermes-config` | `~/.hermes/.mirror/config-stage/` | Bug #2 fix 적용 (manual cp) |
+| `~/.hermes/memories` (raw) | `mybotagent/hermes-memories` (archived) | — | **사용자가 2026-07-09 직접 GitHub archive 처리** |
+| `~/.hermes/cron` (raw) | `mybotagent/hermes-cron` (archived) | — | **사용자가 2026-07-09 직접 GitHub archive 처리** — prompt secret 위험 + config의 jobs.meta.json으로 충분 |
+
+### ⚠️ Cron 이름이 "DRY-first"였지만 default = push였던 함정 (2026-07-09)
+
+**문제**: 기존 cron 이름 `hermes-config-sync (KST 22:30, DRY-first)`. 이름이 "DRY-first" 였지만 DRY_RUN default = 1 (push 안 함) → 17시간 sync 지연.
+
+**교훈**:
+- cron 이름에 동작 모드 (DRY-first / push-first) 를 명시할 것 — 영구 rule
+- 이름과 실제 default가 다르면 sync 지연 같은 silent failure
+- `cron update` 로 이름은 즉시 갱신 가능, 하지만 기본값은 코드에서 default = 0 (push-first) 으로 영구 rule
+- **검증 패턴**: cron 등록 직후 `bash ~/.hermes/scripts/hermes_config_sync.sh` 1회 dry-run + push-run 둘 다 실행 → drift = 0 확인
+
+### ⚠️ "원인 찾아서 알아서 해결해" multi-cause workflow (2026-07-09, aiprofit 운영 원칙)
+
+사용자가 "원인 찾아서 알아서 해결해줘" 명령 시 (예: "cron 안 돌아가는 듯"):
+
+1. **즉시 진단** — `cron list` + 마지막 실행 시각 + last_status + last_error
+2. **로그 확인** — `cron/output/<job_id>/*.log` 가장 최근 파일 직접 읽기
+3. **단일 root cause 가정 ❌ → multi-cause scan** — 1개 원인이 아니라 N개 원인이 동시에 있을 가능성 염두. 본 세션 사례: 17시간 sync 지연 = (a) DRY-first default + (b) rsync wipe + (c) config recursion = 3가지 동시 발생
+4. **dependency order로 fix** — wiki > skills/scripts > config (config는 가장 복잡, 마지막)
+5. **각 fix 후 즉시 검증** — dry-run (DRY=1) → push (DRY=0) → drift log local/remote SHA 일치 확인
+6. **rule로 영구 기록** — memory + wiki (infra/hermes-config-sync.md) 양쪽에
+7. **GitHub mirror push** — wiki + hermes-config 모두 push → drift=0 확인
+
+**이 워크플로의 핵심**: "1개 원인 → 1개 fix"가 아니라 "**multi-cause → multi-fix in order**"라는 사용자 선호 패턴. aiprofit 운영 원칙 = "원인 찾아서" = root cause analysis를 모든 가능한 원인으로 확장.
+
+### ⚠️ PAT admin scope 부족 — `DELETE /repos/...` 403 (2026-07-09)
+
+**현상**: `~/.git-credentials`의 PAT는 `repo` scope만 있고 `admin:org` 등 admin 권한이 없음. 따라서 `curl -X DELETE .../repos/mybotagent/<name>` → `403 Must have admin rights to Repository.`
+
+**대응 패턴**:
+- DELETE API 실패 시 → **GET으로 현재 상태 확인** + 정직한 보고 ("살아있음, admin 권한 부족으로 사용자 직접 처리 필요")
+- "이미 됐을 것" 가정 ❌ → 모든 상태 변경 후 검증
+- **Archive로 우회 가능**: `PATCH /repos/<owner>/<name>` with `{"archived":true}` → read-only 전환. PAT repo scope로도 가능 (2026-07-09 검증)
+- "정리" 결정 시 **사용자 직접 GitHub UI** archive/delete — 이건 PAT scope와 무관한 사용자 결정 영역
+
+상세: `references/hermes-config-sync-bugs.md`
 
 ## 🚨 CRITICAL: `last_delivery_error`는 `cronjob update`로 자동 clear 안 됨 (2026-07-01)
 
@@ -1066,6 +1259,137 @@ hermes cron update <job_id> --deliver "discord:<channel_id>:<correct_thread_id>"
 #주식-증시(1510404235915694170) = stock/market
 다른 주제 X (정확한 매핑 필수)
 ```
+
+## 🧠 LLM 근본 원인 분석 — 재시도 초과 시 시스템 자가 진단 (2026-07-10 신규)
+
+**문제**: 위 Layer 1의 패턴 매칭(404, lock, 429 등)에 안 걸리는 미지의 에러가 재시도 2회 초과로 누적되면, 기존 watchdog은 단순히 "⚠️ 재시도 초과" 출력만 하고 끝남. 같은 에러가 매일 반복되는데 사람은 매번 깨닫지 못함.
+
+**해결**: cron 1회 추가 호출 없이 `self_healing_watchdog.py` 안에서 즉시 LLM(DeepSeek) 1-shot 호출. prompt는 cron 메타 + last_error + 최근 heal_history → JSON 4필드 (root_cause / fix_action / auto_fixable / confidence). 결과를 6시간 캐시 (`~/.hermes/cron/.heal_root_cause.json`) → 같은 cron은 같은 에러로 6시간 안에 재호출 안 함.
+
+### 호출 흐름
+
+```
+self_healing_watchdog.py (no_agent, */10 cron)
+└─ jobs.json sweep → 재시도 ≥ 2 jobs
+   ├─ Layer 1: 즉시 fix 가능? (404, lock, 429, modulenotfound)
+   │   └─ yes → apply_fix() → retry counter reset → 끝
+   └─ no → Layer 2: call_llm_analyze()
+       ├─ cache hit (6h 이내) → 즉시 결과 사용
+       └─ cache miss → DeepSeek API 1-shot
+           ├─ 200 OK + JSON 파싱 OK → root_cause + fix_action + auto_fixable + confidence
+           └─ 네트워크 에러/키 없음 → graceful fallback ("LLM 키 미설정", "수동 진단 필요")
+       └─ Layer 3: Discord webhook embed
+           ├─ job name + status + err + deliver
+           ├─ 🎯 근본 원인
+           ├─ 🛠 권고 fix
+           ├─ 🤖 자동 fix 가능 여부
+           └─ 📡 분석 출처 (cache / live)
+```
+
+### 핵심 코드 패턴 (`self_healing_watchdog.py`)
+
+```python
+# LLM 분석 6시간 캐시
+LLM_CACHE_TTL_HOURS = 6
+
+def call_llm_analyze(jid, name, deliver, status, last_error, recent_history):
+    if not DEEPSEEK_KEY:
+        return {'root_cause': 'LLM 키 미설정', 'fix_action': '수동 진단 필요',
+                'auto_fixable': False, 'confidence': 'low'}
+    prompt_lines = [
+        '너는 시스템 자동복구 분석가다. 아래 cron 작업이 실패했어.',
+        '**구체적인 근본 원인** 1~2문장, **즉시 적용 가능한 자동 fix** '
+        '(auto_fixable=True/False), **사용자가 확인해야 할 결정** 3가지 필드로 JSON만 답해.',
+        '', 'cron:',
+        f'- id: {jid}', f'- name: {name}', f'- status: {status}',
+        f'- deliver: {deliver}', f'- last_error: {last_error[:300]}',
+        f'- recent_history: {recent_history[-3:]}',
+        '', '응답 스키마 (JSON):',
+        'root_cause, fix_action, auto_fixable(bool), confidence(high|medium|low) — '
+        '4개 필드 JSON만 답해.',
+    ]
+    req = urllib.request.Request(
+        'https://api.deepseek.com/v1/chat/completions',
+        data=json.dumps({
+            'model': 'deepseek-chat',
+            'messages': [{'role': 'user', 'content': '\n'.join(prompt_lines)}],
+            'temperature': 0.2, 'max_tokens': 400,
+        }).encode(),
+        headers={'Authorization': f'Bearer {DEEPSEEK_KEY}',
+                 'Content-Type': 'application/json'},
+        timeout=15,
+    )
+    with urllib.request.urlopen(req) as resp:
+        payload = json.loads(resp.read().decode())
+    text = payload['choices'][0]['message']['content'].strip()
+    m = re.search(r'\{[\s\S]*\}', text)   # JSON 블록만 추출
+    if not m: raise ValueError('JSON 추출 실패')
+    return json.loads(m.group(0))
+```
+
+### Discord Embed 템플릿
+
+```json
+{
+  "embeds": [{
+    "title": "🔴 재시도 초과 + 근본 원인 (high conf)",
+    "description": "**job**: `🧠 Memory Usage Alert` (`f405cd52a6e8`)\n"
+                   "**status**: `error` · **err**: `...`\n"
+                   "**🎯 근본 원인**: ...\n"
+                   "**🛠 권고 fix**: ...\n"
+                   "**🤖 자동 fix 가능**: 아니오 (수동 확인 필요)\n"
+                   "**📡 분석 출처**: live",
+    "color": 16732357,
+    "footer": {"text": "hermes self-healing watchdog (root-cause) | 2026-07-10"},
+    "timestamp": "2026-07-10T..."
+  }]
+}
+```
+
+### Env keys (필수)
+
+| Key | 용도 | 미설정 시 동작 |
+|:----|:-----|:-------------|
+| `DEEPSEEK_API_KEY` | LLM 분석 | root_cause='LLM 키 미설정', webhook만 동작 |
+| `DISCORD_WEBHOOK_ROOT_CAUSE` | 근본 원인 통보 | discord=❌, LLM 분석은 정상 진행 |
+
+`~/.hermes/.env.discord_webhook` 파일 또는 `os.environ` 어느 쪽이든 자동 로드 (양쪽 다 안 되면 webhook만 ❌).
+
+### 캐시 + 히스토리 파일
+
+| 파일 | 역할 |
+|:-----|:-----|
+| `~/.hermes/cron/.heal_root_cause.json` | LLM 분석 캐시 (`{jid: {ts, result}}`, TTL 6h) |
+| `~/.hermes/cron/.heal_history.log` | 모든 액션 append (`ROOT_CAUSE_ANALYZED status=... cause=... fix=... discord=OK/FAIL`) |
+
+### 검증된 출력 (2026-07-10, f405cd52a6e8 강제 2회)
+
+```
+⚠️  1 job(s) 재시도 초과 — 근본 원인 분석 발동
+  - f405cd52a6e8: 🧠 Memory Usage Alert (평일 09:00 KST) (2회)
+🧠 1 job(s) LLM 근본 원인 분석 → Discord 통보
+  · f405cd52a6e8: 🧠 Memory Usage Alert (평일 09:00 KST) | discord=❌
+    원인: LLM 키 미설정 (DEEPSEEK_API_KEY 없음)
+    fix : 수동 진단 필요 [AWAITING_MANUAL]
+```
+
+### 운영 규칙 (2026-07-10 사용자 결정)
+
+1. **사람 호출 ❌, 시스템 자가 분석 ✅** — "스스로 llm호출해서 해결"이 사용자 운영 원칙
+2. **LLM 권고는 정보용** — `auto_fixable=True`여도 즉시 적용 ❌, 통보만. (사람 결정 영역)
+3. **재실행 안 함 (같은 cycle)** — LLM 분석 후에도 `cronjob run` 재호출은 같은 cycle에서 안 함. 다음 10분 cycle에서 자연 재시도.
+4. **fix 성공 시 retry counter 리셋** — Layer 1에서 fix 적용했으면 `retries[today][jid] = 0`으로 리셋. 다음 cycle 자연 검증.
+5. **사용자 Discord thread = #시스템 (또는 운영자 선호 thread)** — `DISCORD_WEBHOOK_ROOT_CAUSE` env로 routing.
+
+### 흔한 함정
+
+- **bash heredoc 안 Python f-string 사용 ❌** — `python3 -c "f'**job**: \`{name}\` ...'"` → bash brace expansion이 `{name}`을 command로 해석, 또는 backtick이 command substitution으로 해석됨. **해결: bash wrapper는 python 호출만, 본체는 별도 .py 파일** (2026-07-10 self_healing_watchdog.py 분리 이유).
+- **JSON 스키마 한 줄에 큰따옴표 ❌** — bash heredoc에서 `'{"root_cause": "string", ...}'`는 큰따옴표 충돌. **해결: prompt는 list + '\n'.join()으로 빌드** (큰따옴표 0개).
+- **f-string 안에 큰따옴표 ❌** — `{"예" if auto_fixable else "아니오"}` → f-string syntactic error. **해결: 변수로 추출** `bool_fix = '예' if auto_fixable else '아니오'`.
+- **6시간 캐시 너무 짧으면?** — 1시간마다 같은 cron이 LLM 호출 → 비용 누적. 6시간이 적당 (근본 원인은 보통 1일 안에 안 변함).
+- **LLM 키 없을 때 silent fail ❌** — 명시적으로 root_cause='LLM 키 미설정' 반환 + Discord webhook은 정상 발송. 운영자가 키 누락 즉시 인지.
+
+자세한 prompt 템플릿 + 캐시 schema + 검증 결과: `references/llm-root-cause-analysis.md`
 
 ## 🪜 2-Layer Defense Pattern (2026-07-01)
 

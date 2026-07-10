@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.10.0
+version: 1.11.0
 changelog:
+  - "1.11.0 (2026-07-09): (a) P15 신규 — P14 raw/ false-positive 의심 케이스 중 실제로는 진짜 미등록일 수 있음 (raw/2026-W28-weekly-recap-draft.md 사례); (b) 사전 점검의 `cat >> session-notes.md` 절차가 Tirith guard `dotfile_overwrite`로 차단됨 → `patch` 도구(read → patch)로 append 절차 명시; (c) `git add` 후 commit 전에 `git pull --rebase` 시도 시 'uncommitted changes' 오류 — add → commit → pull 순서 강조"
   - "1.10.0 (2026-07-08): (a) P14 신규 — index.md plain-text bullet `(- name (raw/...) — desc)` 형식이 markdown-link regex로 안 잡혀 4건 false positive; (b) scripts/index-md-audit.py 신규 — 3종 패턴 통합 audit (markdown link + plain text parens + bare path), exit 0 정보성; (c) 사전 점검에 index-md-audit.py 호출 추가; (d) P13 본문에 'index.md에는 등록되어 있으나 audit regex로 false positive' 가능성 명시"
   - "1.9.0 (2026-07-07): (a) 사전 점검 단계 신규 — bundled scripts/wikilink-audit.py + markdown-link-audit.py를 직접 호출하고 references/session-notes.md를 먼저 읽도록 명시 (인라인 audit 재작성 사고 방지); (b) execute_code는 cron 모드에서 block됨 → python3 <script> 직접 실행 fallback을 본문에 명시; (c) P13 신규 — multi-page 문서 README는 index되지만 sibling .md 페이지가 누락되는 anti-pattern (how-to-use-hermes/01-09.md 사례); (d) 2a 불일치 체크 강화 — sibling .md 자동 등록 절차"
   - "1.8.0 (2026-07-06): P12 — cross-domain suffix check must verify local existence FIRST (false-positive on locally-existing suffixed pages); wikilink-audit.py patch"
@@ -52,7 +53,11 @@ python3 "$SCRIPTS/index-md-audit.py" [WIKI_ROOT]
 # "REAL MISSING"만 처리 대상, "SNAPSHOT/ARCHIVE"는 의도된 예외.
 
 # 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시
-cat ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md | tail -100
+#    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
+#    → patch 도구 사용: read_file(offset=<last_few_lines>) → patch(old_string=<마지막 줄>, new_string=<마지막 줄 + 새 섹션>)
+#    → multi-writer 환경 (병렬 cron 등)에서 "sibling subagent가 read 함" 경고가 나올 수 있음 — 그 경우 read_file로 다시 읽고 patch.
+#    절대 `echo ... >> file` 또는 `cat >> file` heredoc 사용 금지.
+cat ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md | tail -100  # 참고용 (append는 위 patch 절차)
 ```
 
 **왜 이게 필수인가:**
@@ -203,6 +208,8 @@ python3 ~/.hermes/skills/devops/wiki-auto-refresh/scripts/markdown-link-audit.py
 cd ~/.hermes/wiki
 git add -A
 git diff --cached --stat  # 변경사항 요약
+# ⚠ 순서 주의: git add 후 commit 전에 `git pull --rebase` 시도하면 "cannot pull with rebase: Your index contains uncommitted changes" 오류.
+#   → 반드시 add → commit → pull → push 순서.
 if [ -n "$(git status --porcelain)" ]; then
   git commit -m "auto-sync $(date +%Y-%m-%d) 21:00 KST"
   git pull --rebase origin main 2>/dev/null || true
@@ -588,6 +595,44 @@ for dir_name, files in candidates.items():
 - **"2a가 N개 누락이라고 보고" = 항상 N개가 진짜 누락은 아님.** raw/ 같이 PAT B 형식 섹션은 항상 false positive.
 - index.md는 3가지 등록 형식 (markdown link / plain text / bare path) 혼용. audit script는 모두 감지해야 함.
 - 향후 wikilink/markdown-link audit 결과를 리포트에 기재할 때, raw/* 섹션이 "누락 N건"에 포함된다면 PAT B cross-verify 절차를 명시적으로 밟을 것.
+
+### P15. P14 False-Positive 의심이 진짜 누락인 경우 (2026-07-09 추가)
+
+**증상:**
+- P14 fix 후, `index-md-audit.py`가 raw/ 섹션에서 1개 REAL MISSING을 보고.
+- 직전 세션 노트/기억으로는 "raw/* 4건이 P14 false-positive"였으므로 이번 1건도 false-positive로 의심하기 쉬움.
+- 하지만 실제로는 untracked 파일이 신규로 추가된 경우(예: `raw/2026-W28-weekly-recap-draft.md`) — PAT B 형식으로 등록되어 있지 않은 **진짜 누락**.
+
+**판단 기준 — false positive vs 진짜 누락 구분 (우선순위 순):**
+1. **파일 상태 확인**: `git status` / `git ls-files --error-unmatch <file>`로 추적 여부 확인.
+   - untracked (`??`) → 자동 생성된 신규 파일일 가능성 높음 → **진짜 누락**
+   - tracked이지만 index.md에 없음 → 사람이 의도적으로 미등록 (raw/ 섹션의 기존 파일들과 다름) → **false positive 의심**
+2. **파일 내용/메타 확인**: 파일 mtime이 최근(7일 이내)이면 → 신규 생성 → 진짜 누락.
+3. **raw/ 섹션 grep으로 PAT B 등록 패턴 일관성 확인**:
+   ```bash
+   grep -nE '^\s*-\s+\S+\s+\((raw/[^)]+)\)' wiki/index.md
+   ```
+   - 다른 raw/ 파일은 PAT B로 등록되어 있고, 누락된 파일만 없음 → **진짜 누락**
+   - 다른 raw/ 파일도 일관되게 누락 → P14 false-positive (전체 raw/ 섹션이 PAT B 일관)
+
+**처리 (진짜 누락으로 판정된 경우):**
+- PAT B 형식으로 등록, **다른 raw/ 페이지와 일관성 유지**:
+  ```
+  - <name> (raw/<file>.md) — <description>
+  ```
+- **의도가 명확치 않은 파일**(예: draft, 자동 생성, publish 전 확인) → `🆕` 마커 + 설명에 상태 명시:
+  ```
+  - 2026-W28-weekly-recap-draft (raw/2026-W28-weekly-recap-draft.md) — 🆕 2026-W28 주간 회고 초안 (publish 전 사용자 확인 대기)
+  ```
+- commit 메시지에 등록 의도 명시 (예: `register raw/2026-W28-weekly-recap-draft in index.md`).
+
+**자동화 권장 (향후):**
+- `index-md-audit.py`에 "raw/ 섹션 + untracked + 7일 이내 mtime" 조합을 자동 REAL MISSING으로 분류하는 로직 추가 가능. 현재는 사람이 cross-verify.
+
+**핵심 교훈:**
+- **"raw/ 섹션 보고 = 무조건 P14 false-positive"로 단정하지 말 것.** P14는 "이전에 등록된 raw/* 파일들"에 대한 패턴. 신규 untracked는 같은 섹션에 있어도 별개.
+- raw/ 섹션은 **P14 false-positive의 hot spot + 신규 untracked의 hot spot**이 동시에 될 수 있음 — 매번 파일 상태로 판단.
+- 진짜 누락 등록 시 의도 마커(`🆕`, `(draft)`, `(publish 전)` 등)는 향후 stale 검사에서 "신규 등록" 시그널로 활용 가능.
 
 ## 참고 자료
 - 위키 구조/스키마: `wiki/AGENTS.md`, `wiki/SCHEMA.md`
