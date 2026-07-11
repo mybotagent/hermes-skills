@@ -175,3 +175,28 @@
 - 0 broken wikilink, 0 broken markdown link, 0 P11 sibling cross-ref.
 - 1 untracked → 등록 처리.
 - 0 stale (30일+) — 신규 draft만 +0일.
+
+## 2026-07-10 (변경 없음)
+
+**사전 점검 (3종 audit 스크립트):**
+- wikilink-audit.py: 62 files, 0 broken, **4 cross-domain (P7, 의도된 외부 참조 — harness-engineering-hub, macro-strategy, macro-indicators-hub, schedule-calendar-hub)**, 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: 등록 65 (PAT A+B+C), 실제 64. 유일한 차이는 AGENTS.md/SCHEMA.md (의도된 제외) + `raw/sync/2026-07-02-2109-a-step-3-watcher--.md` (P13/SNAPSHOT 예외, `hermes-memory-pipeline.md`에서 wikilink로 참조).
+
+**발견:**
+- `git status` clean, `git stash list` empty, origin/main과 up-to-date.
+- untracked .md 0건.
+- P15 의심 raw/ 신규 파일: 없음 (W28 draft는 2026-07-09에 이미 등록됨).
+- P7 cross-domain 4건 모두 위치/섹션 정상:
+  - `hermes-trading-hub.md:17` — Harness Engineering 행
+  - `:43` — Macro Strategy Framework (cross-domain 명시)
+  - `:69`, `:70` — 거시경제 지표 / 경제지표 캘린더
+
+**적용:**
+- 없음. 변경 사항 0건, commit/push 불필요.
+
+**Wiki 상태 (2026-07-10):**
+- 64개 wiki 페이지 (submodule 제외), index.md 등록 64 (1:1 일치, AGENTS/SCHEMA 제외 후).
+- 0 broken wikilink, 0 broken markdown link, 0 orphan, 0 stale (30일+).
+- 4 cross-domain (P7) 정상 유지.
+- push: 없음.
