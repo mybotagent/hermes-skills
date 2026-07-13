@@ -1388,6 +1388,8 @@ def call_llm_analyze(jid, name, deliver, status, last_error, recent_history):
 - **f-string 안에 큰따옴표 ❌** — `{"예" if auto_fixable else "아니오"}` → f-string syntactic error. **해결: 변수로 추출** `bool_fix = '예' if auto_fixable else '아니오'`.
 - **6시간 캐시 너무 짧으면?** — 1시간마다 같은 cron이 LLM 호출 → 비용 누적. 6시간이 적당 (근본 원인은 보통 1일 안에 안 변함).
 - **LLM 키 없을 때 silent fail ❌** — 명시적으로 root_cause='LLM 키 미설정' 반환 + Discord webhook은 정상 발송. 운영자가 키 누락 즉시 인지.
+- **🚨 키워드 매칭 함정 — "API_KEY" / "deepseek" 같은 토큰만 보고 추측성 진단 (2026-07-11 신규)** — LLM root cause analyzer가 에러 메시지에서 키워드만 뽑아 추측성 진단을 만드는 가장 흔한 함정. 실제 사례: 잡의 진짜 원인은 `RuntimeError: Skipped to prevent unintended spend: global inference config drifted` 였는데, LLM은 메시지 안에 "DEEPSEEK"이 들어있다는 이유로 "DEEPSEEK_API_KEY env 없음"이라는 진단을 반환함. **해결**: LLM prompt에 **반드시 auth.json credential_pool 상태 + .env line + config.yaml api_key + jobs.json provider/model pin 상태** 4개 객체를 함께 넘기고, prompt 첫 줄에 "키워드가 아니라 evidence만 보고 진단해. config drift, RuntimeError 패턴을 먼저 의심해" 명시.
+- **🚨 Config drift = 잡 skip의 silent trigger (2026-07-11 신규)** — provider/model 토글 후 unpinned 잡은 RuntimeError로 skip. 워치독은 이를 "API 키 미설정" 같은 다른 이유로 오진하기 쉬움. 진단 시 `last_error`에 `Skipped to prevent unintended spend` 또는 `config drifted` 또는 `and this job is unpinned` 같은 문구가 보이면 **즉시 잡의 pin 상태부터 확인** → `hermes cron update <jid> --provider <p> --model <m>` 후 재실행. config drift 자동 감지 + 자동 pin 보정 로직은 watchdog 차기 버전 후보.
 
 자세한 prompt 템플릿 + 캐시 schema + 검증 결과: `references/llm-root-cause-analysis.md`
 
