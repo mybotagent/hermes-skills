@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.11.0
+version: 1.12.0
 changelog:
+  - "1.12.0 (2026-07-13): (a) P16 신규 — 명시적 updated/created가 있으면 최근 git commit이 stale 판정을 덮어쓰면 안 됨; git log는 날짜 필드가 없는 페이지에만 fallback; (b) raw/sync/snapshot/archive는 immutable/예외이므로 updated 자동 삽입 금지; (c) `git ls-files -v`의 대문자 H는 정상 tracked/cached, 소문자 h만 assume-unchanged — P1 진단 오류 수정; (d) 날짜 자동 채움 뒤 YAML·diff·3종 audit 재검증 추가; (e) P17 신규 — index-md-audit PAT B+C가 markdown 링크 destination을 재매치해 AGENTS/SCHEMA를 dead link로 오탐하던 문제 수정"
   - "1.11.0 (2026-07-09): (a) P15 신규 — P14 raw/ false-positive 의심 케이스 중 실제로는 진짜 미등록일 수 있음 (raw/2026-W28-weekly-recap-draft.md 사례); (b) 사전 점검의 `cat >> session-notes.md` 절차가 Tirith guard `dotfile_overwrite`로 차단됨 → `patch` 도구(read → patch)로 append 절차 명시; (c) `git add` 후 commit 전에 `git pull --rebase` 시도 시 'uncommitted changes' 오류 — add → commit → pull 순서 강조"
   - "1.10.0 (2026-07-08): (a) P14 신규 — index.md plain-text bullet `(- name (raw/...) — desc)` 형식이 markdown-link regex로 안 잡혀 4건 false positive; (b) scripts/index-md-audit.py 신규 — 3종 패턴 통합 audit (markdown link + plain text parens + bare path), exit 0 정보성; (c) 사전 점검에 index-md-audit.py 호출 추가; (d) P13 본문에 'index.md에는 등록되어 있으나 audit regex로 false positive' 가능성 명시"
   - "1.9.0 (2026-07-07): (a) 사전 점검 단계 신규 — bundled scripts/wikilink-audit.py + markdown-link-audit.py를 직접 호출하고 references/session-notes.md를 먼저 읽도록 명시 (인라인 audit 재작성 사고 방지); (b) execute_code는 cron 모드에서 block됨 → python3 <script> 직접 실행 fallback을 본문에 명시; (c) P13 신규 — multi-page 문서 README는 index되지만 sibling .md 페이지가 누락되는 anti-pattern (how-to-use-hermes/01-09.md 사례); (d) 2a 불일치 체크 강화 — sibling .md 자동 등록 절차"
@@ -182,21 +183,29 @@ python3 ~/.hermes/skills/devops/wiki-auto-refresh/scripts/markdown-link-audit.py
 
 ```python
 # 1) For each .md file (skipping index/AGENTS/SCHEMA/README):
-#    - frontmatter `updated: YYYY-MM-DD`가 이미 있으면 skip
-#    - 없으면 git log -1 --format=%ai -- <file> 으로 최근 커밋일 조회
-#    - 파일이 untracked면 file mtime fallback
-#    - effective_date = max(fm_updated, inline_updated, git_date)
-#    - effective_date가 30일 미만이면 → frontmatter에 `updated: <date>` 추가
-#    - 30일 이상이면 → 자동 채우지 말고 리포트에 "수동 확인 필요"로 기재
+#    - `updated:`가 있으면 그 날짜가 stale 판정의 SSOT. git 날짜로 덮어쓰거나 max() 하지 않음.
+#    - `updated:`가 없고 `created:` 또는 inline Last updated가 있으면 그 날짜로 stale 판정.
+#    - 세 날짜가 모두 없을 때만 git log -1 --format=%cs -- <file> fallback.
+#    - 파일이 untracked면 file mtime fallback.
+#    - fallback 날짜가 30일 미만이면 → frontmatter에 `updated: <date>` 추가.
+#    - fallback 날짜가 30일 이상이면 → 자동 채우지 말고 리포트에 "수동 확인 필요"로 기재.
+#    - raw/, **/sync/, **/*snapshot*/, **/archive/는 immutable/예외이므로 날짜가 없어도 자동 채우지 않음.
 
-# 2) Frontmatter가 없는 파일 → 새 frontmatter 블록을 첫 heading 위에 삽입
-# 3) Frontmatter가 있는 파일 → 기존 블록 안에 `updated: YYYY-MM-DD` 줄 추가
+# 2) Frontmatter가 없는 operational 파일 → 새 frontmatter 블록을 첫 heading 위에 삽입
+# 3) Frontmatter가 있는 operational 파일 → 기존 블록 안에 `updated: YYYY-MM-DD` 줄 추가
 ```
+
+**왜 명시적 날짜가 우선인가 (P16):** 링크 수정·일괄 정리 같은 최근 Git 커밋은 콘텐츠 검토일이 아니다. 기존 `updated:`가 오래됐다면 해당 페이지는 여전히 stale이며, 최근 git log로 이를 숨기면 안 된다. Git은 날짜 메타데이터가 아예 없는 페이지에만 fallback으로 쓴다.
 
 **안전 가드 (필수):**
 - `index.md`, `AGENTS.md`, `SCHEMA.md`, `README.md`는 **대상에서 제외** (스키마/랜딩 파일)
+- `raw/`, `sync/`, `snapshots/`, `archive/`, `_archive/`는 **불변 원본·일시 기록 예외** — 날짜 누락 카운트에는 포함할 수 있으나 `updated:` 자동 삽입 금지
 - 30일 이상 stale이면 자동 채우지 않음 (오래된 페이지는 사람이 내용 검토 후 결정해야 함)
-- 추가 후 lint로 검증 (frontmatter YAML 문법 깨지면 안 됨)
+- `updated:` 삽입 후 반드시 아래를 재검증:
+  1. 수정한 모든 frontmatter를 YAML parser로 `safe_load`
+  2. `git diff --check`
+  3. `wikilink-audit.py`, `markdown-link-audit.py`, `index-md-audit.py` 3종 재실행
+- 리포트에서 **stale(명시적 날짜 30일+)**과 **날짜 정보 없음(raw/snapshot 포함)**을 섞지 말고 별도 집계
 
 **리포트:**
 - "updated: 자동 채움: N개 페이지" 형태로 기재
@@ -302,7 +311,12 @@ Stale: K개 페이지
 **진단 절차:**
 ```bash
 # 1) 의심 가는 파일의 인덱스 플래그 확인
-git ls-files -v <file>  # "H" = assume-unchanged
+# `git ls-files -v`에서 **소문자 `h`** = assume-unchanged.
+# 대문자 `H`는 정상 tracked/cached 엔트리이므로 오염으로 판정하지 말 것.
+git ls-files -v <file>
+
+# 전체 잔재를 찾을 때도 소문자 h만 필터:
+git ls-files -v | grep '^h '
 
 # 2) HEAD에 실제로 있는지와 비교
 git ls-tree HEAD <file>  # 비어있으면 HEAD에 없음
@@ -377,7 +391,7 @@ Push 실패 시 아래 순서로 점검 (가장 흔한 원인부터):
 
 1. `git stash list` → 비우기
 2. `git status -sb` → diverged / ahead / behind 상태 확인
-3. `git ls-files -v | grep '^H '` → assume-unchanged 잔재 (P1)
+3. `git ls-files -v | grep '^h '` → assume-unchanged 잔재 (P1; **소문자 h만 해당**, 대문자 H는 정상)
 4. P1 진단·복구
 5. `rm .git/index; git reset HEAD` (최후의 수단 — 인덱스 재빌드)
 6. `git pull --rebase origin main`
@@ -633,6 +647,34 @@ for dir_name, files in candidates.items():
 - **"raw/ 섹션 보고 = 무조건 P14 false-positive"로 단정하지 말 것.** P14는 "이전에 등록된 raw/* 파일들"에 대한 패턴. 신규 untracked는 같은 섹션에 있어도 별개.
 - raw/ 섹션은 **P14 false-positive의 hot spot + 신규 untracked의 hot spot**이 동시에 될 수 있음 — 매번 파일 상태로 판단.
 - 진짜 누락 등록 시 의도 마커(`🆕`, `(draft)`, `(publish 전)` 등)는 향후 stale 검사에서 "신규 등록" 시그널로 활용 가능.
+
+### P16. Stale 날짜의 SSOT — Git 활동이 콘텐츠 검토일을 덮어쓰면 안 됨 (2026-07-13 추가)
+
+**증상:** 페이지 frontmatter의 `updated:`는 30일 이상 지났지만, 최근 일괄 링크 수정·인덱스 정리 커밋이 있어 `git log -1`은 최근 날짜를 반환한다. Git 날짜와 frontmatter 날짜의 `max()`를 쓰면 실제 stale 페이지가 새 문서처럼 오분류된다.
+
+**판정 순서:**
+1. `updated:` 존재 → 해당 날짜가 SSOT
+2. 없으면 `created:`
+3. 없으면 inline `**Last updated:**`
+4. 세 필드가 모두 없을 때만 `git log -1 --format=%cs -- <file>`
+5. untracked 파일만 mtime fallback
+
+**자동 채움:**
+- fallback이 30일 미만인 operational 페이지에만 `updated:`를 채운다.
+- `raw/`, `sync/`, `snapshots/`, `archive/` 계열은 immutable/예외이므로 자동 채움 금지.
+- 30일+ 페이지는 날짜를 기계적으로 갱신하지 말고 내용 검토 대상으로 리포트한다.
+
+**검증:** YAML parse → `git diff --check` → 3종 bundled audit 재실행 → commit.
+
+**2026-07-13 사례:** 날짜 필드가 없던 최근 operational 문서 8개만 Git commit 날짜로 보강하고, raw/sync 6개는 유지했다. 명시적 오래된 날짜를 가진 17개 페이지는 최근 Git 활동과 무관하게 stale로 유지했다.
+
+### P17. Index Audit Regex Overlap — PAT B+C가 PAT A destination을 재매치 (2026-07-13 추가)
+
+**증상:** `index-md-audit.py`가 `[AGENTS.md](AGENTS.md)`, `[SCHEMA](SCHEMA.md)`를 PAT A에서 정상 제외한 뒤, 괄호 경로 정규식(PAT B+C)으로 destination을 다시 매치하여 `dead link`로 오탐한다.
+
+**원인:** PAT B+C의 `\((...\.md)\)`는 plain-text bullet뿐 아니라 일반 markdown 링크의 `(path.md)`에도 일치한다. 실제 파일 수집은 `AGENTS.md`/`SCHEMA.md`를 의도적으로 제외하므로 집합 차이에서 dead link가 된다.
+
+**해결:** PAT B+C 루프에도 `if path in SKIP_FILES: continue`를 동일하게 적용한다. 서로 겹치는 정규식 패스는 각 패스에서 동일 exclusion invariant를 지켜야 한다.
 
 ## 참고 자료
 - 위키 구조/스키마: `wiki/AGENTS.md`, `wiki/SCHEMA.md`

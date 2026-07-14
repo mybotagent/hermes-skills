@@ -200,3 +200,27 @@
 - 0 broken wikilink, 0 broken markdown link, 0 orphan, 0 stale (30일+).
 - 4 cross-domain (P7) 정상 유지.
 - push: 없음.
+
+## 2026-07-13 (날짜 메타데이터 보강)
+
+**사전 점검 (3종 audit 스크립트):**
+- wikilink-audit.py: 62 files, 0 broken, 4 cross-domain (P7), 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: REAL MISSING 0, snapshot 예외 `raw/sync/2026-07-02-2109-a-step-3-watcher--.md` 1건. AGENTS.md/SCHEMA.md dead-link 표시는 index의 의도된 스키마 참조로 확인.
+
+**발견/적용:**
+- orphan 0건, P13 multi-page `architecture/how-to-use-hermes/` 9개 sibling 모두 index에 등록됨.
+- 날짜 필드 누락 14개 중 raw/sync 불변 원본 6개는 유지.
+- 30일 미만이며 git 최종 커밋일이 확인된 operational 문서 8개에 `updated:` 자동 채움:
+  - architecture 3개 (`5-stage-verify`, `memory-to-wiki-watcher-design`, `speculation-cascade-rule`)
+  - infra 5개 (`bot-architecture`, `github-pr-automation-policy`, `hermes-config-sync`, `pr-review-policy`, `system-watchdog-disk`)
+- YAML safe_load, `git diff --check`, audit 3종 재실행 모두 통과.
+
+**Stale:**
+- 30일+ 17개 (analysis 5, architecture 2, code 1, infra 5, people 1, solopreneur 2, watchlist 1). 내용 검토 없이 날짜만 갱신하지 않고 수동 확인 대상으로 유지.
+- 날짜 정보 없음 6개: raw 5 + raw/sync snapshot 1 (불변 원본/예외라 자동 수정하지 않음).
+
+**Git:**
+- commit `6c71912 auto-sync 2026-07-13 21:00 KST: fill recent updated dates` (8 files, +8).
+- `git pull --rebase origin main` 후 push 성공 (`e550c5d..6c71912`).
+- 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.

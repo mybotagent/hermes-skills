@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-index-md-audit.py — P14 (2026-07-08)
+index-md-audit.py — P14 (2026-07-08), P17 (2026-07-13)
 
-Detects index.md registration gaps using THREE patterns, not just markdown links:
+Detects index.md registration gaps using THREE patterns, not just markdown links.
+P17 keeps exclusions consistent across overlapping regex passes so root schema links
+(e.g. AGENTS.md/SCHEMA.md) are not re-added by PATTERN B+C after PATTERN A skips them:
 
   PATTERN A — markdown link:  [text](path/to/file.md) — desc
   PATTERN B — plain text bullet:  - name (path/to/file.md) — desc   ← raw/* section uses this
@@ -65,8 +67,14 @@ def collect_index_targets(wiki: Path) -> set[str]:
             targets.add(path)
 
     # Pattern B+C: (path/to/file.md)
+    # This regex also sees the destination part of markdown links such as
+    # [AGENTS.md](AGENTS.md), so re-apply the root schema/landing exclusion here.
+    # Otherwise PAT A correctly skips it, then PAT B+C adds it back and reports
+    # a false "dead link" because collect_actual_files() intentionally excludes it.
     for m in PAT_PAREN_PATH.finditer(text):
         path = m.group(1).strip()
+        if path in SKIP_FILES:
+            continue
         if path.endswith(".md"):
             targets.add(path)
 

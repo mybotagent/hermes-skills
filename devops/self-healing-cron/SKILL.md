@@ -1290,7 +1290,7 @@ self_healing_watchdog.py (no_agent, */10 cron)
 
 ```python
 # LLM 분석 6시간 캐시
-LLM_CACHE_TTL_HOURS = 6
+LLM_CACHE_TTL_HOURS = 1   # v2: 6h → 1h — 자동 fix 안 되는 진단은 더 자주 재평가
 
 def call_llm_analyze(jid, name, deliver, status, last_error, recent_history):
     if not DEEPSEEK_KEY:
@@ -1389,7 +1389,32 @@ def call_llm_analyze(jid, name, deliver, status, last_error, recent_history):
 - **6시간 캐시 너무 짧으면?** — 1시간마다 같은 cron이 LLM 호출 → 비용 누적. 6시간이 적당 (근본 원인은 보통 1일 안에 안 변함).
 - **LLM 키 없을 때 silent fail ❌** — 명시적으로 root_cause='LLM 키 미설정' 반환 + Discord webhook은 정상 발송. 운영자가 키 누락 즉시 인지.
 - **🚨 키워드 매칭 함정 — "API_KEY" / "deepseek" 같은 토큰만 보고 추측성 진단 (2026-07-11 신규)** — LLM root cause analyzer가 에러 메시지에서 키워드만 뽑아 추측성 진단을 만드는 가장 흔한 함정. 실제 사례: 잡의 진짜 원인은 `RuntimeError: Skipped to prevent unintended spend: global inference config drifted` 였는데, LLM은 메시지 안에 "DEEPSEEK"이 들어있다는 이유로 "DEEPSEEK_API_KEY env 없음"이라는 진단을 반환함. **해결**: LLM prompt에 **반드시 auth.json credential_pool 상태 + .env line + config.yaml api_key + jobs.json provider/model pin 상태** 4개 객체를 함께 넘기고, prompt 첫 줄에 "키워드가 아니라 evidence만 보고 진단해. config drift, RuntimeError 패턴을 먼저 의심해" 명시.
+
+- **🚨 `_env_lookup` 잘못된 경로 함정 — `~/.hermes/.env.discord_webhook`만 보고 메인 `.env` 못 읽음 (2026-07-13 신규, CRITICAL)** — 워치독이 DEEPSEEK_API_KEY를 못 읽으면 매 cycle "LLM 키 미설정" 거짓 진단을 Discord로 보내고 무한 알림 루프. **진짜 원인**: `_env_lookup`이 watchdog 전용 분리 파일만 보고 `~/.hermes/.env`(실제 키가 박힌 파일)는 안 봄. **검증 (1초)**: `python3 -c "import sys; sys.path.insert(0, '/home/ubuntu/.hermes/scripts'); from self_healing_watchdog import DEEPSEEK_KEY; print('len=', len(DEEPSEEK_KEY))"` → 0이면 버그 있음. **Fix**: 멀티 후보 fallback (`{HERMES_HOME}/.env.discord_webhook` → `{HERMES_HOME}/.env` → `~/.env`). **왜 3개월+ 묵었나**: 첫 후보 파일 없으면 즉시 empty 반환 → 워치독 본체는 silent fail → 사용자는 "키 설정했는데 왜 안 되지?" 경험만. **Pitfall**: key-by-key 조회 함수는 첫 후보에서 못 찾으면 silent fail ❌, 멀티 후보 순회 ✅. 상세 코드: `references/llm-root-cause-analysis.md` 섹션 6.
+
+- **🚨 `urllib.request.Request(timeout=15)` TypeError (2026-07-13 신규)** — `timeout`은 `Request` 생성자가 받지 않고 `urlopen()`의 인자. 버그 있으면 `Request.__init__() got an unexpected keyword argument 'timeout'`. **Fix**: `with urllib.request.urlopen(req, timeout=15) as resp:`. **왜 묭었나**: DeepSeek 키 없으면 거짓 진단으로 끝나서 `urllib.request.Request`에 도달 안 함. `_env_lookup` 멀티 후보 fix 먼저 적용해야 이 버그 노출됨 — 순서 의존. 상세: `references/llm-root-cause-analysis.md` 섹션 7.
+
+- **🚨 거짓 진단 무한 알림 차단 — `silence_until_key_present` sentinel (2026-07-13 신규)** — 워치독이 진단을 못 하면 (키 누락, LLM fail, ...) 매 cycle 같은 알림 → Discord spam. **Fix**: Layer 2 진단 결과 `fix_action='silence_until_key_present'` sentinel이면 Layer 3 (Discord) skip. **원칙**: 워치독은 "원인을 정확히 모르면 알리지 않는다". false-positive 알림은 silent로 전환. 상세: `references/llm-root-cause-analysis.md` 섹션 8.
+
+- **🛠 워치독 v2 검증 패턴 — 단독 import 테스트 (2026-07-13 신규)** — patch 후 매번 `cronjob run` 돌릴 필요 없음. 단독 import + 속성 체크가 1초 안에 끝남. ① env 로드: `from self_healing_watchdog import DEEPSEEK_KEY, LLM_CACHE_TTL_HOURS` → len/first4 확인. ② silent fallback: `os.environ.pop('DEEPSEEK_API_KEY', None)` 후 reload + call_llm_analyze 호출. ③ dry-run: `python3 ~/.hermes/scripts/self_healing_watchdog.py` exit=0 + stdout silent. **왜 중요**: 워치독은 silent가 정상. 매 cycle cron 호출 없이 빠른 회귀 검증 가능. 상세: `references/llm-root-cause-analysis.md` 섹션 10.
+
+- **🚨 워치독 거짓 진단 캐시 수동 reset (2026-07-13 신규)** — 거짓 진단이 `.heal_root_cause.json`에 들어간 후 워크플로우가 정상화돼도 워치독은 같은 진단을 6시간 동안 반복 알림. **수동 reset**: `echo '{}' > ~/.hermes/cron/.heal_root_cause.json` + retry 카운터 `python3 -c "import json; d=json.load(open('/home/ubuntu/.hermes/cron/.heal_retries.json')); d['$(date +%Y-%m-%d)']={}; json.dump(d, open('/home/ubuntu/.hermes/cron/.heal_retries.json','w'), indent=2)"`. 다음 10분 cycle에서 새 진단. **예방**: `LLM_CACHE_TTL_HOURS` 6h → 1h.
 - **🚨 Config drift = 잡 skip의 silent trigger (2026-07-11 신규)** — provider/model 토글 후 unpinned 잡은 RuntimeError로 skip. 워치독은 이를 "API 키 미설정" 같은 다른 이유로 오진하기 쉬움. 진단 시 `last_error`에 `Skipped to prevent unintended spend` 또는 `config drifted` 또는 `and this job is unpinned` 같은 문구가 보이면 **즉시 잡의 pin 상태부터 확인** → `hermes cron update <jid> --provider <p> --model <m>` 후 재실행. config drift 자동 감지 + 자동 pin 보정 로직은 watchdog 차기 버전 후보.
+- **🚨 Infinite-loop 진단 알림 함정 — 워치독이 같은 거짓 진단을 매 cycle 반복 (2026-07-11 신규)** — LLM 캐시(`.heal_root_cause.json`)와 retry 카운터(`.heal_retries.json`)가 reset되지 않으면 같은 진단이 10분마다 영원히 반복. 실측 사례: `1f0e383caa82` (daily-repo-orchestrator-dryrun)가 **2026-07-13 14:10:08 ~ 22:00:13 사이에 50회+ 동일한 "DEEPSEEK_API_KEY env 없음" 진단** 알림. 워크플로우는 22:01:44에 `status=ok`로 정상 종료됐는데도 워치독은 22:50까지 같은 진단 발송. **원인**: (a) `.heal_root_cause.json`의 LLM 캐시 TTL (6h) 안 → 캐시 hit → 매 cycle 새 분석 안 함 → 같은 결과만 반환, (b) `.heal_retries.json`의 오늘 카운터가 2 도달 후 → 매 cycle retry 트리거 안 하지만 ROOT_CAUSE_ANALYZED 알림은 무조건 발송. **해결 (수동 reset)**:
+  ```bash
+  # 1) 거짓 진단 캐시 비우기 (4개 잡 동시, 같은 거짓 진단인 경우 일괄)
+  echo '{}' > ~/.hermes/cron/.heal_root_cause.json
+  # 백업은 수동: cp ~/.hermes/cron/.heal_root_cause.json ~/.hermes/cron/.heal_root_cause.json.bak.YYYYMMDD
+  
+  # 2) 오늘 retry 카운터 reset
+  python3 -c "import json; p='/home/ubuntu/.hermes/cron/.heal_retries.json'; d=json.load(open(p)); d['YYYY-MM-DD']={}; json.dump(d, open(p,'w'), indent=2)"
+  ```
+  **다음 cycle (10분 이내)**에서 새 진단 실행 → 진짜 원인 도출. 단, 새 진단도 같은 거짓 패턴일 가능성 있음 → 진단 결과 받자마자 진짜 원인(워크플로우 출력 파일, jobs.json status, .env 키 존재 등) 직접 cross-check 필수.
+- **🔧 워치독 루프 escape 4단계 (2026-07-11 신규)** — infinite-loop 함정에 빠졌을 때:
+  1. **워크플로우 실제 상태 확인**: `ls -lt ~/.hermes/cron/output/<jid>/ | head -3` → 최근 md 파일이 있으면 워크플로우 정상 실행된 것. 워치독 알림과 무관.
+  2. **거짓 진단 캐시 reset**: 위 echo {} 트릭. 또는 `jq '. = {}' ~/.hermes/cron/.heal_root_cause.json`.
+  3. **retry 카운터 reset**: 위 python3 트릭. 오늘 날짜 키만 비우면 됨.
+  4. **pin 상태 확인 + 보정**: `hermes cron list` → 해당 잡의 `provider`/`model` 필드 비어있으면 unpinned → `hermes cron update <jid> --provider <p> --model <m>`로 명시적 pin. 그 다음 10분 cycle에서 워치독이 새 진단 실행.
 
 자세한 prompt 템플릿 + 캐시 schema + 검증 결과: `references/llm-root-cause-analysis.md`
 

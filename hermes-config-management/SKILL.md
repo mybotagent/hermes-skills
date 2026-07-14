@@ -125,6 +125,43 @@ hermes -z "ok" -m <model-id> --provider <provider>
 
 셋 중 하나만 살라도 동작. 가장 안정적인 건 `hermes auth add`로 credential pool에 박는 것.
 
+### 🚨 `hermes config set ... api_key` 및 `hermes auth add --api-key` stdout 노출 함정 (2026-07-11 신규)
+
+**문제**: 키 값을 인자로 직접 넘기면 `hermes` CLI가 stdout에 짧게 echo함. 예시:
+```bash
+hermes config set providers.deepseek.api_key "sk-c4b...063d"
+# stdout: ✓ Set providers.deepseek.api_key = sk-c...063d in /home/ubuntu/.hermes/config.yaml  ← 키 일부 노출
+hermes auth add deepseek --type api_key --api-key "sk-c4b...063d"
+# stdout: Added custom:deepseek credential #2: "DEEPSEEK_API_KEY"  ← 레이블만 노출 (이건 안전)
+```
+
+**CLI별 노출 동작 (2026-07-11 검증)**:
+| 명령어 | stdout 노출 | 위험도 |
+|:-------|:----------|:------:|
+| `hermes config set <key> <value>` | `✓ Set <key> = <value[:8]>... in ...` | ⚠️ **노출** — 첫 8자 + 말줄임 |
+| `hermes auth add <provider> --api-key <key>` | `Added ...` (레이블만) | ✅ 안전 |
+| `hermes auth add <provider> --api-key -` (stdin) | 동일 | ✅ 안전 — 키 안 보임 |
+
+**노출 회피 패턴**:
+```bash
+# ❌ 노출 — 인자로 직접
+hermes config set providers.deepseek.api_key "sk-c4b...063d"
+
+# 🟡 부분 안전 — .env에서 추출 (여전히 CLI가 일부 echo)
+KEY=$(grep -E "^DEEPSEEK_API_KEY=" ~/.hermes/.env | cut -d= -f2-)
+hermes config set providers.deepseek.api_key "$KEY"
+# stdout: ...sk-c...063d in ...  ← 여전히 노출 (CLI 자체가 echo)
+
+# ✅ 가장 안전 — stdin 패턴
+echo "$KEY" | hermes auth add deepseek --type api_key --label "DEEPSEEK_API_KEY" --api-key -
+# stdout: Added ... (라벨만, 키 0 노출)
+```
+
+**대응 원칙**: 
+- 키가 들어가는 명령은 **shell history에 안 남기게** `unset HISTFILE` 또는 임시 `set +o history`
+- 화면 공유 / 로그 캡처 환경이면 `--api-key -` (stdin) 패턴 우선
+- **`hermes config set providers.<p>.api_key`는 어쩔 수 없이 일부 노출** → 정말 보안 sensitive하면 credential_pool (`hermes auth add`) 경로만 사용
+
 ### `hermes auth status` 함정 — "logged out" 표시는 misleading
 
 `hermes auth status <provider>` 가 `logged out`을 보여줘도 credential_pool에 키가 등록돼 있고 실제 호출은 정상 동작할 수 있음. status는 **OAuth 로그인 플로우의 상태**를 보여줄 뿐, api_key credential pool과는 별개 신호.

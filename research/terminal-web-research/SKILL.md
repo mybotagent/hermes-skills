@@ -1,7 +1,7 @@
 ---
 name: terminal-web-research
 description: "Web research via curl + Python when browser tools are unavailable"
-version: 1.1.0
+version: 1.2.0
 author: Hermes Agent
 metadata:
   hermes:
@@ -355,7 +355,123 @@ terminal(f'curl -sL -H "User-Agent: Mozilla/5.0" "{rss_url2}" -o /tmp/QUERY2.xml
 - **Non-English queries**: Google News RSS works with any language. Set `hl=ko` for Korean, `hl=ja` for Japanese. Content returned depends on the query language.
 - **Very niche queries**: Google News may return 0 results. Fall back to site-specific curl scraping (section 1-6 above) or try broader search terms.
 
-See `references/rss-news-extraction.md` for a ready-to-use extraction script template.
+- `references/korean-stock-news-extraction.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
+- `references/rss-news-extraction.md` — Ready-to-use Google News RSS extraction script template.
+
+#### 7.7 Korean Stock News Collection — Parallel Per-Ticker (added 2026-07-13)
+
+When a user asks for "today's news for these N Korean stocks", use this parallel Google News RSS pattern. The Korean-language `hl=ko&gl=KR&ceid=KR:ko` parameter set returns domestic-press results (연합뉴스, 조선일보, 매일경제, 한국경제, etc.) with Korean-localized rankings.
+
+**Single-query pattern** (one stock):
+```bash
+curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+  "https://news.google.com/rss/search?q=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90+2026%EB%85%84+7%EC%9B%94+13%EC%9D%BC&hl=ko&gl=KR&ceid=KR:ko" \
+  -o /tmp/samsung.xml
+```
+
+**Batch script** (N tickers in parallel terminal() calls — `/tmp/kr_news_collect.py`):
+```python
+import xml.etree.ElementTree as ET, json, urllib.request, urllib.parse, os, re
+from html import unescape
+
+# (ticker_code, display_name) — pick 2-3 query variants per ticker for breadth
+TARGETS = [
+    ("005930", "삼성전자"),
+    ("000660", "SK하이닉스"),
+    ("267260", "HD현대일렉트릭"),  # NOT HD건설기계(267270) — double-check codes
+]
+
+def fetch_rss(query, hl="ko", gl="KR", ceid="KR:ko"):
+    url = f"https://news.google.com/rss/search?q={urllib.parse.quote(query)}&hl={hl}&gl={gl}&ceid={ceid}"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    return ET.fromstring(urllib.request.urlopen(req, timeout=15).read())
+
+results = {}
+for code, name in TARGETS:
+    # Multi-variant query — Korean name + ticker code + date for breadth
+    queries = [f"{name}+2026년+7월", f"{name}+{code}"]
+    seen = set()
+    items = []
+    for q in queries:
+        root = fetch_rss(q)
+        for item in root.findall(".//item")[:10]:
+            t = (item.find("title").text or "")
+            # Strip " - Google 뉴스" suffix and HTML entities
+            t = unescape(re.sub(r"\s*-\s*Google\s*뉴스\s*$", "", t))
+            if t in seen or "Google 뉴스" in t:
+                continue
+            seen.add(t)
+            src = item.find("source")
+            pub = item.find("pubDate")
+            items.append({
+                "title": t,
+                "source": src.text if src is not None else "",
+                "pubDate": pub.text if pub is not None else "",
+            })
+    results[code] = items[:5]
+
+print(json.dumps(results, ensure_ascii=False, indent=2))
+```
+
+**Cron-safe invocation** (no pipe-to-interpreter):
+```bash
+python3 /tmp/kr_news_collect.py > /tmp/kr_news_2026-07-13.json
+```
+
+#### 7.8 Naver News Body Extraction — When JS Sites Block curl (added 2026-07-13)
+
+Yonhap/조선일보/전자신문 본문이 JS로 렌더링됨 (curl로 받으면 빈 `<div>`만). **Naver News 채널 (`n.news.naver.com/article/{oid}/{aid}`)** 은 server-rendered HTML이라 본문 추출 가능. 연합뉴스 본문은 `yna.co.kr/view/`도 JS 렌더링이지만, Naver News의 연합 채널은 정상.
+
+```bash
+curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0" \
+  "https://n.news.naver.com/article/001/0016191550?sid=104" \
+  -o /tmp/article.html
+
+# newsct_body 블록 추출 — sed로 HTML 태그 제거
+grep -A 250 'newsct_body' /tmp/article.html \
+  | sed -E 's/<[^>]+>/ /g; s/&nbsp;/ /g; s/[[:space:]]+/ /g' \
+  | head -c 3500
+```
+
+**Why this works**: Naver News (`n.news.naver.com/article/...`) is a different render path than the main news site. It returns server-rendered HTML with `<div id="newsct_body">` containing the full article, while other Korean news outlets (yna.co.kr/view/, etnews.com, v.daum.net/v/) return JS-rendered pages or 404s.
+
+**Verification**: Check `wc -c /tmp/article.html` — real article ~200KB+, JS-stub page ~50KB.
+
+#### 7.9 Find Naver Article URLs from Google News (added 2026-07-13)
+
+Google News headlines link to Naver News pages (especially for Korean press). To extract the underlying Naver article URL from Google News RSS:
+
+```bash
+# Find Naver article URLs in a Google News RSS feed
+curl -sL "https://news.google.com/rss/search?q=..." -o /tmp/news.xml
+grep -oE 'href="https://news\.naver\.com/[^"]+"' /tmp/news.xml | head -5
+# Returns URLs like: https://news.naver.com/main/read.naver?mode=LSD&mid=shm&sid1=104&oid=023&aid=0003928909
+# The "oid" = outlet ID, "aid" = article ID — use these to construct direct Naver News URL:
+# https://n.news.naver.com/article/{oid}/{aid}
+```
+
+**Or use search.naver.com for discovery** when Google News doesn't surface enough:
+```bash
+curl -sL -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+  "https://search.naver.com/search.naver?where=news&query=ENCODED_QUERY&pd=1" \
+  -o /tmp/search.html
+grep -oE 'article/[0-9]+/[0-9]+' /tmp/search.html | head -10
+# Returns: article/023/0003928909, article/009/0005706657, ...
+# Prefix with: https://n.news.naver.com/
+```
+
+#### 7.10 Korean Stock News Causal Chain Reporting (added 2026-07-13)
+
+When the user asks "why did KOSPI drop?", the workflow is:
+
+1. **Headline collection**: parallel Google News RSS for `KOSPI+급락`, `반도체+매도`, `유가+급등`, `호르무즈+2026`
+2. **Body extraction**: pick 3-4 representative articles from different outlets (MBN, KBS, 헤럴드경제, 매일경제) → extract `newsct_body` to confirm causal chain
+3. **Cross-source verification**: Korean outlets often share wire copy (연합뉴스/AFP). Extract quotes that appear across multiple sources. If multiple outlets report the same cause, that's the verified explanation.
+4. **Quote-in-source attribution**: report only what each outlet actually wrote. Don't synthesize a number that wasn't in the source.
+
+**User preference observed 2026-07-13**: "정성 뉴스만 반환, 수치를 새로 생성하지 말라" (return only qualitative news, do not fabricate new numbers). When reporting market data points (KOSPI %, ticker prices), only cite numbers that appear in the actual article body — never extrapolate or interpolate.
+
+When a ticker has no same-day article (e.g. 소형주, 신규 종목), report this explicitly and substitute the most recent prior-day article that includes relevant context (earnings, contract wins, sector trends). Never invent a headline for a missing ticker.
 
 ### 8. YouTube / Video Search
 
