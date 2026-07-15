@@ -29,6 +29,9 @@ Trigger when **any** of these signals appear:
 - `gh search repos` returns nothing
 - User asks "왜접근이 불가하지 / why can't you access it?" after you report a 404
 - User says "공개로 바꿈 / I made it public / fork해줘 / fork it" in response to an access failure
+- User asks to **flip visibility** for a repo: "public으로 전환 / private으로 / make public / 공개 전환"
+- User asks to **clean before going public**: "공개할거 검수 / public으로 가기전 정리 / 알아서 정리 / 권장 정리 / gitignore 처리"
+- User sees 403 on `PATCH /repos/...` with `"Resource not accessible by personal access token"` (visibility/admin endpoints need elevated PAT)
 
 ---
 
@@ -120,6 +123,94 @@ Walk the user through:
 4. Click **"Make public"** → confirm → wait 30–60s for GitHub propagation
 
 After they confirm, re-run step 1 of the diagnosis recipe. You should see HTTP 200 + repo title in the page title tag.
+
+#### Option A.1 — Pre-Public Content Audit (REQUIRED before flipping visibility)
+
+**Hard lesson (2026-07-14):** When the user says "공개로 전환해줘" / "make it public", do NOT just flip the toggle. **Audit the repo contents first.** A repo that has been happily private for months usually contains:
+
+| Category | Examples | Why it leaks |
+|----------|----------|--------------|
+| **Editor/IDE state** | `.obsidian/workspace.json`, `.vscode/settings.json`, `.idea/workspace.xml` | Absolute paths, recent file lists, OS username, project tree |
+| **Personal tool config** | `.claude/settings.json`, `.claude/hooks/*` (often contains `bash '/Users/<name>/...'` in hook commands) | User identity, MacBook absolute paths, working directory leaks |
+| **External content / clippings** | `Clippings/`, `bookmarks/`, `readlater/`, downloaded PDFs, scraped articles | Copyright risk + personal curation patterns |
+| **`.gitmodules` pointers** | URL list of all submodules | Reveals what other private repos exist in the ecosystem (content stays private, but names leak) |
+| **`.env*`, secrets**, **local scripts with hardcoded tokens** | obvious | Token/credential exposure |
+| **Personal notes / journals** | Anything in `notes/`, `journal/`, `daily/` | Internal thinking, plans, people |
+
+**Audit recipe (run this before PATCH):**
+
+```bash
+# 1. Clone fresh into /tmp
+git clone https://github.com/<owner>/<repo>.git /tmp/<repo>-audit
+cd /tmp/<repo>-audit
+
+# 2. List everything tracked
+git ls-files | wc -l
+git ls-files
+
+# 3. Hunt for identity leaks (Linux paths, usernames, MacBook paths)
+git ls-files | xargs -I{} sh -c 'echo "=== {} ==="; cat "{}"' 2>/dev/null \
+  | grep -nE "(/Users/[a-z]+|/home/[a-z]+|/Users/sanghee|MacBook|C:\\Users)" | head -20
+
+# 4. Hunt for secrets / tokens
+git ls-files | xargs grep -lE "(ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[A-Z0-9]{16})" 2>/dev/null
+
+# 5. Check for copyrighted scraped content
+git ls-files | xargs file 2>/dev/null | grep -E "(PDF|HTML|markdown)" | grep -iE "(clippings|bookmarks|scraped|readlater)"
+
+# 6. Check submodule pointers
+cat .gitmodules
+```
+
+**Clean recipe — `.gitignore` + `git rm --cached`:**
+
+```bash
+# 1. Update .gitignore to block these categories going forward
+cat >> .gitignore <<'EOF'
+
+# Pre-public cleanup (2026-07-14)
+.obsidian/
+.claude/
+Clippings/
+*.swp
+EOF
+
+# 2. Remove from git tracking but KEEP local files on disk
+git rm --cached -r .obsidian/ .claude/ Clippings/
+
+# 3. Verify staged deletions
+git status | grep "deleted:"
+
+# 4. Commit + push (so the audit-clean version is what's visible after the flip)
+git add .gitignore
+git commit -m "chore: gitignore sensitive paths before public release"
+git push origin main
+```
+
+**Then flip visibility** (PATCH /repos/{owner}/{repo} with `{"private": false}`) — the user or browser session does this since **PATs without admin scope get 403** (see below).
+
+#### Option A.2 — PAT 403 on Visibility PATCH (agent-side hard limit)
+
+```bash
+# This WILL 403 with a normal `repo`-scope PAT:
+curl -X PATCH -H "Authorization: Bearer $TOKEN" \
+  -d '{"private": false}' \
+  https://api.github.com/repos/<owner>/<repo>
+# → {"message":"Resource not accessible by personal access token","status":"403"}
+```
+
+**Why:** GitHub's API requires `repo` scope **AND** admin-level access on the target repo for visibility changes. Classic PATs (`ghp_*`) typically lack the elevated admin grant; fine-grained PATs need `Administration: Write`. The same applies to `gh repo edit --visibility public` (it uses the same API).
+
+**Fallback (the only option from the agent):** Tell the user to flip it manually in the browser. Provide the exact URL and step list:
+
+```
+👉 https://github.com/<owner>/<repo>/settings
+   → scroll to Danger Zone (bottom)
+   → "Change repository visibility" → "Make public"
+   → type repo name to confirm → password prompt
+```
+
+**Don't burn turns trying token rotation, re-PATCHing with different scopes, or `gh` CLI flags** — they're all going to 403 for the same reason. Once the user confirms the flip, verify with `gh repo view <owner>/<repo> --json visibility` (read-only, works with any token).
 
 ### Option B — User forks, gives you the URL
 
@@ -219,9 +310,12 @@ The session that produced this skill followed a 5-turn loop that exactly matched
 - "너가해" / "fork해줘" / "공개로 바꿈"
 - "pm prd fast는 잘 됬잖아" / "다른 레포는 됐는데" (comparing public success to private failure)
 - "어제 push 됐는데" / "GitHub에 보이는데" / "다른 세션에서는 됐는데" (recent successful push but new fetch fails — token NOT being sent)
+- **Visibility flip / pre-public audit signals:** "public으로 전환" / "private으로" / "make public" / "공개 전환" / "공개할거 검수" / "알아서 정리" / "권장 정리" / "gitignore 처리" / "publish 전 정리"
+- **Admin endpoint 403:** "Resource not accessible by personal access token" on PATCH/DELETE → elevated PAT required
 
 If ANY of these appear, this skill applies — load it and pivot to escape hatches on the next turn, no more probes.
 
 ## Related References
 
 - [references/verify-after-push.md](references/verify-after-push.md) — After `git push`, the 4-layer verification recipe (ls-remote → API contents → raw byte check → vision_analyze) for confirming artifacts actually landed and render correctly on GitHub. Covers the "anonymous raw fetch returns 404 even with valid token" trap.
+- [references/pre-public-audit-2026-07-14.md](references/pre-public-audit-2026-07-14.md) — Verbatim transcript of the hermes-wiki-super pre-public audit. Concrete leak checklist (`.obsidian/workspace.json`, `.claude/settings.json`, `Clippings/processed/*`), the exact `gitignore + git rm --cached` recipe used, and the user's tone signal ("알아서 정리해" = executive-mode green light, don't re-ask).

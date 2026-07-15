@@ -1101,6 +1101,38 @@ TICKER_SECTOR removed: OK
 ```
 → 이전 18개 → 33개로 늘어난 이유: watchlist 33개 전부 vs config 18개만 fair_value가 분석 → 통합 후 전체 분석.
 
+#### 26d. 🔴 watchlist.json ticker 코드 자체 검증 — 수집 시점 cross-check (2026-07-14 신규)
+
+Pitfall 26 / 26b / 26c는 "단일소스 + 중복 통합"의 정합성 문제였음. 별도 4번째 함정: **watchlist.json에 등록된 ticker 코드 자체가 사용자 의도와 다를 수 있음** — 등록 시점에는 검증되지 않은 채 통과된 stale 데이터.
+
+**실제 사례 (2026-07-14)**: watchlist.json에 `에이피알` 종목이 `278280`으로 등록되어 있었으나, Naver Polling 조회 시 응답 `nm='천보'` (2차전지 부품 회사, 화장품 ODM인 에이피알이 아님). **정정 코드 = 278470** (`nm='에이피알'` 확인). 두 회사는 사업군·시총·변동성이 모두 다르므로 **분석 결과 자체가 잘못된 회사에 대해 산출**되는 silent corruption.
+
+**방지 3단계** (수집 시점 1차 방어선):
+
+1. **Naver Polling 1회 응답으로 종목명 cross-check** (모든 한국주 권장):
+   ```bash
+   python3 -c "
+   import json, urllib.request
+   raw = urllib.request.urlopen(urllib.request.Request(
+     'https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:278280',
+     headers={'User-Agent':'Mozilla/5.0'}), timeout=10).read()
+   print(json.loads(raw.decode('euc-kr', errors='ignore'))['result']['areas'][0]['datas'][0]['nm'])"
+   ```
+   - 응답 `nm`이 watchlist의 `name`과 일치해야 통과
+   - 불일치 시 → `grep -rn '<ticker>' data/watchlist.json` + 메모리/위키 cross-check
+
+2. **Suffix 검증** (`.KS` vs `.KQ` 혼동 방지): 코스피 ↔ 코스닥 섞인 등록은 시가총액·유동성 등급 자체가 달라짐. watchlist의 `market` 필드와 Naver 응답 일치 확인.
+
+3. **change_pct 부호 검증**: Naver Polling의 `cr` 필드는 부호 포함. 직접 계산 `(nv - pcv) / pcv * 100` 결과와 부호 일치 확인. cron 표 작성 시 부호 누락 실수 방지 (2026-07-14 삼성전기 사례: `cv=-29,000`을 표에서 `+29,000`으로 잘못 적을 위험).
+
+**watchlist.json 정정 워크플로우** (Pitfall 26 단일소스 원칙 준수):
+1. `data/watchlist.json`에서 해당 ticker 한 줄 확인
+2. 사용자(너구리)에게 "watchlist에 등록된 `{ticker}`가 Naver 응답 기준 `{nm}`입니다. 정정 코드는 `{correct_ticker}` (`{correct_nm}`)입니다. 정정할까요?" 명시적 확인
+3. 승인 시 → watchlist.json 1곳만 수정
+4. `git commit -m "watchlist: {name} 코드 정정 {old} → {new}"` (선택, watchlist.json은 .gitignore 대상이지만 변경 이력은 보존 가능)
+
+**왜 SKILL 본체 pitfall로 보존하나**: 단일소스 원칙은 코드 구조의 정합성 (Pitfall 26). 이 pitfall은 **데이터 무결성** — 등록 시점에 한 번 잡으면 이후 18:30 매크로 + 18:35 파이프라인 전체에 silent corruption 전파. references/cron-mode-data-verification.md의 Ticker Code Verification 섹션에 **상세 워크플로우 + 코드 예시** 기록. SKILL 본체는 **pitfall 신호등** 역할.
+
 ### 27. ⚠️ import os 누락 주의 (2026-06-07 신규)
 - 하드코딩 STOCKS 리스트에서 watchlist.json 로드로 변경 시 `import os`와 `import json`이 필요
 - 기존에 `import os`가 없던 파일(fair_value.py 등)에서 `os.path.join()`을 쓰면 NameError
