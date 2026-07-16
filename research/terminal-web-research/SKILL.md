@@ -473,7 +473,13 @@ When the user asks "why did KOSPI drop?", the workflow is:
 
 When a ticker has no same-day article (e.g. 소형주, 신규 종목), report this explicitly and substitute the most recent prior-day article that includes relevant context (earnings, contract wins, sector trends). Never invent a headline for a missing ticker.
 
-### 8. YouTube / Video Search
+#### 7.11 Auditable Cron Macro Reports (added 2026-07-15)
+
+For scheduled macro reports that must write `macro_context.json`, use the reusable validation and artifact contract in [`references/cron-macro-validation-pattern.md`](references/cron-macro-validation-pattern.md). It covers BLS YoY calculation, CNBC internal-disagreement handling, Naver per-ticker fallback/name validation, RSS qualitative news collection, cron-safe Python script execution, atomic dual-path saves, and post-save equality checks.
+
+**Important shell pitfall:** do not pass multiline code containing literal `\\n` escape sequences inside `python3 -c`; this can produce `SyntaxError: unexpected character after line continuation character`. Write a small script file and execute it separately instead.
+
+
 
 When you need to find YouTube videos about a topic but the browser is unavailable:
 

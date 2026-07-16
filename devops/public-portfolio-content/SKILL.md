@@ -26,6 +26,32 @@ Or any edit to files under `mybotagent.github.io/hermes-architecture-deck/` or o
 
 ## 📋 Hard Rules (Public Surface)
 
+### 0. ❌ NO personal identifiers in public repos (added 2026-07-15)
+
+Before any push to a public repo, scan for **user-identifying content**:
+
+- **Real name** (Korean 실명 or English full name) in README, index.html, CHANGELOG
+- **Brand nicknames** (별명) — `YuRi`, `꼬북아`, `채니봇`, etc.
+- **Local filesystem paths** with username (`/Users/sanghee/...`, `/home/ubuntu/projects/...`)
+- **Vault state** files (`.obsidian/workspace.json` exposes active tabs + recent files)
+- **Personal config** in `.claude/settings.json` hooks
+
+**Why**: Obsidian vault config (`.obsidian/workspace.json`) leaks the GitHub
+account owner's local file paths, recently opened files, and host username.
+These files ride along whenever a vault is committed into a repo.
+
+**Automate before push to any public repo**:
+
+```bash
+# Scan for real-name / brand / path leaks before committing
+git diff --cached | grep -iE "(sanghee|이상희|YuRi|꼬북아|/Users/[a-z]+/|/home/[a-z]+/)" && \
+  echo "⚠️ PII in diff — anonymize before push"
+```
+
+**Standard remediation**: keep only the GitHub handle (`@mybotagent`)
+as the public identity; route any "who runs this" detail to internal
+wiki only.
+
 ### 1. ❌ NO Korean text in public decks
 
 - Public portfolio = global audience. Default = English.
@@ -146,6 +172,15 @@ curl -s -H "Authorization: token $TOKEN" \
 
 ## ⚠️ Pitfalls
 
+### ❌ PII leak via Obsidian/Claude config in public repo (2026-07-15)
+- User asked to publish `hermes-wiki-super` publicly → repo contained
+  `.obsidian/workspace.json` (MacBook username `/Users/sanghee/...` +
+  active tabs + recently opened files) and `.claude/settings.json` hooks
+  with absolute paths.
+- ✅ Fix: `.gitignore` + `git rm --cached -r .obsidian/ .claude/ Clippings/`
+  → keeps local files on disk but untracks from git. Push, then user
+  flips visibility via GitHub UI (PAT can't change visibility).
+
 ### ❌ 자기 스타일로 새로 짓기 (2026-07-03 Pitfall)
 - 사용자가 "github.io에서 메모리 관리 deck 정리해줘" → **첫 시도에서 6단계 단일공식 임의 작성** → 사용자 정정
 - ✅ 항상 Pitfall 11.5 (`wiki-save`) 처럼 **기존 자료/공식문서 토대로** 발췌 모드
@@ -185,3 +220,5 @@ curl -s -H "Authorization: token $TOKEN" \
 - `wiki-save` §Pitfall 11.5 — "기존 자료 토대로" 신호 (임의 작성 금지)
 - `hermes-agent` (번들) — 공식 GitHub Pages 셋업 문서
 - `architecture/hermes-architecture-deck` — 예시 프로젝트
+- `references/public-release-workflow.md` — private→public release checklist
+  (PII scan, .gitignore sweep, visibility 403 fallback, deployment verify)
