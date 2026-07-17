@@ -1,11 +1,12 @@
-# Drop-in workflow template: review-bot
+# Drop-in workflow template: review-bot (DeepSeek V4 Flash)
 # Save as .github/workflows/review-bot.yml
 
 name: review-bot
 
-# Comment-on-PR-only: posts verdict comment via MiniMax; never merges.
+# Comment-on-PR-only: posts verdict comment via DeepSeek V4 Flash; never merges.
 # Trigger uses pull_request_target so same-repo PRs fire (see skill
 # "Pitfall 1: pull_request does not fire for same-repo PRs").
+# Cheapest model: deepseek-v4-flash ($0.14/M input, $0.28/M output).
 
 on:
   pull_request_target:
@@ -24,7 +25,7 @@ permissions:
 
 jobs:
   review:
-    name: hermes review (MiniMax)
+    name: hermes review (DeepSeek V4 Flash)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -52,8 +53,8 @@ jobs:
       - name: Run review script
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
-          MINIMAX_BASE_URL: ${{ secrets.MINIMAX_BASE_URL }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
           REPO: ${{ github.repository }}
         run: |

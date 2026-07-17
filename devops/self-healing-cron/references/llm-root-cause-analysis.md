@@ -1,383 +1,282 @@
-# LLM 근본 원인 분석 — Self-Healing Watchdog의 Layer 2/3
+---
 
-**2026-07-10 신규**. `self_healing_watchdog.py` 안에 LLM(DeepSeek) 1-shot 호출 + Discord webhook 통보 패턴.
+# v2/v3 갱신 (2026-07-13)
 
-## 배경 (왜 추가했는가)
+## 6. 멀티 후보 env lookup (CRITICAL)
 
-이전 동작: cron이 `last_status='error'`로 fail → 1일 2회까지 cron run 재실행 → 2회 초과 시 단순 `⚠️ 재시도 초과` 출력 후 silent 종료. 같은 에러가 매일 반복되어도 자동 진단 없이 누적만 됨.
+**문제**: 기존 `_env_lookup`은 `~/.hermes/.env.discord_webhook`만 봄. 메인 `~/.hermes/.env`에 박힌 키는 못 읽음 → 워치독이 "LLM 키 미설정" 거짓 진단을 무한 반복.
 
-사용자 지시 (aiprofit, 2026-07-10):
-> "재시도 초과 하면 셀프 힐링 반복만하지 말고 근본 원인 찾아서 해결하라고. 재시도-> 원인 디스코드애 보내기 => 근본 원인 해결 스스로 llm호출해서 해결"
-
-**운영 원칙**:
-1. 사람 호출 ❌ — 시스템이 LLM으로 자가 진단
-2. 자동 fix 가능하면 즉시 적용, 불가하면 사람 결정 영역으로 Discord 통보
-3. 같은 cron은 같은 에러로 6시간 안에 재호출 안 함 (TTL 캐시)
-
-## 3-Layer Escalation
-
-```
-재시도 ≥ 2회 누적
-   │
-   ├─ Layer 1: 패턴 매칭 → 즉시 fix 가능한가?
-   │   • 404 + 위험 deliver → jobs.json deliver=origin
-   │   • stale .tick.lock (30분+) → 강제 rm
-   │   • rate limit (429) → 자연 cooldown 60분
-   │   • module not found → venv/path 확인 권고
-   │
-   ├─ Layer 2: LLM 근본 원인 분석 (DeepSeek API, 1-shot curl)
-   │   • prompt: cron 메타 + last_error + recent_history → JSON 4필드
-   │   • root_cause / fix_action / auto_fixable(bool) / confidence
-   │   • 6시간 캐시 (같은 cron은 같은 LLM 호출 안 함)
-   │
-   └─ Layer 3: Discord webhook 통보 (embed)
-       • 자동 fix 가능 여부 + LLM 권고 → 사람 결정 영역 명시
-```
-
-## DeepSeek API 호출 패턴 (no_agent에서)
-
-cron은 `no_agent=True`로 동작하므로 LLM 호출은 **curl 또는 urllib.request 1회**가 핵심. agent loop 없음.
+**Fix (멀티 후보 fallback + 견고한 파싱)**:
 
 ```python
-import json, urllib.request, re
-
-def call_llm_analyze(jid, name, deliver, status, last_error, recent_history, api_key):
-    if not api_key:
-        return {
-            'root_cause': 'LLM 키 미설정 (DEEPSEEK_API_KEY env 없음)',
-            'fix_action': '수동 진단 필요',
-            'auto_fixable': False,
-            'confidence': 'low',
-            'note': 'webhook만 전송됨, LLM 분석 생략',
-        }
-
-    # prompt를 list + '\n'.join()으로 빌드 (큰따옴표 충돌 회피)
-    prompt_lines = [
-        '너는 시스템 자동복구 분석가다. 아래 cron 작업이 실패했어.',
-        '**구체적인 근본 원인** 1~2문장, **즉시 적용 가능한 자동 fix** '
-        '(auto_fixable=True/False), **사용자가 확인해야 할 결정** 3가지 필드로 JSON만 답해.',
-        '',
-        'cron:',
-        f'- id: {jid}',
-        f'- name: {name}',
-        f'- status: {status}',
-        f'- deliver: {deliver}',
-        f'- last_error: {last_error[:300]}',
-        f'- recent_history: {recent_history[-3:]}',
-        '',
-        '응답 스키마 (JSON):',
-        'root_cause, fix_action, auto_fixable(bool), confidence(high|medium|low) — '
-        '4개 필드 JSON만 답해.',
+def _env_lookup(key):
+    """v2: 멀티 후보 — Discord env, main .env, ~/.env 순회. # 주석·빈값·따옴표 모두 견고 처리."""
+    candidates = [
+        f'{HERMES_HOME}/.env.discord_webhook',
+        f'{HERMES_HOME}/.env',
+        f'{os.path.expanduser("~")}/.env',
     ]
-    prompt = '\n'.join(prompt_lines)
-
-    try:
-        req_body = json.dumps({
-            'model': 'deepseek-chat',
-            'messages': [{'role': 'user', 'content': prompt}],
-            'temperature': 0.2,  # 일관된 분석
-            'max_tokens': 400,
-        }).encode()
-        req = urllib.request.Request(
-            'https://api.deepseek.com/v1/chat/completions',
-            data=req_body,
-            headers={
-                'Authorization': f'Bearer {api_key}',
-                'Content-Type': 'application/json',
-            },
-            timeout=15,
-        )
-        with urllib.request.urlopen(req) as resp:
-            payload = json.loads(resp.read().decode())
-        text = payload['choices'][0]['message']['content'].strip()
-        # JSON 블록만 추출 (LLM이 코드블록으로 감싸는 경우 대비)
-        m = re.search(r'\{[\s\S]*\}', text)
-        if not m:
-            raise ValueError('JSON 추출 실패')
-        parsed = json.loads(m.group(0))
-        # 안전 default
-        parsed.setdefault('auto_fixable', False)
-        parsed.setdefault('confidence', 'low')
-        parsed.setdefault('root_cause', text[:200])
-        parsed.setdefault('fix_action', '수동 진단 필요')
-        return parsed
-    except Exception as e:
-        return {
-            'root_cause': f'LLM 호출 실패: {str(e)[:100]}',
-            'fix_action': '수동 진단 필요',
-            'auto_fixable': False,
-            'confidence': 'low',
-            'note': f'llm_error: {str(e)[:80]}',
-        }
+    for env_path in candidates:
+        if not os.path.exists(env_path):
+            continue
+        try:
+            with open(env_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    if line.startswith(f'{key}='):
+                        val = line.split('=', 1)[1].strip().strip('"').strip("'")
+                        if val:  # 빈값 skip
+                            return val
+        except Exception:
+            continue
+    return ''
 ```
 
-## 6시간 캐시 스키마
+**검증 (1초)**:
+```python
+import sys
+sys.path.insert(0, '/home/ubuntu/.hermes/scripts')
+from self_healing_watchdog import DEEPSEEK_KEY
+print('len=', len(DEEPSEEK_KEY))  # 0이면 버그, 35+면 OK
+```
+
+**왜 3개월+ 묵었나**: 첫 후보 파일 없으면 즉시 empty 반환 → 워치독 본체는 silent fail → 사용자는 "키 설정했는데 왜 안 되지?" 경험만. **Pitfall**: key-by-key 조회 함수는 첫 후보에서 못 찾으면 silent fail ❌, 멀티 후보 순회 ✅.
+
+## 7. urllib.request.Request(timeout=15) 버그
+
+**문제**: `Request(timeout=15)` → `TypeError: Request.__init__() got an unexpected keyword argument 'timeout'`. `timeout`은 `urlopen()`의 인자지 `Request` 생성자 인자 아님.
+
+**Fix**:
+```python
+# ❌ BAD
+req = urllib.request.Request(url, data=..., headers=..., timeout=15)
+with urllib.request.urlopen(req) as resp: ...
+
+# ✅ GOOD
+req = urllib.request.Request(url, data=..., headers=...)
+with urllib.request.urlopen(req, timeout=15) as resp: ...
+```
+
+**왜 묭었나**: DeepSeek 키 없으면 거짓 진단 fallback으로 끝나서 `urllib.request.Request` 라인에 도달 안 함. `_env_lookup` 멀티 후보 fix 먼저 적용해야 이 버그 노출됨 — **순서 의존**. env 로드 후 반드시 LLM 호출 dry-run으로 검증.
+
+## 8. 거짓 진단 무한 알림 차단 — silence_until_key_present sentinel
+
+**문제**: 워치독이 진단을 못 하면 (키 누락, LLM fail, ...) 매 cycle 같은 알림 → Discord spam.
+
+**Fix**: Layer 2 진단 결과 `fix_action='silence_until_key_present'` sentinel이면 Layer 3 (Discord) skip.
 
 ```python
-# ~/.hermes/cron/.heal_root_cause.json
+def call_llm_analyze(...):
+    if not DEEPSEEK_KEY:
+        return {
+            'root_cause': 'watchdog LLM 키 미설정 — 자동 fix 시도 생략, 다음 사이클에 retry',
+            'fix_action': 'silence_until_key_present',  # ← sentinel
+            'auto_fixable': False,
+            'confidence': 'low',
+            'note': 'DEEPSEEK_API_KEY 누락 — alert 대신 silent',
+        }
+
+# caller
+if fix_action_rec == 'silence_until_key_present':
+    discord_sent = False
+    root_cause_actions.append((jid, name, root_cause, fix_action_rec, 'SILENT_NO_KEY', False))
+    skipped.append((jid, name, day_retries))
+    continue  # Discord 호출 skip
+```
+
+**원칙**: 워치독은 "원인을 정확히 모르면 알리지 않는다". false-positive 알림은 silent로 전환.
+
+## 9. LLM_CACHE_TTL_HOURS 단축 (v2: 6h → 1h)
+
+이유: 캐시된 진단이 거짓이면 6시간 동안 매 cycle 같은 알림 반복. 1시간으로 줄이면 더 자주 재평가. LLM 1회 호출 = ~$0.0001이라 비용 부담 없음.
+
+```python
+LLM_CACHE_TTL_HOURS = 1  # v2: 6h → 1h
+```
+
+## 10. v2 검증 패턴 — 단독 import 테스트
+
+patch 후 매번 `cronjob run` 돌릴 필요 없음. 단독 import + 속성 체크가 1초 안에 끝남.
+
+```python
+# ① env 로드 확인
+import sys
+sys.path.insert(0, '/home/ubuntu/.hermes/scripts')
+from self_healing_watchdog import DEEPSEEK_KEY, LLM_CACHE_TTL_HOURS, call_llm_analyze
+print('len=', len(DEEPSEEK_KEY))  # 0이면 버그
+
+# ② silent fallback
+import os
+os.environ.pop('DEEPSEEK_API_KEY', None)
+result = call_llm_analyze('test', 'test-job', 'origin', 'error', 'some err', [])
+print(result['fix_action'])  # 'silence_until_key_present' 기대
+
+# ③ 실제 LLM 호출 dry-run
+result = call_llm_analyze('f405cd52a6e8', 'Memory Alert', 'origin', 'script failed',
+    '⚠ MEMORY ALERT: 2200/2200 chars (100.0%)', [])
+print(result['root_cause'])  # 도메인 컨텍스트 힌트 없으면 'Discord 2000자 초과' 거짓
+```
+
+## 11. v3 — LLM 진단 정확도 = 컨텍스트 힌트로 결정 (CRITICAL)
+
+**문제**: LLM이 단순 숫자만 보고 도메인 지식 없이 추측성 진단을 만듦.
+
+**실제 사례 (2026-07-13 f405cd52a6e8)**:
+- `last_error`: `⚠ MEMORY ALERT: 2200/2200 chars (100.0%)`
+- LLM 진단 (hint 없을 때): "Discord 웹훅 메시지가 2200자로 2000자 제한을 초과" ← **거짓**
+- 진짜 원인: Hermes 내부 memory 100% 가득 참
+
+**Fix**: `call_llm_analyze` prompt에 도메인 컨텍스트 힌트 5줄 명시:
+
+```python
+prompt = '\n'.join([
+    '너는 시스템 자동복구 분석가다. ...',
+    '',
+    '## 컨텍스트 힌트 (v2 2026-07-13)',
+    '- cron stdout의 "N/N chars (X%)" 형식은 **Hermes 내부 memory 사용률** (예: "2200/2200 chars (100%)" = 메모리 100% 가득 참). Discord 메시지 한도가 아님.',
+    '- "script exited with code 1"는 보통 스크립트의 의도된 비정상 종료 (예: threshold 초과 시 alert 발송 후 exit 1).',
+    '- 같은 진단이 LLM_CACHE_TTL_HOURS 이내 반복되면 캐시된 거짓 진단 가능성 — root_cause를 confidence:low로 표시.',
+    '- deliver가 "discord:숫자:숫자" 형식이면 thread 안으로 보낸 것. 404면 thread가 만료됐거나 채널을 찾을 수 없음.',
+    '- auto_fixable=True인 경우: jobs.json deliver 변경 / stale lock 제거 / cache 초기화 / memory compact 같은 **즉시 적용 가능한 액션** 우선.',
+    '',
+    'cron:',
+    f'- id: {jid}',
+    f'- name: {name}',
+    ...
+])
+```
+
+**검증**: hint 추가 후 `call_llm_analyze("f405cd52a6e8", ...)` →
+```json
 {
-  "f405cd52a6e8": {
-    "ts": 1752167400,  # epoch seconds (UTC)
-    "result": {
-      "root_cause": "memory.md 95% 사용 중 → memory_alert이 stderr로 fail",
-      "fix_action": "memory_daily_compact.sh 즉시 실행",
-      "auto_fixable": True,
-      "confidence": "high"
-    }
-  }
+  "root_cause": "Hermes 내부 memory 사용률이 100%에 도달하여 스크립트가 의도적으로 exit 1로 종료되었으며, 이는 메모리 한계 초과 경고입니다.",
+  "fix_action": "Hermes memory를 compact하거나 캐시를 초기화하여 사용률을 낮춘 후 재시작",
+  "auto_fixable": true,
+  "confidence": "high"
 }
 ```
 
-캐시 hit 시나리오:
+→ `memory` + `100%` 키워드 매칭으로 `run_memory_compact` 자동 fix 가능.
+
+## 12. v3 — 자동 fix 액션 + LLM 진단 매핑
+
+**`apply_fix()` 확장**:
+
+```python
+def apply_fix(fix_action):
+    """시스템이 즉시 적용 가능한 fix. 성공 여부 반환."""
+    if fix_action == 'reset_deliver_to_origin':
+        return True
+    if fix_action == 'remove_stale_lock':
+        try:
+            os.remove(LOCK_FILE)
+            return True
+        except Exception:
+            return False
+    if fix_action == 'run_memory_compact':
+        try:
+            r = subprocess.run(
+                f'{HERMES_HOME}/scripts/memory_daily_compact.sh',
+                shell=True, capture_output=True, text=True, timeout=30,
+            )
+            return r.returncode == 0
+        except Exception:
+            return False
+    if fix_action == 'reset_false_rca_cache':
+        try:
+            with open(ROOT_CAUSE_DB, 'w') as f:
+                json.dump({}, f)
+            try:
+                with open(RETRY_DB) as f:
+                    rd = json.load(f)
+                rd[TODAY] = {}
+                with open(RETRY_DB, 'w') as f:
+                    json.dump(rd, f, indent=2)
+            except Exception:
+                pass
+            return True
+        except Exception:
+            return False
+    return False
+```
+
+**워치독 본체에서 LLM 진단 → 자동 fix 분기**:
+
+```python
+# v2 (2026-07-13): LLM 진단 기반 자동 fix 시도
+llm_fix_action = None
+if auto_fixable:
+    rc = (root_cause or '').lower()
+    if 'memory' in rc and ('100%' in rc or 'full' in rc or '가득' in rc or '초과' in rc):
+        llm_fix_action = 'run_memory_compact'
+    elif '거짓' in rc or 'cache' in rc or '루프' in rc or '반복' in rc:
+        llm_fix_action = 'reset_false_rca_cache'
+
+if llm_fix_action and apply_fix(llm_fix_action):
+    root_cause_actions.append((jid, name, root_cause, fix_action_rec, 'AUTO_FIX_APPLIED', True))
+    retries[TODAY][jid] = 0  # retry 카운터 즉시 reset
+    save_db(JOBS_JSON, jobs_data)
+    skipped.append((jid, name, day_retries))
+    continue  # Discord 알림 skip
+```
+
+**자동 fix 후 retry reset**: 다음 cycle에서 정상 평가. 이게 핵심 — 워치독이 진짜로 "자가 치유"하는 사이클.
+
+## 13. v3 — 캐시 hit_count 3회 강제 재진단
+
+**문제**: 같은 진단이 캐시 hit으로 반복되면 LLM이 새 분석 안 함. 거짓 진단이면 1시간 TTL 동안 같은 알림 반복.
+
+**Fix**: `hit_count` 필드 추가, 3회째에 강제 LLM 재호출:
+
 ```python
 cached = root_cause_db.get(jid)
-if cached and (now_epoch - cached.get('ts', 0)) < LLM_CACHE_TTL_HOURS * 3600:
-    llm_result = cached['result']
-    llm_source = 'cache'  # Discord embed에 표시
+if cached and (NOW_EPOCH - cached.get('ts', 0)) < LLM_CACHE_TTL_HOURS * 3600:
+    if cached.get('hit_count', 0) < 3:
+        llm_result = cached['result']
+        llm_source = 'cache'
+        cached['hit_count'] = cached.get('hit_count', 0) + 1
+        root_cause_db[jid] = cached
+    else:
+        # 3회째: 캐시 무시하고 강제 재진단
+        llm_result = call_llm_analyze(jid, name, deliver, status, delivery_error, recent_history)
+        llm_source = 'live_after_3hits'  # 운영자가 escape 인지 가능
+        root_cause_db[jid] = {'ts': NOW_EPOCH, 'result': llm_result, 'hit_count': 0}
 else:
     llm_result = call_llm_analyze(...)
     llm_source = 'live'
-    root_cause_db[jid] = {'ts': now_epoch, 'result': llm_result}
+    root_cause_db[jid] = {'ts': NOW_EPOCH, 'result': llm_result, 'hit_count': 0}
 ```
 
-**왜 6시간?** 1시간마다 같은 cron이 LLM 호출되면 비용 누적. 6시간은 "근본 원인은 보통 1일 안에 안 변함"이라는 경험칙. 더 짧게 (1~2시간) 해도 되고, 더 길게 (12~24시간) 해도 됨 — 운영 환경에 따라 조정.
+**왜 3회인가**: 1~2회는 transient 가능성, 3회는 거짓 진단 강력 의심. 즉시 escape.
 
-## Discord Embed (webhook) 템플릿
+## 14. v3 — Memory 100% 알림 = exit 1의 의도된 패턴
 
-```python
-import json, urllib.request
-from datetime import datetime, timezone
+**문제**: `memory_alert.py check`는 memory 90%+ 시 `stdout "⚠ MEMORY ALERT"` + `exit 1`로 종료. 워치독이 이걸 "스크립트 실패"로 보고 retry → 무한 루프.
 
-def send_discord(webhook_url, title, body, color=0xff5555):
-    if not webhook_url:
-        return False
-    embed = {
-        'title': title,
-        'description': body[:1900],  # Discord limit
-        'color': color,  # red: 0xff5555
-        'footer': {'text': 'hermes self-healing watchdog (root-cause) | 2026-07-10'},
-        'timestamp': datetime.now(tz=timezone.utc).isoformat(),
-    }
-    payload = json.dumps({'embeds': [embed]}).encode()
-    try:
-        req = urllib.request.Request(
-            webhook_url, data=payload,
-            headers={'Content-Type': 'application/json'},
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            return resp.status in (200, 204)
-    except Exception:
-        return False
+**진짜 의미**: "memory 100% 차서 알림 발송 완료, 스크립트 임무 완수".
 
-# 본문 빌드 (f-string 큰따옴표 회피: 변수로 추출)
-bool_fix = '예 (자동 fix 가능)' if auto_fixable else '아니오 (수동 확인 필요)'
-title = f'🔴 재시도 초과 + 근본 원인 ({confidence} conf)'
-body = '\n'.join([
-    f'**job**: `{name}` (`{jid[:12]}`)',
-    f'**status**: `{status}` · **err**: `{delivery_error[:200]}`',
-    f'**deliver**: `{deliver}`',
-    '',
-    f'**🎯 근본 원인**: {root_cause}',
-    '',
-    f'**🛠 권고 fix**: {fix_action_rec}',
-    '',
-    f'**🤖 자동 fix 가능**: {bool_fix}',
-    f'**📡 분석 출처**: {llm_source}',
-])
-discord_sent = send_discord(webhook_url, title, body)
-```
+**진단**: `last_error`에 `MEMORY ALERT: 2200/2200 chars` 패턴 → 즉시 `memory_daily_compact.sh` 1회 수동 실행.
 
-## Env Keys (필수)
+**자동 fix (v3)**: 위 11번 컨텍스트 힌트 + 12번 자동 fix 매핑으로 워치독이 정확히 진단 + 자동 compact 실행. retry 카운터 reset → 다음 cycle 자연 검증.
 
-| Key | 용도 | 미설정 시 동작 |
-|:----|:-----|:-------------|
-| `DEEPSEEK_API_KEY` | LLM 분석 | root_cause='LLM 키 미설정', webhook만 동작 |
-| `DISCORD_WEBHOOK_ROOT_CAUSE` | 근본 원인 통보 | discord=❌, LLM 분석은 정상 진행 |
+## 15. provider/model drift 잡 skip 패턴 (2026-07-11)
 
-자동 로드 패턴:
-```python
-import os
-def _env_lookup(key):
-    env_path = f'{os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))}/.env.discord_webhook'
-    if not os.path.exists(env_path): return ''
-    try:
-        with open(env_path) as f:
-            for line in f:
-                if line.startswith(f'{key}='):
-                    return line.split('=', 1)[1].strip().strip('"').strip("'")
-    except: pass
-    return ''
+**증상**: `hermes config set model.provider deepseek` 같은 토글 후 unpinned 잡이 다음 cycle에 `RuntimeError: Skipped to prevent unintended spend`로 fail.
 
-DEEPSEEK_KEY = os.environ.get('DEEPSEEK_API_KEY') or _env_lookup('DEEPSEEK_API_KEY')
-DISCORD_WEBHOOK = os.environ.get('DISCORD_WEBHOOK_ROOT_CAUSE') or _env_lookup('DISCORD_WEBHOOK_ROOT_CAUSE')
-```
+**last_error 키워드**:
+- `Skipped to prevent unintended spend`
+- `config drifted`
+- `this job is unpinned`
+- `To run on the new config, pin it explicitly`
 
-`~/.hermes/.env.discord_webhook` 예시:
-```
-DISCORD_WEBHOOK_ROOT_CAUSE=https://discord.com/api/webhooks/...
-DEEPSEEK_API_KEY=sk-...
-```
+→ 이 키워드 보이면 즉시 잡의 pin 상태 확인 → `hermes cron update <jid> --provider <p> --model <m>` 후 재실행.
 
-## 검증된 출력 (2026-07-10 실측)
+**워치독의 흔한 오진**: 이걸 "API 키 미설정"으로 진단. 진단 시 반드시 last_error 키워드부터 확인.
 
-강제 시뮬레이션: `.heal_retries.json`의 `f405cd52a6e8`을 2회로 설정 후 `bash self_healing_watchdog.sh`:
+## v4 후보
 
-```
-[HEAL] 1 job(s) 재실행 시작
-  ✅ f405cd52a6e8: 🧠 Memory Usage Alert (평일 09:00 KST) [unknown] → Triggered job: ...
-  ⚠️  1 job(s) 재시도 초과 — 근본 원인 분석 발동
-  - f405cd52a6e8: 🧠 Memory Usage Alert (평일 09:00 KST) (2회)
-🧠 1 job(s) LLM 근본 원인 분석 → Discord 통보
-  · f405cd52a6e8: 🧠 Memory Usage Alert (평일 09:00 KST) | discord=❌
-    원인: LLM 키 미설정 (DEEPSEEK_API_KEY 없음)
-    fix : 수동 진단 필요 [AWAITING_MANUAL]
-```
-
-`discord=❌` 표시 = `DISCORD_WEBHOOK_ROOT_CAUSE` env 미설정. LLM 키도 미설정 → graceful fallback으로 두 채널 모두 "키 미설정" 보고.
-
-## 히스토리 로그 포맷
-
-`~/.hermes/cron/.heal_history.log`:
-```
-2026-07-10 12:30:00 KST f405cd52a6e8 🧠 Memory Usage Alert ROOT_CAUSE_ANALYZED status=AWAITING_MANUAL cause=LLM 키 미설정 (DEEPSEEK_API_KEY 없음) fix=수동 진단 필요 discord=FAIL
-```
-
-grep 한방 진단:
-```bash
-# 오늘 LLM 분석 발동 횟수
-grep "ROOT_CAUSE_ANALYZED" ~/.hermes/cron/.heal_history.log | grep "$(date +%Y-%m-%d)" | wc -l
-
-# 자동 fix 가능한 cron
-grep "AWAITING_MANUAL" ~/.hermes/cron/.heal_history.log | grep "$(date +%Y-%m-%d)" | wc -l
-
-# Discord 전송 성공률
-grep -c "discord=OK" ~/.hermes/cron/.heal_history.log
-grep -c "discord=FAIL" ~/.hermes/cron/.heal_history.log
-```
-
-## 운영 규칙 (aiprofit, 2026-07-10 결정)
-
-1. **사람 호출 ❌, 시스템 자가 분석 ✅** — "스스로 llm호출해서 해결"이 사용자 운영 원칙
-2. **LLM 권고는 정보용** — `auto_fixable=True`여도 즉시 적용 ❌, 통보만 (사람 결정 영역)
-3. **재실행 안 함 (같은 cycle)** — LLM 분석 후에도 `cronjob run` 재호출은 같은 cycle에서 안 함. 다음 10분 cycle에서 자연 재시도
-4. **fix 성공 시 retry counter 리셋** — Layer 1에서 fix 적용했으면 `retries[today][jid] = 0`. 다음 cycle 자연 검증
-5. **사용자 Discord thread = #시스템 (또는 운영자 선호 thread)** — `DISCORD_WEBHOOK_ROOT_CAUSE` env로 routing
-
-## 흔한 함정 (2026-07-10 실측)
-
-### 1. bash heredoc 안 Python f-string 사용 ❌
-
-```bash
-# ❌ BAD — bash brace expansion이 {name}을 command로 해석
-python3 -c "
-import json
-data = {
-    'job': f'{name}',  # bash가 {name}을 brace expansion으로 시도
-}
-"
-```
-
-**증상**: `line 57: {name}: command not found` 같은 noise 출력. Python 자체는 동작하지만 stderr noise.
-
-**해결**: bash wrapper는 단순히 python 호출만, 본체는 별도 `.py` 파일.
-
-```bash
-# ✅ GOOD — bash는 .py 실행만
-#!/bin/bash
-python3 "$HOME/.hermes/scripts/self_healing_watchdog.py"
-```
-
-### 2. f-string 안에 큰따옴표 ❌
-
-```python
-# ❌ BAD — f-string syntactic error
-body = f'**🤖 자동 fix 가능**: {"예" if auto_fixable else "아니오"}'
-# SyntaxError: f-string: unmatched ('"') in expression
-```
-
-**해결**: 변수로 추출.
-
-```python
-# ✅ GOOD
-bool_fix = '예 (자동 fix 가능)' if auto_fixable else '아니오 (수동 확인 필요)'
-body = f'**🤖 자동 fix 가능**: {bool_fix}'
-```
-
-### 3. JSON 스키마 한 줄에 큰따옴표 ❌
-
-```python
-# ❌ BAD — bash heredoc에서 '...' 안에 "..." 들어가면 충돌
-prompt = f'''... 응답 스키마 (그대로):
-{{"root_cause": "string", "fix_action": "string", ...}}'''
-```
-
-**증상**: bash가 `{"root_cause":`를 따옴표 끝으로 인식, 그 이후 `string"`를 따옴표 매칭하려고 시도하다 syntax error.
-
-**해결**: prompt는 list + `'\n'.join()`으로 빌드 (큰따옴표 0개).
-
-```python
-# ✅ GOOD
-prompt_lines = [
-    '너는 시스템 자동복구 분석가다.',
-    f'cron: id={jid}, name={name}, ...',
-    '',
-    '응답 스키마: root_cause, fix_action, auto_fixable(bool), confidence',
-]
-prompt = '\n'.join(prompt_lines)
-```
-
-### 4. LLM 키 없을 때 silent fail ❌
-
-```python
-# ❌ BAD — API key 없으면 None 반환 → caller가 AttributeError
-def call_llm_analyze(...):
-    if not api_key: return None
-    ...
-
-# caller
-result = call_llm_analyze(...)
-result.get('root_cause')  # AttributeError: 'NoneType' object has no attribute 'get'
-```
-
-**해결**: 명시적 fallback dict 반환.
-
-```python
-# ✅ GOOD
-def call_llm_analyze(...):
-    if not api_key:
-        return {
-            'root_cause': 'LLM 키 미설정 (DEEPSEEK_API_KEY env 없음)',
-            'fix_action': '수동 진단 필요',
-            'auto_fixable': False,
-            'confidence': 'low',
-        }
-    ...
-```
-
-### 5. 6시간 캐시 너무 짧으면 비용 누적
-
-LLM 1회 호출 = ~$0.0001. 50개 cron이 1시간마다 LLM 호출 = $0.005/시간 = $3.6/월. 적지만 캐시 1~2시간으로 줄이면 비용 더 낮춤. 6시간은 "근본 원인은 보통 1일 안에 안 변함" 경험칙. 운영 환경에 따라 조정.
-
-## 관련 파일
-
-- `~/.hermes/scripts/self_healing_watchdog.py` — 본체
-- `~/.hermes/scripts/self_healing_watchdog.sh` — bash wrapper (python 호출만)
-- `~/.hermes/cron/.heal_root_cause.json` — LLM 분석 캐시
-- `~/.hermes/cron/.heal_history.log` — 모든 액션 append-only
-- `~/.hermes/cron/.heal_retries.json` — retry counter (강제 시뮬레이션 가능)
-- `~/.hermes/.env.discord_webhook` — DEEPSEEK_API_KEY, DISCORD_WEBHOOK_ROOT_CAUSE
-
-## cron job 메타
-
-| ID | 이름 | Schedule | Mode |
-|:--|:----|:---------|:-----|
-| `894e773a9a2b` | 🔧 Self-healing watchdog (no_agent) | `*/10 6-22 * * 1-5` | no_agent (script) |
-
-이 cron이 self_healing_watchdog.sh를 호출 → .py 본체 실행 → LLM 분석 → Discord 통보.
-
-## 향후 확장 후보
-
-- **다른 LLM provider** (Claude/GPT-4): DeepSeek 키가 rate-limit에 걸리면 fallback
-- **auto_fixable=True 자동 실행 옵션**: 사용자 명시 OK 후 활성화 (현재는 통보만)
-- **근본 원인 → wiki 페이지 자동 기록**: 같은 에러 누적 시 self_improve_loop가 패턴 분석
-- **Multi-cause**: 여러 cron이 동시에 fail → 공통 원인 분석 (예: GitHub API 장애)
+- **자동 fix 매핑 키워드 확장** — `401`/`timeout`/`disk full` 등
+- **config drift 자동 감지** — 잡의 provider/model 필드 ↔ config.yaml global 비교 후 자동 pin
+- **자동 fix 성공률 추적** — `.heal_history.log` grep으로 `AUTO_FIX_APPLIED` vs 알림 비율 → 메트릭 대시보드

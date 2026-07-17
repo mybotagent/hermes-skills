@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""Drop-in PR review script for the github-pr-review-pipeline skill.
+"""Drop-in PR review script for the github-pr-review-pipeline skill (DeepSeek V4 Flash).
 
-Fetches a PR diff, calls MiniMax (Anthropic-compatible API) for a
+Fetches a PR diff, calls DeepSeek V4 Flash (OpenAI-compatible API) for a
 structured review, and posts the result as a single PR comment that
 starts with `**Verdict:** Approve | Changes Requested | Blocked`.
+
+Cheapest model: deepseek-v4-flash ($0.14/M input, $0.28/M output).
 
 Usage (in a GitHub Actions workflow):
 
     env:
-      GH_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
-      MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
-      MINIMAX_BASE_URL: ${{ secrets.MINIMAX_BASE_URL }}   # = https://api.minimax.io/anthropic
-      PR_NUMBER:       ${{ steps.pr.outputs.number }}
-      REPO:            ${{ github.repository }}
+      GH_TOKEN:          ${{ secrets.GITHUB_TOKEN }}
+      DEEPSEEK_API_KEY:  ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}   # = https://api.deepseek.com/v1
+      PR_NUMBER:         ${{ steps.pr.outputs.number }}
+      REPO:              ${{ github.repository }}
     run: python3 scripts/review_pr.py
 """
 from __future__ import annotations
@@ -25,15 +27,11 @@ import sys
 import urllib.error
 import urllib.request
 
-API_KEY = os.environ.get("MINIMAX_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
-BASE_URL = (
-    os.environ.get("MINIMAX_BASE_URL")
-    or os.environ.get("ANTHROPIC_BASE_URL")
-    or "https://api.minimax.io/anthropic"
-)
-PR_NUMBER = os.environ.get("PR_NUMBER")
-REPO = os.environ.get("REPO", "")
-MODEL = os.environ.get("MINIMAX_MODEL", "MiniMax-M3")
+API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+BASE_URL = os.environ.get("DEEPSEEK_BASE_URL") or "https://api.deepseek.com/v1"
+PR_NUMBER = os.environ.get("PR_NUMBER", "")
+REPO = os.environ.get("REPO", "") or os.environ.get("GITHUB_REPOSITORY", "")
+MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")
 MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "3500"))
 DIFF_MAX_CHARS = int(os.environ.get("DIFF_MAX_CHARS", "50000"))
 
@@ -57,16 +55,12 @@ def fetch_pr_meta(pr_number: str) -> dict:
                     "deletions,changedFiles,author"])
 
 
-def messages_url(base: str) -> str:
-    """Normalize BASE_URL — accept either .../anthropic or .../v1."""
-    base = base.rstrip("/")
-    if base.endswith("/v1"):
-        return base + "/messages"
-    return base + "/v1/messages"
-
-
-def call_minimax(prompt: str) -> str:
-    url = messages_url(BASE_URL)
+def call_deepseek(prompt: str) -> str:
+    base = BASE_URL.rstrip("/")
+    if base.endswith("/chat/completions"):
+        url = base
+    else:
+        url = base + "/chat/completions"
     payload = {
         "model": MODEL,
         "max_tokens": MAX_TOKENS,
@@ -77,9 +71,8 @@ def call_minimax(prompt: str) -> str:
         url,
         data=json.dumps(payload).encode(),
         headers={
-            "x-api-key": API_KEY,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json",
         },
         method="POST",
     )
@@ -88,13 +81,16 @@ def call_minimax(prompt: str) -> str:
             body = json.loads(r.read())
     except urllib.error.HTTPError as e:
         sys.stderr.write(
-            f"MiniMax API error {e.code}: {e.read().decode()[:300]}\n"
+            f"DeepSeek API error {e.code}: {e.read().decode()[:300]}\n"
         )
         raise SystemExit(2)
-    for block in body.get("content") or []:
-        if block.get("type") == "text":
-            return block["text"]
-    raise SystemExit("no text block in MiniMax response")
+    choices = body.get("choices") or []
+    for choice in choices:
+        msg = choice.get("message") or {}
+        content = msg.get("content", "")
+        if content:
+            return content
+    raise SystemExit("no text content in DeepSeek response")
 
 
 PROMPT_TEMPLATE = """\
@@ -170,7 +166,7 @@ def main() -> None:
     if not PR_NUMBER:
         raise SystemExit("PR_NUMBER env var required")
     if not API_KEY:
-        raise SystemExit("MINIMAX_API_KEY env var required")
+        raise SystemExit("DEEPSEEK_API_KEY env var required")
 
     print(f"==> Reviewing PR #{PR_NUMBER} in {REPO}", flush=True)
     meta = fetch_pr_meta(PR_NUMBER)
@@ -183,27 +179,22 @@ def main() -> None:
     if not diff.strip():
         post_comment(
             PR_NUMBER,
-            f"🤖 hermes review-bot: PR #{PR_NUMBER} has no diff "
-            f"(binary-only changes?). **Verdict:** Approve",
+            f"🤖 review-bot: PR #{PR_NUMBER} has no diff. **Verdict:** Approve",
         )
         return
 
     prompt = build_prompt(meta, diff)
-    print(
-        f"==> Calling MiniMax ({MODEL}) at {messages_url(BASE_URL)}",
-        flush=True,
-    )
-    review = call_minimax(prompt)
+    print(f"==> Calling DeepSeek ({MODEL}) at {BASE_URL}", flush=True)
+    review = call_deepseek(prompt)
     verdict = parse_verdict(review)
     print(f"   verdict: {verdict or '<not parsed>'}", flush=True)
     print(f"   review length: {len(review)} chars", flush=True)
 
     if not verdict:
-        # Safe default: prepend Changes Requested so auto-merge won't fire.
         review = "**Verdict:** Changes Requested\n\n" + review
         review += (
-            "\n\n_(hermes review-bot: could not parse verdict from "
-            "MiniMax response — defaulted to Changes Requested)_"
+            "\n\n_(review-bot: could not parse verdict from "
+            "DeepSeek response — defaulted to Changes Requested)_"
         )
 
     post_comment(PR_NUMBER, review)

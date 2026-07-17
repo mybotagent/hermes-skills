@@ -224,3 +224,26 @@
 - commit `6c71912 auto-sync 2026-07-13 21:00 KST: fill recent updated dates` (8 files, +8).
 - `git pull --rebase origin main` 후 push 성공 (`e550c5d..6c71912`).
 - 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
+
+## 2026-07-16 (변경 없음)
+
+**사전 점검 (3종 audit 스크립트):**
+- wikilink-audit.py: 62 files, 0 broken, 4 cross-domain (P7, 의도된 외부 참조), 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: 등록 63 (PAT A+B+C), 실제 64. snapshot 예외 `raw/sync/2026-07-02-2109-a-step-3-watcher--.md` 1건. AGENTS.md/SCHEMA.md 의도된 제외.
+
+**발견:**
+- `git status` clean, `git stash list` empty, origin/main과 up-to-date.
+- untracked .md 0건, auto-fill candidate 0건.
+- P7 cross-domain 4건 정상 유지.
+- 18개 stale (30일+, 사람 검토 대기): analysis 5, architecture 3 (ssot-single-source-of-truth 신규 진입), code 1, infra 6 (apify-mcp-supabase-automation 신규 진입), people 1, solopreneur 2.
+
+**적용:**
+- 없음. 변경 사항 0건, commit/push 불필요.
+
+**Wiki 상태 (2026-07-16):**
+- 64개 wiki 페이지 (submodule 제외), index.md 등록 63 (1:1 일치, AGENTS/SCHEMA 제외 후, snapshot 예외 1).
+- 0 broken wikilink, 0 broken markdown link, 0 orphan.
+- 4 cross-domain (P7) 정상 유지.
+- 18 stale (30일+, 수동 확인 대기).
+- push: 없음.

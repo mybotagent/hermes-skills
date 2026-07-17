@@ -69,6 +69,7 @@ When **any step in this cron job fails**, follow this protocol before reporting 
 | Broken pipe | clarify 등 user-input 툴 호출 금지 확인. 스킬이 프롬프트보다 먼저 로드돼서 스킬 지침을 따를 수 있음 → 스킬 자체를 크론/인터랙티브 모드로 분리 필요. 프롬프트가 자급자족형(템플릿+로직 내장)이면 아예 해당 스킬을 크론 skills에서 제거 |
 | API rate limit | 10초 대기 후 재시도. 동일 IP에서 연속 호출 시 User-Agent 추가 또는 다른 API endpoint(query2 등) 시도 |
 | Script non-zero exit | stderr 확인, 스크립트 의존성 점검 |
+| **Script set -e false positive (2026-07-16 신규)** | `set -euo pipefail`에서 `git push` 실패 시 exit 1 → stdout에 파일 저장/commit이 완료됐으면 워치독 `mark_false_failure`가 자동 정상화. **수동 fix**: `|| echo "실패"` graceful handling + 마지막에 `exit 0`. |
 | **Heredoc 차단** (security scanner) | `<< 'PYEOF'` heredoc에 이모지/특수문자 포함 시 차단됨 → `write_file()`로 `/tmp/script.py` 저장 후 `terminal("python3 /tmp/script.py")` 실행 |
 | **Pipe-to-interpreter 차단** | `curl \| python3 -c` → 차단됨. 대신 `curl -o /tmp/data.json` 저장 후 별도 실행 |
 | **Yahoo Finance Too Many Requests** | **2026-07-09 기준 완전 차단**. 5초 sleep / User-Agent 교체 / query1→query2 모두 무효. **한국 개별주는 Naver Polling API로 우회** (`references/cron-mode-naver-polling-fallback.md`), US 지수·선물은 CNBC XML/HTML로 우회. |
@@ -682,7 +683,7 @@ curl -s -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
 - ❌ "정리하자", "삭제하자", "off 해도 되겠다", "비활성화하자"
 - ✅ "다시 켤까요?", "paused 사유가 있나요?", "이 cron의 역할을 확인할까요?", "일시정지 상태인데 의도가 뭔가요?"
 
-## 🧠 Memory cap 정확 측정 (2026-07-07 신규)
+## 🧠 Memory cap 정확 측정 (2026-07-07 신규, 2026-07-17 수정)
 
 memory.md 2,200 chars cap은 **codepoint count (chars)** 기준이지 byte count가 아니다.
 - `wc -c` (byte) 사용 시 → ~+32% 과대측정 (한글 UTF-8 multibyte 때문)
@@ -690,9 +691,23 @@ memory.md 2,200 chars cap은 **codepoint count (chars)** 기준이지 byte count
 
 **검증된 측정법** (`~/.hermes/scripts/memory_alert.py`):
 ```bash
-python3 ~/.hermes/scripts/memory_alert.py check    # 90%↑ exit 1, <90% silent exit 0
+python3 ~/.hermes/scripts/memory_alert.py check    # 90%↑ alert 메시지 출력 (exit 0), <90% silent exit 0
 python3 ~/.hermes/scripts/memory_alert.py stats    # 상세 (chars + bytes + ratio)
 ```
+
+**⚠️ 2026-07-17 중요 수정: `exit 1` → `exit 0`**
+
+**과거**: `sys.exit(1)` (memory 90%+ 시 alert + exit 1)
+**문제**: `no_agent` cron은 exit code != 0을 "스크립트 실패"로 처리 → **stdout 전송 차단**.
+  - alert 메시지(⚠ MEMORY ALERT: XX%...)가 Discord에 절대 도달 안 함
+  - watchdog은 "script failed"로 retry만 반복 → 무한 루프
+
+**수정**: `sys.exit(0)` — alert도 정상 종료로 처리. stdout이 Home 채널로 전달됨.
+**검증**: `cronjob run f405cd52a6e8` → `execution_success: true`, `last_status: ok` ✅
+
+**교훈**: `no_agent` 스크립트는 exit 0일 때만 stdout이 전달됨. 
+- 경보 스크립트도 `exit 0`으로 끝낼 것 (alert 메시지가 stdout에 이미 있음)
+- exit 1 = 진짜 복구 불가능한 에러일 때만 사용
 
 **권장 cron 등록**: 평일 09:00 KST (당일 작업 시작 전), `no_agent` script로 silent. ≥90%만 Discord 알림.
 
@@ -967,6 +982,18 @@ bash ~/.hermes/scripts/self_healing_watchdog.sh
 
 ## 📎 참고 파일 (reference)
 - `references/cron-mode-data-sources.md` — cron 모드에서 검증된 금융 데이터 소스
+
+### ⚠️ 2026-07-17 사용자 교정: Discord 스레드 생애주기
+
+**과거 (self-healing-cron이 권장)**: "스레드는 영구적이지 않음. 절대 deliver 대상으로 사용 금지. origin으로 이동"
+**사용자 교정 (aiprofit, 2026-07-17)**: "**계속 같은 스레드에 7일 내에 보내면 살아있음**"
+
+**옳은 접근**: Discord 스레드는 7일간 메시지가 없으면 자동 보관됨. **매일/격일로 메시지가 도착하는 스레드는 영구 유지됨**. 따라서:
+- 404 스레드가 감지되면 origin으로 이동하는 대신 **동일 주제의 활성 스레드로 마이그레이션**할 것
+- 활성 스레드에 주 1회 이상 메시지를 보내는 크론은 스레드가 절대 죽지 않음
+- 404 fix의 1순위는 origin이 아니라 **같은 topic의 활성 스레드**
+
+**적용**: 4개 잡(만료된 스레드 1520640537995247698) → 활성 스레드 1510404235915694170 마이그레이션 완료.
 - `references/cron-mode-security-scanner.md` — cron 모드 HIGH 보안 차단 패턴 + 우회
 - `references/broken-pipe-clarify-cron.md` — Broken pipe + clarify 차단 해결
 - `references/no-agent-git-sync-patterns.md` — no_agent git sync 스크립트 robust 패턴
@@ -1390,7 +1417,33 @@ def call_llm_analyze(jid, name, deliver, status, last_error, recent_history):
 - **LLM 키 없을 때 silent fail ❌** — 명시적으로 root_cause='LLM 키 미설정' 반환 + Discord webhook은 정상 발송. 운영자가 키 누락 즉시 인지.
 - **🚨 키워드 매칭 함정 — "API_KEY" / "deepseek" 같은 토큰만 보고 추측성 진단 (2026-07-11 신규)** — LLM root cause analyzer가 에러 메시지에서 키워드만 뽑아 추측성 진단을 만드는 가장 흔한 함정. 실제 사례: 잡의 진짜 원인은 `RuntimeError: Skipped to prevent unintended spend: global inference config drifted` 였는데, LLM은 메시지 안에 "DEEPSEEK"이 들어있다는 이유로 "DEEPSEEK_API_KEY env 없음"이라는 진단을 반환함. **해결**: LLM prompt에 **반드시 auth.json credential_pool 상태 + .env line + config.yaml api_key + jobs.json provider/model pin 상태** 4개 객체를 함께 넘기고, prompt 첫 줄에 "키워드가 아니라 evidence만 보고 진단해. config drift, RuntimeError 패턴을 먼저 의심해" 명시.
 
-- **🚨 `_env_lookup` 잘못된 경로 함정 — `~/.hermes/.env.discord_webhook`만 보고 메인 `.env` 못 읽음 (2026-07-13 신규, CRITICAL)** — 워치독이 DEEPSEEK_API_KEY를 못 읽으면 매 cycle "LLM 키 미설정" 거짓 진단을 Discord로 보내고 무한 알림 루프. **진짜 원인**: `_env_lookup`이 watchdog 전용 분리 파일만 보고 `~/.hermes/.env`(실제 키가 박힌 파일)는 안 봄. **검증 (1초)**: `python3 -c "import sys; sys.path.insert(0, '/home/ubuntu/.hermes/scripts'); from self_healing_watchdog import DEEPSEEK_KEY; print('len=', len(DEEPSEEK_KEY))"` → 0이면 버그 있음. **Fix**: 멀티 후보 fallback (`{HERMES_HOME}/.env.discord_webhook` → `{HERMES_HOME}/.env` → `~/.env`). **왜 3개월+ 묵었나**: 첫 후보 파일 없으면 즉시 empty 반환 → 워치독 본체는 silent fail → 사용자는 "키 설정했는데 왜 안 되지?" 경험만. **Pitfall**: key-by-key 조회 함수는 첫 후보에서 못 찾으면 silent fail ❌, 멀티 후보 순회 ✅. 상세 코드: `references/llm-root-cause-analysis.md` 섹션 6.
+- **🚨 `_env_lookup` 잘못된 경로 함정 — `~/.hermes/.env.discord_webhook`만 보고 메인 `.env` 못 읽음 (2026-07-13 신규, CRITICAL)** — 워치독이 DEEPSEEK_API_KEY를 못 읽으면 매 cycle "LLM 키 미설정" 거짓 진단을 Discord로 보내고 무한 알림 루프. **진짜 원인**: `_env_lookup`이 watchdog 전용 분리 파일만 보고 `~/.hermes/.env`(실제 키가 박힌 파일)는 안 봄. **검증 (1초)**: `python3 -c "import sys; sys.path.insert(0, '/home/ubuntu/.hermes/scripts'); from self_healing_watchdog import DEEPSEEK_KEY; print('len=', len(DEEPSEEK_KEY))"` → 0이면 버그 있음. **Fix**: 멀티 후보 fallback (`{HERMES_HOME}/.env.discord_webhook` → `{HERMES_HOME}/.env` → `os.path.expanduser("~")/.env`, 첫 hit 발견 시 stop + `#` 주석/빈값 skip + 따옴표 strip). **왜 3개월+ 묵었나**: 첫 후보 파일 없으면 즉시 empty 반환 → 워치독 본체는 silent fail → 사용자는 "키 설정했는데 왜 안 되지?" 경험만. **Pitfall**: key-by-key 조회 함수는 첫 후보에서 못 찾으면 silent fail ❌, 멀티 후보 순회 ✅. 상세 코드: `references/llm-root-cause-analysis.md` 섹션 6.
+
+- **🚨 `urllib.request.Request(timeout=15)` TypeError (2026-07-13 신규)** — `timeout`은 `Request` 생성자가 받지 않고 `urlopen()`의 인자. 버그 있으면 `Request.__init__() got an unexpected keyword argument 'timeout'`. **Fix**: `with urllib.request.urlopen(req, timeout=15) as resp:`. **왜 묭었나**: DeepSeek 키 없으면 거짓 진단으로 끝나서 `urllib.request.Request`에 도달 안 함. `_env_lookup` 멀티 후보 fix 먼저 적용해야 이 버그 노출됨 — 순서 의존. 상세: `references/llm-root-cause-analysis.md` 섹션 7.
+
+- **🚨 거짓 진단 무한 알림 차단 — `silence_until_key_present` sentinel (2026-07-13 신규)** — 워치독이 진단을 못 하면 (키 누락, LLM fail, ...) 매 cycle 같은 알림 → Discord spam. **Fix**: Layer 2 진단 결과 `fix_action='silence_until_key_present'` sentinel이면 Layer 3 (Discord) skip. **원칙**: 워치독은 "원인을 정확히 모르면 알리지 않는다". false-positive 알림은 silent로 전환. 상세: `references/llm-root-cause-analysis.md` 섹션 8.
+
+- **🛠 워치독 v2 검증 패턴 — 단독 import 테스트 (2026-07-13 신규)** — patch 후 매번 `cronjob run` 돌릴 필요 없음. 단독 import + 속성 체크가 1초 안에 끝남. ① env 로드: `from self_healing_watchdog import DEEPSEEK_KEY, LLM_CACHE_TTL_HOURS` → len/first4 확인. ② silent fallback: `os.environ.pop('DEEPSEEK_API_KEY', None)` 후 reload + call_llm_analyze 호출. ③ dry-run: `python3 ~/.hermes/scripts/self_healing_watchdog.py` exit=0 + stdout silent. **왜 중요**: 워치독은 silent가 정상. 매 cycle cron 호출 없이 빠른 회귀 검증 가능. 상세: `references/llm-root-cause-analysis.md` 섹션 10.
+
+- **🚨 워치독 거짓 진단 캐시 수동 reset (2026-07-13 신규)** — 거짓 진단이 `.heal_root_cause.json`에 들어간 후 워크플로우가 정상화돼도 워치독은 같은 진단을 6시간 동안 반복 알림. **수동 reset**: `write_file(path="/home/ubuntu/.hermes/cron/.heal_root_cause.json", content="{}")` + retry 카운터는 `write_file(path="/home/ubuntu/.hermes/cron/.heal_retries.json", content="{\"YYYY-MM-DD\": {}}")`. 다음 10분 cycle에서 새 진단. **예방**: `LLM_CACHE_TTL_HOURS` 6h → 1h.
+
+- **🧠 v3 — LLM 진단 정확도 = 컨텍스트 힌트로 결정 (2026-07-13 신규, CRITICAL)** — LLM이 단순 숫자만 보고 도메인 지식 없이 추측성 진단을 만듦. **실제 사례**: `f405cd52a6e8` (Memory Usage Alert)의 stdout `⚠ MEMORY ALERT: 2200/2200 chars (100.0%)`을 LLM이 **Discord 메시지 2000자 제한 초과**로 오진. 진짜 원인은 **Hermes 내부 memory 100% 가득 참**. **Fix**: `call_llm_analyze` prompt에 도메인 컨텍스트 힌트 5줄 명시 — ① `"N/N chars (X%)" = Hermes 내부 memory 사용률 (Discord 메시지 한도 아님)`, ② `"script exited with code 1" = 의도된 비정상 종료 (alert 발송 후 exit 1)`, ③ 캐시된 진단 반복 = `confidence:low`, ④ `discord:숫자:숫자` = thread 안, ⑤ `auto_fixable=True`이면 즉시 적용 가능한 액션 우선. **검증**: hint 추가 후 `call_llm_analyze("f405cd52a6e8", ...)` → `"Hermes 내부 memory 사용률이 100%에 도달하여 스크립트가 의도적으로 exit 1로 종료..."` 정확 진단. **상세 코드 + 자동 fix 매핑**: `references/llm-root-cause-analysis.md` 섹션 11-12.
+
+- **🛠 v3 — 자동 fix 액션 3종 + LLM 진단 매핑 (2026-07-13 신규, 2026-07-16 `mark_false_failure` 추가)** — `apply_fix()`에 `run_memory_compact` / `reset_false_rca_cache` 추가. 워치독 본체에서 LLM 진단 결과의 `auto_fixable=True` + `root_cause` 키워드 매핑으로 자동 실행. ① `run_memory_compact`: `subprocess.run("memory_daily_compact.sh")` 30초 timeout → 메모리 100% 알림 잡 자동 fix. ② `reset_false_rca_cache`: `.heal_root_cause.json` + `.heal_retries.json` 오늘 키 초기화 → 거짓 진단 루프 자동 차단. ③ `mark_false_failure` (v2.1, 2026-07-16): `suggest_auto_fix()`에서 `"script failed" in status.lower()` 또는 `"exit code 1" in err` + stdout에 성공 마커(`✅`/`저장 완료`/`commit`) 감지 → `j['last_error']=None; j['last_delivery_error']=None; j['last_status']='ok'; retries[TODAY][jid]=0`. **실제 사례**: `collect_stock_briefings.sh`가 `set -euo pipefail` 때문에 `git push` 실패 시 exit 1 → 워치독이 `mark_false_failure`로 즉시 정상화. **자동 fix 성공 시**: `AUTO_FIX_APPLIED` 상태 기록 + retry 카운터 즉시 0 reset + 다음 cycle 자연 검증. **상세**: `references/llm-root-cause-analysis.md` 섹션 12.
+
+- **🛡 v3 — 캐시 hit_count 3회 강제 재진단 (2026-07-13 신규)** — 같은 진단이 캐시 hit으로 반복되면 3회째에 캐시 무시하고 LLM 강제 재호출. `hit_count` 필드 추가 (cached dict). **왜 3회인가**: 1~2회는 transient 가능성, 3회는 거짓 진단 강력 의심 → 강제 escape. **검증**: `live_after_3hits` 소스가 Discord embed에 표시되어 운영자가 캐시 escape를 인지. **함정**: `hit_count` 증가 코드 위치 — 캐시 hit 분기 안에서만 increment. cache miss 분기는 0으로 reset. **상세**: `references/llm-root-cause-analysis.md` 섹션 13.
+
+- **🚨 Memory 100% 알림 = exit 1의 의도된 패턴 (2026-07-13 신규)** — `memory_alert.py check`는 memory 90%+ 시 `stdout "⚠ MEMORY ALERT"` + `exit 1`로 종료. **워치독의 잘못된 해석**: 이걸 "스크립트 실패"로 보고 retry → 무한 루프. **진짜 의미**: "memory 100% 차서 알림 발송 완료, 스크립트 임무 완수". **진단**: `last_error`에 `MEMORY ALERT: 2200/2200 chars` 패턴이 보이면 즉시 `memory_daily_compact.sh` 1회 수동 실행 → 워치독이 자동 fix로 이어감. **Fix**: `call_llm_analyze`가 이 패턴을 정확히 인식 (위 컨텍스트 힌트). **상세**: `references/llm-root-cause-analysis.md` 섹션 14.
+
+- **🚨 provider/model drift 잡 skip 패턴 (2026-07-11 신규)** — `hermes config set model.provider deepseek` 같은 토글 후 unpinned 잡은 `RuntimeError: Skipped to prevent unintended spend: global inference config drifted since this job was created (provider 'minimax' -> 'deepseek'; model 'minimax-m3' -> 'deepseek-v4-flash'), and this job is unpinned`로 skip. 워치독이 이걸 "API 키 미설정" 같은 다른 이유로 오진하기 쉬움. **진단 시 `last_error`에 다음 키워드 중 하나라도 보이면 즉시 잡의 pin 상태부터 확인**: `Skipped to prevent unintended spend`, `config drifted`, `this job is unpinned`, `To run on the new config, pin it explicitly`. **Fix**: `hermes cron update <jid> --provider <p> --model <m>` 후 재실행. config drift 자동 감지 + 자동 pin 보정 로직은 watchdog 차기 버전 후보. **상세**: `references/llm-root-cause-analysis.md` 섹션 15.
+
+- **🧠 v2/v3 reference 갱신 (2026-07-13)** — `references/llm-root-cause-analysis.md`에 섹션 6-15 추가: 멀티 후보 env lookup / urllib timeout 버그 / silence_until_key_present sentinel / LLM_CACHE_TTL_HOURS 1h 단축 / 단독 import 테스트 패턴 / v3 컨텍스트 힌트 + 자동 fix + hit_count 3회 강제 재진단 / memory 100% 패턴 / provider drift 패턴. 각 섹션마다 검증된 Python 코드 + 검증 결과 포함.
+  - `Skipped to prevent unintended spend`
+  - `config drifted`
+  - `this job is unpinned`
+  - `To run on the new config, pin it explicitly`
+  
+  **Fix**: `hermes cron update <jid> --provider <p> --model <m>` 후 재실행. config drift 자동 감지 + 자동 pin 보정 로직은 watchdog 차기 버전 후보.
 
 - **🚨 `urllib.request.Request(timeout=15)` TypeError (2026-07-13 신규)** — `timeout`은 `Request` 생성자가 받지 않고 `urlopen()`의 인자. 버그 있으면 `Request.__init__() got an unexpected keyword argument 'timeout'`. **Fix**: `with urllib.request.urlopen(req, timeout=15) as resp:`. **왜 묭었나**: DeepSeek 키 없으면 거짓 진단으로 끝나서 `urllib.request.Request`에 도달 안 함. `_env_lookup` 멀티 후보 fix 먼저 적용해야 이 버그 노출됨 — 순서 의존. 상세: `references/llm-root-cause-analysis.md` 섹션 7.
 

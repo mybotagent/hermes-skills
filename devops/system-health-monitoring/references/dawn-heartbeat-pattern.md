@@ -164,6 +164,7 @@ hermes cronjob create \
 - `self-healing-cron` — cron 실패 시 retry/diagnose 패턴.
 - `cron-delivery-routing` — `deliver=origin` + silent on healthy의 deliver 동작.
 - `execution-discipline/references/silent-stop-theater.md` — non-collision 가드 cron 추가 시 묶음 batch push 규칙.
+- `hermes-wiki: infra/memory-trend-analysis.md` — 2026-07-17 메모리 dip 분석 + 2GB server baseline 진단
 
 ## 2026-07-07 제작 배경 (Provenance)
 

@@ -5,6 +5,12 @@ description: Validate that cron deliver targets match the cron's topic before cr
 
 # cron-delivery-routing
 
+## Thread lifecycle (critical) — 2026-07-17
+**Discord threads auto-archive after 7 days of inactivity.** They do NOT expire if messages arrive at least once every 7 days. Therefore:
+- A cron that delivers daily or multiple times per week keeps its target thread alive forever
+- Moving a cron to `origin` or a Home channel is rarely necessary — **keep delivering to the same active thread**
+- When a 404 ("Unknown Channel") is detected, first check if the thread was archived (inactivity). If so, migrate to an active thread in the same topic, not to origin.
+
 ## Core principle
 **A cron's `deliver` field must point to the thread whose TOPIC matches the cron's content.** Configuration silence ≠ correct routing. The cron will return `ok` either way — that's the trap.
 

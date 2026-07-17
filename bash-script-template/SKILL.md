@@ -183,7 +183,31 @@ fi
 | placeholder comment ("단순 휴리스틱") | 정확한 측정 후속 또는 `NOTE:` 로 한계 명시 |
 | README emoji 과다 | 사용자 패턴 따르기 (보통 moderate) |
 | `\|\| echo ""` in `[ -x "$(... \|\| echo)" ]` | 명확한 `command -v` 또는 단축 평가 |
-| **`python3 -c "..."` heredoc 안에 Python f-string (`{name}` 등)** | **bash wrapper = python 호출만, 본체는 별도 `.py` 파일**. 아래 "🐍 bash + Python pitfall" 섹션 참조. |
+| `python3 -c "..."` heredoc 안에 Python f-string (`{name}` 등) | bash wrapper = python 호출만, 본체는 별도 `.py` 파일. 아래 "🐍 bash + Python pitfall" 섹션 참조. |
+
+### Multi-step data pipeline: set +e + FAIL (2026-07-17)
+
+`set -euo pipefail`은 단일 스크립트에 적합하지만, 여러 Python 스크립트를 연쇄 실행하는 데이터 파이프라인에는 위험. 한 스크립트 실패 시 이후 전체 미실행 → 불완전한 데이터로 push됨.
+
+**안전한 패턴** — 각 단계의 실패를 기록하고 계속 진행:
+```bash
+#!/bin/bash
+# paper_tracker_daily.sh (multi-step data pipeline)
+set +e          # 실패해도 계속 진행
+set -u          # undefined 변수는 에러
+set -o pipefail # 파이프 실패 감지
+
+FAIL=0
+
+cd "$HOME/trade-pipeline" || { echo "cd 실패"; FAIL=1; }
+python3 script1.py 2>&1 | tail -3 || { echo "script1 실패"; FAIL=1; }
+python3 script2.py 2>&1 | grep "OK" || { echo "script2 실패"; FAIL=1; }
+
+echo "[$(date)] Pipeline 완료 (실패=$FAIL)"
+exit $FAIL
+```
+
+**기존 `PIPESTATUS[0]` 패턴과 차이**: PIPESTATUS는 마지막 명령만 추적. FAIL 변수는 모든 단계의 실패를 누적. 데이터 파이프라인처럼 4개+ 스크립트를 연쇄 실행할 때 적합.
 
 ## 🐍 bash + Python pitfall — `python3 -c "..."` 안에 f-string 넣지 말 것 (2026-07-10 신규)
 

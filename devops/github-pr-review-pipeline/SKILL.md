@@ -2,18 +2,23 @@
 name: github-pr-review-pipeline
 description: |
   Build / maintain an automated GitHub PR review + auto-merge gate
-  pipeline using a direct LLM API call (MiniMax Anthropic-compatible)
-  and a GitHub Actions workflow pair. Use when the user wants
-  auto-review of every PR with verdict comments, or auto-merge only of
-  PRs whose verdict is "Approve" (no 🔴/🟠), without installing the
-  anthropics/claude-code-action GitHub App or any other App. Triggers:
-  "PR 자동 리뷰", "리뷰 봇", "자동 머지 정책", "심각성 높은 것만 자동 머지",
-  "verdict", or mentions MINIMAX_API_KEY + GitHub Actions together.
+  pipeline using a direct LLM API call (DeepSeek V4 Flash —
+  cheapest model, OpenAI-compatible) and a GitHub Actions workflow
+  pair. Use when the user wants auto-review of every PR with verdict
+  comments, or auto-merge only of PRs whose verdict is "Approve"
+  (no 🔴/🟠), without installing the anthropics/claude-code-action
+  GitHub App or any other App. Triggers: "PR 자동 리뷰", "리뷰 봇",
+  "자동 머지 정책", "심각성 높은 것만 자동 머지", "verdict", or mentions
+  DEEPSEEK_API_KEY + GitHub Actions together.
 
   As of 2026-07-07 the canonical auto-merge.yml is **v2**
   (concurrency group + newest-sha verdict polling) — replaces the v1
   worst-of polling that masked fix re-reviews for 6+ minutes. See
   Pitfall 8 (superseded) and `references/auto-merge-v2-pitfalls.md`.
+
+  **2026-07-17: 전환 완료 — MiniMax M3 → DeepSeek V4 Flash**.
+  이제 review bot은 DeepSeek V4 Flash($0.14/M input, $0.28/M output)
+  을 사용한다. MiniMax 관련 설정은 모두 deprecated.
 ---
 
 # GitHub PR Review Pipeline (LLM-based, no claude-code dep)
@@ -29,6 +34,8 @@ see Pitfall 1):
 | `auto-merge.yml` | `pull_request_target: [...]` (same trigger) | `auto-merge` | Poll comments for `**Verdict:**` → squash-merge if Approve |
 
 Plus a Python script `scripts/review_pr.py` invoked by review-bot.
+The script calls DeepSeek V4 Flash (OpenAI `POST /v1/chat/completions`),
+the cheapest available model ($0.14/M input).
 
 Both workflows need:
 - `permissions: contents: write, pull-requests: write, issues: write`
@@ -36,9 +43,17 @@ Both workflows need:
 
 ## Repository secrets (register via API, see `references/`)
 
-- `MINIMAX_API_KEY` — the LLM key. Stored as a GitHub secret via sealed box.
-- `MINIMAX_BASE_URL` — **must** be `https://api.minimax.io/anthropic`
-  (NOT `https://api.minimax.io/v1` — see Pitfall 5).
+- `DEEPSEEK_API_KEY` — the LLM key. Stored as a GitHub secret via sealed box.
+- `DEEPSEEK_BASE_URL` — **must** be `https://api.deepseek.com/v1`
+  (OpenAI-compatible endpoint).
+  - API format: `POST /v1/chat/completions` with `Authorization: Bearer <key>`
+  - Model: `deepseek-v4-flash` (cheapest DeepSeek model)
+  - Pricing: $0.14/M input, $0.28/M output (cache miss); $0.0028/M input (cache hit)
+
+> **2026-07-17: MiniMax M3 → DeepSeek V4 Flash 전환 완료**
+> 이전에는 `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` (Anthropic-compat)를 사용했으나,
+> DeepSeek V4 Flash가 약 50~70% 저렴하여 전환.
+> 기존 MiniMax 설정이 남아있는 레포는 다음으로 변경: secrets 이름, workflow env, script 내 API call.
 
 ## Verdict format (LLM must return exactly this on first line)
 
@@ -107,14 +122,24 @@ Actions is not permitted to approve pull requests"). Skip the approve;
 call `PUT /pulls/{n}/merge` directly — admin tokens on the repo can
 merge.
 
-### 5. `MINIMAX_BASE_URL` secret value is critical
+### 5. `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` secret values
 
-Two valid prefixes:
-- `https://api.minimax.io/anthropic` → append `/v1/messages`
-- `https://api.minimax.io/v1` → append `/messages`
+Two valid `BASE_URL` forms:
+- `https://api.deepseek.com/v1` → script appends `/chat/completions`
+- `https://api.deepseek.com` → script appends `/v1/chat/completions`
 
-Store the **first** form as the secret. The script normalizes either
-via `messages_url()`.
+The script normalizes either at `call_deepseek()`. Model must be
+`deepseek-v4-flash` (cheapest). Auth header is `Authorization: Bearer`.
+
+**MiniMax → DeepSeek migration (2026-07-17)**: If a repo still has
+the old `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` secrets and
+MiniMax-formatted workflows, convert them:
+1. Rename secrets to `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL`
+2. Update `review-bot.yml` and `review-bot-reusable.yml` env vars
+3. Replace `scripts/review_pr.py` with the DeepSeek version
+4. Change model from `MiniMax-M3` to `deepseek-v4-flash`
+5. Change API header from `x-api-key` + `anthropic-version` to `Authorization: Bearer`
+6. Change endpoint from `/v1/messages` to `/v1/chat/completions`
 
 ### 6. `gh api -f` sends strings; `-F` sends typed values
 
@@ -374,15 +399,18 @@ Pitfall은 아니지만 패턴 자체가 자주 씀. 위키 `infra/pr-review-pol
 
 ## Cross-references
 
-- `references/minimax-anthropic-compat.md` — endpoint, headers, model,
-  - `references/auto-merge-v2-pitfalls.md` — 🆕 worst-of regression, why v2 picks newest-sha, "stuck auto-merge" triage flowchart
-  - `references/minimax-anthropic-compat.md` — endpoint, headers, model, BASE_URL normalization.
-  - `references/github-actions-quirks.md` — each pitfall with reproduction.
-  - `references/secret-registration.md` — sealed-box secret PUT.
-  - `scripts/review_pr.py` — drop-in LLM call template.
-  - `scripts/verdict_analyzer.py` — 🆕 read-only 주간 PR verdict 분석 (자가개선 기초)
-  - `templates/review-bot.yml` — drop-in workflow.
-  - `templates/auto-merge.yml` — 🆕 v2 (race-hardened 2026-07-07; replace any old v1 worst-of with this).
+- `references/deepseek-openai-compat.md` — 🆕 DeepSeek V4 Flash API: endpoint,
+  headers, model, pricing, auth format. Use instead of deprecated
+  `minimax-anthropic-compat.md`.
+- `references/auto-merge-v2-pitfalls.md` — worst-of regression, why v2 picks newest-sha, "stuck auto-merge" triage flowchart
+- `references/minimax-anthropic-compat.md` — ⚠️ **DEPRECATED 2026-07-17**. Kept for repos that haven't migrated yet. New deployments use DeepSeek.
+- `references/github-actions-quirks.md` — each pitfall with reproduction.
+- `references/secret-registration.md` — sealed-box secret PUT.
+- `scripts/review_pr.py` — drop-in DeepSeek V4 Flash LLM call template.
+- `scripts/verdict_analyzer.py` — read-only 주간 PR verdict 분석 (자가개선 기초)
+- `templates/review-bot.yml` — drop-in workflow (DeepSeek V4 Flash version).
+- `templates/review-bot-reusable.yml` — 🆕 reusable workflow for other repos.
+- `templates/auto-merge.yml` — v2 (race-hardened 2026-07-07; replace any old v1 worst-of with this).
 
 ## User preference (carry across sessions)
 

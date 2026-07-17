@@ -16,6 +16,7 @@ metadata:
 ## When to fire this skill
 
 - User says "자율 진행", "자율 주행", "알아서 해줘", "idle 작업", "작업 없을 때 알아서 수정"
+- **🆕 2026-07-17**: User says "메모리 정리해", "불필요한 메모리 정리", "memory 해결해", "알아서 정리" — memory audit + wiki 마이그레이션 트리거
 - Session has completed the user's last explicit ask and the user has signaled open-ended autonomy
 - A `hermes kanban list` shows ≥5 ready tasks with similar titles or duplicate `created` timestamps
 - **2026-07-09 추가**: "자율운영 안됨" 진단 / "원인 찾아서 알아서 해결" / "각각에대해서 설명" / "각 cron마다 자세히 문서화" / "왜 자꾸 빼먹지?" — hermes-config-sync 자가진단 패턴
@@ -412,6 +413,7 @@ cronjob action=create \
 | Step 4 자율운영 후보 | `references/step-4-candidates.md` |
 | 🆕 Memory 90% 압축 워크플로 | `references/memory-compression-workflow.md` |
 | 🆕 Memory lazy indexing (50% 이하, wiki 페이지 링크 + memory-map repo) | `references/memory-lazy-indexing.md` |
+| 🆕 **Memory→Wiki 마이그레이션** (wiki-first 감사 → wiki 페이지 생성 → batch 제거 → index.md → 주간 cron) | `references/memory-wiki-migration.md` |
 | 🆕 PR submission & review workflow (PR→Review 필수, **own vs external 분기**, Case A mybotagent own / Case B fork→upstream) | `references/external-pr-workflow.md` |
 | 🆕 System audit (Hermes + GitHub 종합 진단 — disk/script/cron 3-tier) | `references/system-audit-methodology.md` |
 | 🆕 Linear backfill (Kanban done → SHO issue, mapping.json 미존재 task 자동 승격) | `references/linear-backfill-workflow.md` |

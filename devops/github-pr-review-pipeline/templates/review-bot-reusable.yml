@@ -1,0 +1,62 @@
+# Drop-in reusable workflow template: review-bot-reusable (DeepSeek V4 Flash)
+# Save as .github/workflows/review-bot-reusable.yml
+
+name: review-bot (reusable)
+
+# Reusable workflow: any repo can call to get automated DeepSeek PR review.
+# Caller needs DEEPSEEK_API_KEY secret.
+# Cheapest model: deepseek-v4-flash.
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: "PR number (defaults to the trigger PR if not set)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    name: hermes review (DeepSeek V4 Flash)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch review script from hub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HERMES_GATE_REPO: ${{ vars.HERMES_GATE_REPO || 'mybotagent/hermes-pr-gate' }}
+          REF: ${{ vars.HERMES_GATE_REF || 'main' }}
+        run: |
+          mkdir -p scripts
+          curl -sSL -o scripts/review_pr.py \
+            "https://raw.githubusercontent.com/${HERMES_GATE_REPO}/${REF}/scripts/review_pr.py"
+          python3 -c "import scripts.review_pr" && echo "script OK"
+
+      - name: Resolve PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          N="${{ inputs.pr_number || github.event.pull_request.number }}"
+          if [ -z "$N" ]; then echo "::error::PR number required"; exit 1; fi
+          echo "number=${N}" >> "$GITHUB_OUTPUT"
+
+      - name: Run review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          cd scripts && python3 review_pr.py
