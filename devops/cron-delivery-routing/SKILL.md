@@ -9,7 +9,16 @@ description: Validate that cron deliver targets match the cron's topic before cr
 **Discord threads auto-archive after 7 days of inactivity.** They do NOT expire if messages arrive at least once every 7 days. Therefore:
 - A cron that delivers daily or multiple times per week keeps its target thread alive forever
 - Moving a cron to `origin` or a Home channel is rarely necessary — **keep delivering to the same active thread**
-- When a 404 ("Unknown Channel") is detected, first check if the thread was archived (inactivity). If so, migrate to an active thread in the same topic, not to origin.
+- When a 404 ("Unknown Channel") is detected: the thread was archived (inactivity > 7d). **Do NOT migrate to Home channel (`discord:<channel_id>`) or to `origin`.** Instead, migrate to the **same active thread that all other crons in the same topic use**. The active thread receives daily messages from other crons, so it stays alive permanently.
+- **Forensic check**: when diagnosing a 404, use `cronjob action='list'` to find ALL jobs that share the dead thread ID, and migrate them as a batch.
+
+### 2026-07-17 case: 4 jobs shared expired thread `1520640537995247698`
+1. `f405cd52a6e8` — Memory Usage Alert
+2. `2f553ea20e27` — 매일 아침 일정 요약
+3. `df1faab3310b` — 일요일 아침 주간 브리핑
+4. `fffbc0dce0c7` — 일요일 저녁 주간 브리핑
+
+**Fix**: All 4 migrated to `#주식-증시` thread `1510404235915694170` (the actively used thread for stock market reports). **Must also check `memory_alert.py` for `exit 1` bug** — `no_agent` scripts only deliver stdout on `exit 0`. Exit code 1 → delivery silently blocked.
 
 ## Core principle
 **A cron's `deliver` field must point to the thread whose TOPIC matches the cron's content.** Configuration silence ≠ correct routing. The cron will return `ok` either way — that's the trap.

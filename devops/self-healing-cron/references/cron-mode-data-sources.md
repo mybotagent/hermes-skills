@@ -214,3 +214,65 @@ q = urllib.parse.quote('Kevin Warsh Fed chair June 2026')
 | CPI | `Consumer prices rose X% annually` | X%를 타이틀에서 직접 추출 |
 | Fed 의장 | FOMC meeting 타이틀 | 의장 이름 포함 기사 확인 |
 | 점도표 전망 | `dot plot` 검색 | 향후 금리 경로 예측
+
+---
+
+## 🔍 Flat-Close 검증 패턴: CNBC/Naver 데이터가 전일과 동일할 때 (2026-07-17 신규)
+
+**문제**: CNBC XML API나 Naver Polling이 반환하는 KOSPI·KOSDAQ·개별주 종가가 **전일과 완전히 동일**할 때, 데이터가 단순히 stale/cached된 것인지 아니면 시장이 실제로 flat close(0% 등락)한 것인지 판단해야 함.
+
+**실제 사례 (2026-07-17)**: KOSPI -6.37% 폭락 다음날, KOSPI가 전일과 동일한 6,820.60에서 마감. 6개 포트폴리오 종목 모두 동일 가격. 하지만 시장은 실제로 활발하게 거래되었음.
+
+### 진단 3단계
+
+#### ① Intraday Range 확인 (Naver Polling)
+```python
+# Naver Polling API 응답의 ov/hv/lv/ms/aq 필드 확인
+import json, urllib.request
+
+req = urllib.request.Request(
+    'https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:005930',
+    headers={'User-Agent': 'Mozilla/5.0'})
+raw = urllib.request.urlopen(req, timeout=10).read()
+d = json.loads(raw.decode('euc-kr', errors='ignore'))
+x = d['result']['areas'][0]['datas'][0]
+
+print(f"Name: {x['nm']}")
+print(f"Close: {x['nv']:,} / Open: {x['ov']:,} / High: {x['hv']:,} / Low: {x['lv']:,}")
+print(f"Volume: {x['aq']:,} / MS: {x['ms']}")
+range_pct = (x['hv'] - x['lv']) / x['lv'] * 100
+print(f"Intraday Range: {range_pct:.1f}%")
+
+# 개장~종가 범위로 거래 여부 판단
+if x['ov'] == x['hv'] == x['lv'] == x['nv']:
+    print("⚠️ 모든 가격 동일 — 시장이 오늘 거래되지 않았을 가능성 높음 (휴장/휴일)")
+elif x['nv'] == x.get('pcv', 0):
+    print(f"✅ Flat close — 시장은 거래됨 (range={range_pct:.1f}%, vol={x['aq']:,})")
+    print(f"   Open={x['ov']:,} High={x['hv']:,} Low={x['lv']:,} → 전일 종가와 동일하게 마감")
+```
+
+#### ② 시장 지수도 동시 확인 (KOSPI·KOSDAQ)
+```python
+for idx_name, query in [('KOSPI', 'KOSPI'), ('KOSDAQ', 'KOSDAQ')]:
+    req = urllib.request.Request(
+        f'https://polling.finance.naver.com/api/realtime?query=SERVICE_INDEX:{query}',
+        headers={'User-Agent': 'Mozilla/5.0'})
+    raw = urllib.request.urlopen(req, timeout=10).read()
+    d = json.loads(raw.decode('utf-8', errors='ignore'))
+    x = d['result']['areas'][0]['datas'][0]
+    print(f"{idx_name}: nv={x['nv']:,} ov={x['ov']:,} hv={x['hv']:,} lv={x['lv']:,} aq={x['aq']:,}")
+```
+
+#### ③ 판단 매트릭스
+
+| CNBC XML last = 전일값 | Naver Polling 확인 | 결론 |
+|:------------------------|:------------------|:-----|
+| 동일 + change도 동일 | ov≠hv≠lv (거래 有) | **Legitimate flat close**: 시장 거래됨, 전일과 동일 종가 |
+| 동일 + change도 동일 | ov=hv=lv (거래 無) | **Stale data / 휴장일**: 시장 거래 안 됨, 데이터 미갱신 |
+| 동일 + change 다름 | ov≠hv≠lv (거래 有) | **데이터 지연**: CNBC가 캐싱 중. Naver 데이터 우선 사용 |
+
+### 일반화 원칙
+
+- **CNBC XML API**는 장 종료 후 1~2시간 내 `previous_day_closing`이 정확하지 않을 수 있음 (last와 동일한 값 반환)
+- **Naver Polling 응답**의 `pcv`(prev close) 필드는 전전일 종가를 가리키는 경우가 있음 (e.g., 7/15 → 7/17 data에서도 pcv=7/15 값). **절대 pcv만 보고 등락률 판단 금지** — 반드시 ov/hv/lv/nv와 volume(ms='CLOSE'더라도 거래량 있음)을 함께 확인.
+- **요일 확인**: 금요일 close=flat + 주말 다음 월요일에도 동일 데이터면 stale 추정 강화. 평일 중 flat close는 데이터 자체의 맥락(전일 변동성, 장중 range)과 함께 해석.

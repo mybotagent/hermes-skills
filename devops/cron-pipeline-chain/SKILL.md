@@ -308,7 +308,24 @@ rsync -a --delete \
 
 **Verification**: After fix, stage `.git/HEAD` and `.git/config` should still exist post-rsync.
 
-### 🔴 Pitfall 9: rsync source = HERMES_HOME → infinite recursion (mirror-push, 2026-07-09)
+### 🔴 Pitfall 10: Collector cron runs before source job finishes (2026-07-17)
+
+**Symptom**: A no_agent collector script runs but finds "변경 없음, 스킵" when new data should exist.
+
+**Root cause**: The collector cron schedule is too close to the source cron's execution window. Source job is an LLM agent (multi-tool, 10-20 minute runtime), collector is a no_agent script that runs 5 minutes after source starts.
+
+**Example**: Source `6297df83d4f3` at `10 8 * * 1-5` (08:10 KST, finishes ~08:22). Collector `7f8ba2820760` was at `15 8 * * 1-5` (08:15 KST) — ran BEFORE source finished. Fixed by moving collector to `50 8 * * 1-5` (08:50).
+
+**Fix**: Add minimum 30-minute buffer after the source job's EXPECTED finish time:
+```bash
+# 1. Check how long the source actually takes (last_run_at in cron list)
+# 2. Add buffer: 08:10 + 12min runtime + 28min buffer = 08:50
+cronjob action=update job_id=COLLECTOR_JOB_ID schedule="50 8 * * 1-5"
+```
+
+**Rule of thumb**: LLM agent crons take 10-20 minutes. Schedule downstream no_agent collectors at least 40 minutes after source starts (e.g., 08:10 source → 08:50 collector).
+
+### 🟡 Pitfall 9: rsync source = HERMES_HOME → infinite recursion (mirror-push, 2026-07-09)
 
 **Symptom:** Mirror-push script hangs/times out with `rsync error: received SIGINT (code 20)` and `file has vanished` messages for every file in `~/.hermes/`. Cron log shows it's been running 60+ seconds with no progress.
 

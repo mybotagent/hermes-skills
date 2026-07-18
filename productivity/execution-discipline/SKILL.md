@@ -103,7 +103,8 @@ and recovery sequence.
 | **Speculation cascade** | External fact (creator/founder/year) is unknown, agent guesses repeatedly | ≥2 consecutive rejected guesses + user "멍청해졌다" / "헛소리" | `speculation-cascade.md` (2026-07-04) |
 | Paste-request theater | User asked "너가 알아서" but agent keeps requesting paste/permission | ≥3 paste-guide outputs in same session + user frustration signal ("왜 못함", "이상한 짓") | `paste-request-theater.md` (2026-07-06) |
 | Over-engineering sprawl | User gave a goal, agent added layers beyond the minimum viable — extra retries, force-re-register tricks, "reusable workflow" indirection when inline copy works, etc. | User signals "억지로 X 만들 필요는 없어", "반드시 필요한 것만", "복잡해질거 같으니" after an extended build | `over-engineering-sprawl.md` (2026-07-06) |
-| **Silent-stop theater** | Multi-step autonomous batch (e.g. cron update sequence) and the tool loop goes quiet between iterations — user keeps waiting for next step but agent silently pauses awaiting user input | User mid-batch correction: "쉬지말고", "계속 진행", "왜 멈춰있어", "다음 단계 진행" | `silent-stop-theater.md` (2026-07-07) |
+| | **Silent-stop theater** | Multi-step autonomous batch (e.g. cron update sequence) and the tool loop goes quiet between iterations — user keeps waiting for next step but agent silently pauses awaiting user input | User mid-batch correction: "쉬지말고", "계속 진행", "왜 멈춰있어", "다음 단계 진행" | `silent-stop-theater.md` (2026-07-07) |
+| | **Process-update theater** | User reports pipeline bug → agent patches display instead of fixing the data-generation script | User corrects: "결과를 업데이트하지 말고 과정을 업데이트해" | `process-update-theater.md` (2026-07-17) |
 
 **Paste-request theater 신호**:
 - 외벽 (예: GitHub PAT `workflow` scope 부재)에 부딪혀 매번 "paste해주세요" 안내를 3번+ 반복

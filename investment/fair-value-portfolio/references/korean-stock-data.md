@@ -46,6 +46,45 @@ pbr = data.get("pbr")
 - **언제나 동작** (네이버 금융 접속 차단 없음)
 - **PER/PBR 동시 제공** — 별도 계산 불필요
 
+### ⚠️ Naver Polling `cr` 부호 함정 (2026-07-17 발견)
+
+**`polling.finance.naver.com/api/realtime`**의 `cr`(등락률) 필드는 **항상 절대값(양수)**.
+`nv`(현재가)와 `pcv`(전일종가)를 비교해 부호를 직접 계산해야 함.
+
+```python
+# BAD — cr을 그대로 사용하면 부호가 항상 양수
+cr = float(item['cr'])  # → 8.77 (절대값!)
+
+# GOOD — nv-pcv로 부호 계산
+nv = int(item['nv'])
+pcv = int(item['pcv'])
+sign = 1 if nv >= pcv else -1
+cr_signed = round(float(item['cr']) * sign, 2)  # → -8.77
+```
+
+**권장**: `cd ~/trade-pipeline && python3 scripts/fetch_kr_stocks.py` 사용
+— watchlist.json을 단일 진실 공급원으로 읽고, 부호까지 정확하게 계산.
+
+### 종목 코드 검증 (Naver 응답 nm 교차 체크)
+
+watchlist.json에 등록된 ticker 코드가 Naver Polling에서 의도한 회사를 가리키는지
+반드시 `nm`(회사명) 필드로 교차 검증할 것. 잘못된 코드를 사용하면 전혀 다른 회사의
+가격으로 분석이 이루어지는 silent corruption 발생.
+
+```bash
+python3 -c "
+import json, urllib.request
+url = 'https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:267260'
+raw = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})).read()
+item = json.loads(raw.decode('euc-kr', errors='ignore'))['result']['areas'][0]['datas'][0]
+print(f'Naver says: {item[\"nm\"]}')  # 예: 'HD현대일렉트릭' vs watchlist 'HD현대일렉' → OK (부분 일치)
+"
+```
+
+**실제 사례 (2026-07-17)**: `fetch_kr_stocks.py`에 `298040` (효성중공업, HD현대일렉 아님)으로
+하드코딩되어 있어 **전혀 다른 회사의 가격**으로 수집됨. v2에서 watchlist.json을
+단일 소스로 읽도록 수정하여 재발 방지. watchlist에 종목 추가 시 반드시 Naver `nm` 교차 검증 필요.
+
 ### 단점
 - 한국 주식만 지원 (005930 형식, .KS/.KQ)
 - Referer 헤더 필수 (없으면 빈 응답)

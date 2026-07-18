@@ -247,3 +247,25 @@
 - 4 cross-domain (P7) 정상 유지.
 - 18 stale (30일+, 수동 확인 대기).
 - push: 없음.
+
+## 2026-07-17 (index 등록 2건 + updated 자동 채움)
+
+**사전 점검 (3종 audit 스크립트):**
+- wikilink-audit.py: 67 files, 0 broken, 4 cross-domain (P7), 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: REAL MISSING 2건 — `analysis/portfolio-postmortem-20260717.md`, `infra/selfheal-discord-thread-expiry.md`.
+
+**발견/적용:**
+- 2개 페이지 index.md에 등록 (infra/ + analysis/ 섹션).
+- 신규 operational 페이지 2개에 `updated: 2026-07-17` 자동 채움 (frontmatter 삽입).
+- 0 broken wikilink, 0 broken markdown link, 0 dead link.
+- YAML safe_load + git diff --check + 3종 audit 재검증 모두 통과.
+
+**Stale:**
+- 30일+ 18개 (변동 없음 — 직전 실행과 동일).
+- 날짜 정보 없음: 8개 (raw/ 6개 불변 예외 유지, 2개는 금일 자동 채움 처리).
+
+**Git:**
+- commit `d36802c auto-sync 2026-07-17 21:00 KST: register portfolio-postmortem and selfheal-discord-thread-expiry in index.md, fill updated dates` (3 files, +10).
+- `git pull --rebase origin main` 후 push 성공 (`422914b..d36802c`).
+- 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.

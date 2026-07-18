@@ -236,8 +236,9 @@ Context(V3) → Bull(V3)∥Bear(V3)∥Risk(V3) → Facilitator(R1)
 **데이터 소스 구분**:
 | 항목 | 미국주 (16종목) | 한국주 (6종목) |
 |:----|:-------------:|:-------------:|
-| 주가/재무 | yfinance (15~20분 지연) | **네이버 증권 홈페이지** |
+| 주가/재무 | yfinance (15~20분 지연) | **`scripts/fetch_kr_stocks.py`** (watchlist.json SSoT, ±부호 자동 보정) |
 | Analyst Target | Finnhub/cron (30일 window) | **네이버 컨센서스 스크래핑** (coinfo.naver, analyst 의견만) |
+| **컨세서스 수집** | **yfinance + FinanceDataReader only** | **yfinance + FinanceDataReader only** |
 | 뉴스 | **Finnhub** (실시간) | **네이버 뉴스** (cron+Hermes Agent) |
 | Insider | Finnhub | 해당 없음 |
 | SEC Filing | sec-edgar-mcp | 해당 없음 |
@@ -862,7 +863,10 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/t1-gap-vs-midpoint.md`** — T1 괴리율 전환 사유 및 변경 내역 (2026-06-08)
 - **`references/fear-greed-index.md`** — CNN Fear & Greed Index API, 봇 우회 방법, 스크립트, 08:10 크론 통합 (2026-06-10 신규)
 - **`references/moat-estimation-rubric.md`** — Moat 점수 LLM 추정 루브릭 + 실행 사례 (2026-06-08 신규)
-- **`references/portfolio-postmortem-20260717.md`** — Portfolio 성과 분석 + 전략 개선 (2026-07-17 신규)
+- **`references/recency-weighted-targets.md`** — tradingAgents 기반 recency-weighted target price calibration + references (2026-07-17 신규) — Portfolio 성과 분석 + 전략 개선 (2026-07-17 신규)
+- **`references/briefing-timestamp-system.md`** — Briefing timestamp 파이프라인 + market status 표시 + cron timing (2026-07-17 신규)
+- **`references/market-calendar-module.md`** — `scripts/market_calendar.py` — KR/US holiday calendar + market open/close detection + pipeline consumers (2026-07-17 신규)
+- **`references/process-update-theater.md`** —** `execution-discipline` skill의 process-update theater variant. display-layer patching 대신 pipeline-layer fix 우선 원칙. 본 SKILL의 Pitfall 49와 연결됨.
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
 - `build_macro_summary()`가 `macro_ctx`의 모든 필드를 추출하지 않음
@@ -1277,7 +1281,124 @@ yfinance가 return하는 sector(generic)가 watchlist에 설정된 사용자 의
 - Dashboard: 종목명 옆 등급 배지 표시
 - 참조: references/moat-estimation-rubric.md (v3)
 
-### 44. 🔴 Bear/Base/Bull 시나리오 + Return/Risk ratio (2026-07-17)
+### 45. 🔴 Recency-Weighted Target Price Calibration — tradingAgents multi-source + per-source references (2026-07-17 신규, v2: 2026-07-17 web search)
+
+### 47. 🔴 JS try/catch bracket discipline — 기존 catch 체인에 새 try 삽입 시 주의 (2026-07-17 신규)
+
+portfolio_dashboard.html은 여러 개의 try/catch가 중첩되어 있음:
+```
+outer try { ... }  // main data fetch
+  macro try { ... }  // macro dashboard
+    consensus try/catch { ... }  // consensus data
+    briefing try { ... }  // briefing section (NESTED INSIDE macro try!)
+  } macro catch { ... }
+} outer catch { ... }
+```
+
+**실수 패턴**: briefing try를 추가할 때 `}catch{macro_status}`(원래 macro try의 catch)가 briefing try의 catch로 잘못 연결됨 → macro try가 닫히지 않아 JS 전체 syntax error → 모든 JS 함수 미실행 → 대시보드 정적 HTML(이미지)만 표시.
+
+**방지**: 새 try/catch 블록을 기존 try/catch 체인에 삽입할 때:
+1. 기존 구조에서 `try` 시작과 `catch` 종료를 모두 식별
+2. 새 `try{`와 `}catch`가 어느 try에 속하는지 선으로 tracing
+3. `{`와 `}` 개수 카운트로 검증: `curl -s <page> | python3 -c "h=sys.stdin.read();s=h[h.find('<script>'):h.find('</script>')];print(s.count('{'),s.count('}'))"`
+
+**발생 사례 (2026-07-17)**: briefing try 1개 추가 → 185:185 balanced에서 185:186으로 불균형 → 모든 JS 렌더링 중단. 수정: briefing catch `}catch(e){console.log('briefing:',e.message)}` 추가.
+
+### 48. 🔴 브리핑 cron timing — 생성 전 수집 금지 (2026-07-17 신규)
+
+**문제**: collect_stock_briefings.sh(`7f8ba2820760`, 08:15)가 브리핑 cron(`6297df83d4f3`, 08:10~08:22 소요)보다 먼저 실행 → "변경 없음, 스킵" 발생.
+
+**해결**: collect cron을 08:50으로 지연. 생성 cron과 수집 cron 사이에 최소 30분 버퍼 필요.
+
+**오후도 동일**: US 브리핑(18:00), 매크로(18:30), LangGraph(18:35) → collect 오후(18:40)는 18:35 이후인지 확인. 필요 시 18:50으로 지연.
+
+**참조**: `references/briefing-timestamp-system.md`
+
+### 51. 🔴🔴 "결과 업데이트 금지 — 과정(프로세스)을 업데이트하라" (2026-07-17 신규)
+
+**사용자 원칙**: 출력물(대시보드·브리핑·JSON)에서 증상만 고치지 말고, **데이터가 생성되는 과정(파이프라인·스크립트·스킬 프롬프트)을 수정하라.**
+
+**위반 사례**:
+1. ❌ 대시보드 HTML에서 등락률 부호를 하드코딩으로 반전 → ✅ `fetch_kr_stocks.py`에서 nv-pcv 계산으로 근본 수정
+2. ❌ 브리핑 시간을 HTML에서 직접 수정 → ✅ `collect_stock_briefings.sh`에 타임스탬프 추출 로직 추가
+3. ❌ 대시보드에 market status만 패치 → ✅ `market_calendar.py` 모듈 생성 + 모든 consumer 업데이트
+
+**확인 순서** (문제 발견 시):
+1. 출력 데이터(JSON/CSV/HTML) 검사
+2. 생성 스크립트 추적 (어떤 코드가 이 데이터를 만들었는가?)
+3. **스크립트 수정** (화면단 패치 금지)
+
+### 52. 🔴 모든 데이터 표시에 날짜 레이블 포함 — no bare numbers (2026-07-17 신규)
+
+사용자가 발견: 🇰🇷 한국 주요 종목 전일 마감 표에서 날짜 정보 없이 가격/변동만 표시됨.
+
+**규칙**: 모든 시장 데이터(가격·지표·수익률)는 표시 시 반드시 기준 날짜 또는 시간을 함께 표시할 것.
+- "삼성전자 ₩255,000 -8.77%" (X) → "삼성전자 ₩255,000 -8.77% (07/16 종가)" (O)
+- "CPI 3.2%" (X) → "CPI 3.2% (6월)" (O)
+- 브리핑 헤더에 반드시 날짜 포함
+
+**08:10 크론 리포트 생성 시 이 규칙을 반드시 준수할 것.**
+
+### 50. 🔴🔴 Naver Polling `cr` (등락률) 부호 반전 버그 — 절대 raw API 직접 호출 금지 (2026-07-17 신규, v2 수정)
+
+**발견**: 오전 포트폴리오 브리핑에서 한국주 등락률 부호가 반전됨 (예: -8.77%를 +8.77%로 표시).
+
+**원인 1 — `cr` 절대값**: `polling.finance.naver.com/api/realtime`의 `cr` 필드는 **항상 절대값(양수)**. 부호는 `nv - pcv`로 직접 계산해야 함.
+
+**원인 2 — 종목 코드 하드코딩**: `fetch_kr_stocks.py`가 HD현대일렉 코드 `298040`(효성중공업, ₩2,789,000)를 하드코딩하여 전혀 다른 회사의 가격을 가져옴. 올바른 코드는 `267260`(HD현대일렉트릭, ₩797,000).
+
+**해결**:
+1. `cd ~/trade-pipeline && python3 scripts/fetch_kr_stocks.py` 사용 — `nv - pcv`로 부호 계산
+2. **watchlist.json에서 종목 코드를 읽을 것** (하드코딩 금지). v2에서 watchlist.json을 단일 진실 공급원으로 읽도록 전면 재작성.
+3. **Naver 응답 `nm`(회사명) 필드로 교차 검증**: watchlist name과 일치하는지 확인. 불일치 시 경고 출력.
+
+**08:10 크론 실행 시 `fetch_kr_stocks.py`만 사용할 것. 절대 `polling.finance.naver.com` 직접 호출 금지. 절대 종목 코드 하드코딩 금지.**
+
+**검증 명령어**: `python3 -c "import json,urllib.request; r=urllib.request.urlopen(urllib.request.Request('https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:267260',headers={'User-Agent':'Mozilla/5.0'})); print(json.loads(r.read().decode('euc-kr'))['result']['areas'][0]['datas'][0]['nm'])"`
+→ `HD현대일렉트릭` 출력 확인
+
+**상세**: `references/korean-stock-data.md` ⚠️ Naver Polling `cr` 부호 함정 섹션
+
+대시보드 상단에 US/KR 시장 상태를 표시해야 함:
+- 🇺🇸 US: `⚡ 장중` / `장마감` / `휴장`
+- 🇰🇷 KR: `⚡ 장중` / `장마감` / `휴장`
+
+장 시간 (KST 기준):
+- US: 월~금 23:30~06:00 (다음날)
+- KR: 월~금 09:00~15:30
+
+**Python 모듈**: `scripts/market_calendar.py` — 파이프라인 전반에서 import하여 사용.
+**JS 코드**: `portfolio_dashboard.html` 인라인 holiday map (Python과 동기화 필요).
+
+JS 코드는 `new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'})`로 KST now 계산.
+
+**참조**: `references/market-calendar-module.md`
+
+`collect_recent_targets.py`가 tradingAgents `lib/recency.py` + `lib/conflict.py` 아키텍처로 최신 목표주가를 수집:
+
+**Source Registry**: 각 source는 독립적 tier + weight + reference 보유
+- yfinance target_mean(B, 1.0), target_median(B, 0.8), sentiment_delta(B, 0.5), high/low(C, 0.3)
+- Google News RSS (C, 0.1~1.0, 최근 30일) — **v2: 개별 analyst 리포트 추출 (Tier A, weight 3.0)**
+
+**v2 Web Search**: US 종목당 3개 검색어로 Google News RSS 검색 → `_extract_target_price()` (market cap filter + sanity 50%~500% of current price) + `_extract_firm()` (40+ firm dictionary) → `action` 필드 (upgrade/downgrade/initiate)
+
+**Recency Budgets**: target_price 14일, recommendation 30일, web_news 7일
+
+**Calibration Factor**: `weighted_target / existing_targetMeanPrice`
+- collect_consensus.py가 calibration factor를 읽어 target price 보정
+- 대시보드에 `×calibration_factor` 배지 + `⚙️ 보정` 줄 표시
+- 각 target price마다 `references[]`에 firm·date·value·url·action 명시
+
+**Known limitation**: 한국주(LG이노텍·현대차·기아)는 영문 Google News RSS 커버리지 부족 → web source 0개. yfinance baseline fallback.
+
+**참조**: `references/recency-weighted-targets.md` + `portfolio-performance` skill `references/recent-targets-calibration.md`
+
+### 46. 🔴 Stale briefing 데이터 방지 — 오늘 날짜만 표시 (2026-07-17 신규)
+
+`collect_briefings.py`는 오늘 날짜 디렉토리만 로드. 오늘 브리핑이 없으면 `{"note": "오늘 브리핑이 아직 생성되지 않았습니다"}` 반환.
+- 대시보드 JS가 `note` 필드를 감지하여 안내 메시지 표시
+- stale 어제 브리핑 노출 금지
+- 브리핑 생성 후 다음 날까지 데이터 보존하지 않음
 - 각 종목 6개월 전망: Bull(Base)/Bear 시나리오 목표가 + 확률(합=100%)
 - return/risk ratio = probability-weighted upside / probability-weighted downside
 - 1.0 미만 → 비중 축소 검토
