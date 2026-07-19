@@ -1,9 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.13.0
+version: 1.14.0
 changelog:
-  - "1.13.0 (2026-07-17): (a) P18 신규 — patch 도구로 index.md 수정 시 read_file line-number 구분 파이프(`|`)를 old_string에 포함하면 포맷 오염 발생; `|-` 패턴 판별법과 복구 절차 명시; (b) offset/limit pagination 경고 시 전체 파일 재-read 후 patch 권장"
+  - "1.14.0 (2026-07-19): (a) 2c-bis 신규 — SCHEMA.md Tag Audit (Lint ⑧) 절차 추가; taxonomy 확장 vs 개별 페이지 수정 판단 프레임워크 명시; (b) 2c-ter 신규 — logs submodule index 일치 확인 절차 추가; (c) SCHEMA.md 테이블 `||` double pipe 형식 patch 위험 경고 보강"
   - "1.12.0 (2026-07-13): (a) P16 신규 — 명시적 updated/created가 있으면 최근 git commit이 stale 판정을 덮어쓰면 안 됨; git log는 날짜 필드가 없는 페이지에만 fallback; (b) raw/sync/snapshot/archive는 immutable/예외이므로 updated 자동 삽입 금지; (c) `git ls-files -v`의 대문자 H는 정상 tracked/cached, 소문자 h만 assume-unchanged — P1 진단 오류 수정; (d) 날짜 자동 채움 뒤 YAML·diff·3종 audit 재검증 추가; (e) P17 신규 — index-md-audit PAT B+C가 markdown 링크 destination을 재매치해 AGENTS/SCHEMA를 dead link로 오탐하던 문제 수정"
   - "1.11.0 (2026-07-09): (a) P15 신규 — P14 raw/ false-positive 의심 케이스 중 실제로는 진짜 미등록일 수 있음 (raw/2026-W28-weekly-recap-draft.md 사례); (b) 사전 점검의 `cat >> session-notes.md` 절차가 Tirith guard `dotfile_overwrite`로 차단됨 → `patch` 도구(read → patch)로 append 절차 명시; (c) `git add` 후 commit 전에 `git pull --rebase` 시도 시 'uncommitted changes' 오류 — add → commit → pull 순서 강조"
   - "1.10.0 (2026-07-08): (a) P14 신규 — index.md plain-text bullet `(- name (raw/...) — desc)` 형식이 markdown-link regex로 안 잡혀 4건 false positive; (b) scripts/index-md-audit.py 신규 — 3종 패턴 통합 audit (markdown link + plain text parens + bare path), exit 0 정보성; (c) 사전 점검에 index-md-audit.py 호출 추가; (d) P13 본문에 'index.md에는 등록되어 있으나 audit regex로 false positive' 가능성 명시"
@@ -211,6 +211,51 @@ python3 ~/.hermes/skills/devops/wiki-auto-refresh/scripts/markdown-link-audit.py
 **리포트:**
 - "updated: 자동 채움: N개 페이지" 형태로 기재
 - "30일+ stale로 수동 확인 필요: M개 페이지" 별도 표기
+
+#### 2c-bis. (주간) SCHEMA.md Tag Audit (Lint ⑧)
+
+SCHEMA.md lint ⑧ (tag audit)는 SCHEMA.md taxonomy에 등록되지 않은 태그를 사용하는 모든 페이지를 찾는다. 위키 헬스 체크에서 자주 누락되므로 별도로 실행할 것.
+
+**판단 프레임워크 — taxonomy 확장 vs 개별 페이지 수정:**
+
+| 상황 | 행동 | 근거 |
+|:-----|:-----|:------|
+| 미등록 태그가 여러 파일에서 반복됨 (3+회) | **SCHEMA.md taxonomy 확장** | 개별 수정보다 확장이 효율적, 반복 태그는 자연스러운 분류 |
+| 미등록 태그가 특정 섹션에 집중 (예: infra/ 전체) | **SCHEMA.md taxonomy 확장** | 해당 섹션의 일반적인 태그 — 누락된 분류일 뿐 |
+| 미등록 태그가 1개 파일에만 있음 | **개별 페이지 수정** | 태그를 올바른 taxonomy 태그로 교체 |
+| 태그가 오타/스펠링 실수 | **개별 페이지 수정** | 올바른 태그로 교체 |
+| 태그가 운영상 유효하지만 taxonomy에 없음 | **SCHEMA.md taxonomy 확장** | 사용 중인 태그는 분류체계에 포함되어야 함 |
+
+**실제 사례 (2026-W29):** 40개 파일에서 미등록 태그 발견. 대부분이 infra/ (mcp, bot, messaging 등), analysis/ (pipeline, stock 등), architecture/ (hermes, verify 등)에 집중 → SCHEMA.md taxonomy 29→55개로 확장. 개별 페이지 수정 0건.
+
+**Taxonomy 확장 절차:**
+1. 발견된 미등록 태그를 카운트 (file별, 디렉토리별 집계)
+2. 각 태그를 SCHEMA.md taxonomy의 적절한 운영/리서치 카테고리에 매핑
+3. 기존 행에 추가하거나 새 행 생성 (가급적 기존 행 확장)
+4. `patch` 도구로 SCHEMA.md 수정 — **테이블 파이프 포맷 주의** (SCHEMA.md 테이블은 `||` double pipe 형식 행이 있음; patch로 수정 시 `|||` triple pipe 포맷 깨짐 위험. 확실하지 않으면 전체 테이블 블록 rewrite)
+5. lint 재실행으로 tag audit ✅ 확인
+6. `git commit`에 "SCHEMA.md tag taxonomy 확장: +N개 태그" 명시
+
+#### 2c-ter. Logs submodule index 일치 확인
+
+`logs/` 서브모듈에 root-level `.md` 파일이 새로 추가되었을 때(예: self-heal 로그), `logs/index.md`에도 반영되었는지 확인:
+
+```bash
+cd ~/.hermes/wiki/logs
+for f in *.md; do
+  if [ "$f" != "index.md" ] && [ "$f" != "README.md" ] && ! grep -q "$f" index.md; then
+    echo "MISSING FROM LOGS INDEX: $f"
+  fi
+done
+```
+
+root-level 로그 파일이 index.md에 누락된 경우:
+1. 파일 mtime/content 확인 → 설명 작성
+2. `logs/index.md`에 적절한 섹션에 항목 추가 (역시간순 정렬 유지)
+3. logs 서브모듈 내부에서 git add/commit/push (`git push origin HEAD:master`)
+4. parent wiki에서 submodule pointer commit: `git add logs && git commit -m "wiki: bump logs" && git push`
+
+**실제 사례 (2026-W29):** `2026-06-10-2115.md`, `2026-07-17-selfheal-discord-thread.md`, `2026-07-17-selfheal-fundamental-fix.md`, `hermes-logs-hub.md` 4개가 logs/index.md에 누락되어 있음. 자체 로그는 root-level flat 구조라 logs/ 내 index.md 관리가 필요.
 
 ### 3. Git Push (GitHub 연동)
 

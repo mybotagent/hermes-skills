@@ -225,6 +225,7 @@
 - `git pull --rebase origin main` 후 push 성공 (`e550c5d..6c71912`).
 - 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
 
+
 ## 2026-07-16 (변경 없음)
 
 **사전 점검 (3종 audit 스크립트):**
@@ -269,3 +270,36 @@
 - commit `d36802c auto-sync 2026-07-17 21:00 KST: register portfolio-postmortem and selfheal-discord-thread-expiry in index.md, fill updated dates` (3 files, +10).
 - `git pull --rebase origin main` 후 push 성공 (`422914b..d36802c`).
 - 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
+
+## 2026-07-19 (weekly cleanup — SCHEMA.md tag taxonomy 확장 + logs/index 수정)
+
+**사전 점검 (3종 audit — lint 8종 직접 실행):**
+- Lint ① (orphan): 2건 — `raw/2026-W29-weekly-recap-draft.md` (신규 draft, 정상), `raw/sync/2026-07-02-2109-a-step-3-watcher--.md` (복제본, duplicate 표시).
+- Lint ② (broken wikilink): 0건 ✅
+- Lint ③ (index 누락): 0건 ✅ (false positive: index.md 자체만 — 정상)
+- Lint ④ (frontmatter): research/ 3개 전부 유효 ✅
+- Lint ⑤ (stale): 0건 (research/ 전부 90일 미만) ✅
+- Lint ⑥ (모순): 0건 ✅
+- Lint ⑦ (품질): 0건 (low confidence 없음) ✅
+- Lint ⑧ (tag audit): **40개 파일**에서 미등록 태그 발견 ⚠️
+
+**발견/적용:**
+- tag audit ⑧: 대부분 infra/ (mcp, bot, messaging, auth 등), analysis/ (pipeline, stock), architecture/ (hermes, verify)에 집중.
+  - **선택: 개별 수정 ❌, SCHEMA.md taxonomy 확장 ✅** — 29→55개 태그로 확장 (판단 프레임워크에 따라).
+  - SCHEMA.md operational 태그 표에 26개 태그 추가 배치.
+  - SCHEMA.md 테이블 `||` double pipe 형식에 patch 오염 발생 → `|||` triple pipe 발생 후 전체 블록 rewrite로 복구 (P18 심화).
+- logs/index.md: 4개 root-level 파일 누락 발견 (`2026-06-10-2115.md`, `2026-07-17-selfheal-discord-thread.md`, `2026-07-17-selfheal-fundamental-fix.md`, `hermes-logs-hub.md`).
+  - July + June 테이블에 항목 추가, June 역순 정렬, 허브/기타 섹션 신설.
+  - logs submodule commit + push (master) + parent submodule pointer commit.
+- raw/sync/ duplicate: frontmatter에 `duplicate_of: architecture/memory-snapshots/...` 표시, canonical 위치 명시.
+- `infra/` 디렉토리 (21개 파일): index.md와 전부 일치 ✅.
+
+**Git:**
+- hermes-wiki (main): `ccd1952 weekly-cleanup 2026-W29: SCHEMA.md tag taxonomy 확장, logs/index.md 수정, raw/sync duplicate 정리` (4 files, +47/-16).
+- hermes-logs (master): `43d2316 weekly-cleanup: logs/index.md 업데이트 (+ self-heal log entries)` (3 files, +65/-16).
+
+**교훈:**
+- **tag audit 대량 발견 시 taxonomy 확장이 개별 수정보다 40x 효율적.** 판단 프레임워크 명문화 필요 → SKILL.md v1.14.0에 2c-bis 추가.
+- **SCHEMA.md 테이블 `||` double pipe 형식은 patch 오염 위험 높음.** 확실하지 않으면 전체 블록 rewrite.
+- **logs submodule index는 주기적으로 확인 필요** — 4개가 누락되어 있었음. SCHEMA.md lint에 포함되지 않는 영역이므로 별도 절차 필요 → SKILL.md v1.14.0에 2c-ter 추가.
+
