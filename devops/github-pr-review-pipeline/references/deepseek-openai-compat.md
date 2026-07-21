@@ -93,10 +93,18 @@ Content-Type: application/json
 
 ## Migration checklist (MiniMax → DeepSeek)
 
-1. [ ] Rename secrets: `MINIMAX_API_KEY` → `DEEPSEEK_API_KEY`, `MINIMAX_BASE_URL` → `DEEPSEEK_BASE_URL`
+1. [ ] Rename secrets: create `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` via `gh secret set` (GitHub does not support rename — delete old MINIMAX_* after verification)
 2. [ ] Update `review-bot.yml` and `review-bot-reusable.yml` env vars
 3. [ ] Replace `scripts/review_pr.py` with DeepSeek version
 4. [ ] Change model from `MiniMax-M3` to `deepseek-v4-flash`
 5. [ ] Change API header from `x-api-key` + `anthropic-version` to `Authorization: Bearer`
 6. [ ] Change endpoint from `/v1/messages` to `/v1/chat/completions`
-7. [ ] Validate: create test PR → check verdict comment appears
+7. [ ] Register DEEPSEEK_* secrets in **every target repo** via `gh secret set` (⚠️ **most commonly missed step** — workflow shows no error until it runs):
+   ```bash
+   source ~/.hermes/.env
+   echo "$DEEPSEEK_API_KEY" | gh secret set DEEPSEEK_API_KEY --repo mybotagent/hermes-pr-gate
+   echo "${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}" | gh secret set DEEPSEEK_BASE_URL --repo mybotagent/hermes-pr-gate
+   gh secret list --repo mybotagent/hermes-pr-gate  # verify both DEEPSEEK_* visible
+   ```
+8. [ ] Delete old `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` secrets (optional, no harm keeping them)
+9. [ ] Validate: create test PR → check verdict comment appears

@@ -141,6 +141,16 @@ MiniMax-formatted workflows, convert them:
 5. Change API header from `x-api-key` + `anthropic-version` to `Authorization: Bearer`
 6. Change endpoint from `/v1/messages` to `/v1/chat/completions`
 
+**⚠️ CRITICAL: After migration, register the new secrets via `gh secret set` —
+the workflow references `secrets.DEEPSEEK_API_KEY` but the repo still only has
+`MINIMAX_*`. This is easy to miss because the workflow shows no error until
+it actually runs.** 실측: 2026-07-20, review-bot 3일간 Broken 상태였음.
+```bash
+# After updating YAML + script, also:
+gh secret set DEEPSEEK_API_KEY -r mybotagent/REPO < ~/.hermes/.env.d/keys
+gh secret set DEEPSEEK_BASE_URL -r mybotagent/REPO <<< "https://api.deepseek.com/v1"
+```
+
 ### 6. `gh api -f` sends strings; `-F` sends typed values
 
 ```bash
@@ -396,6 +406,48 @@ Pitfall은 아니지만 패턴 자체가 자주 씀. 위키 `infra/pr-review-pol
 - ✅ 우리 own repo의 bug → OK
 - ⚠️ NousResearch/hermes-agent 같은 외부 repo → 명시 OK 필요
 - ❌ "Fix PR"이 외부 repo 의도였으면 사용자 명시 OK 받은 후 진행
+
+### 20. HEAD_SHA marker는 3개 파일 동시 수정 필요 (실측 2026-07-20)
+
+auto-merge v2의 정밀 verdict 매칭을 위해서는 `<!-- sha: {HEAD_SHA} -->` 마커가
+**3개 파일 모두에 일관되게 적용되어야 한다**. 하나라도 빠지면 SHA 마커가 작동 안 하고
+fallback(최신 bot comment)으로만 동작한다:
+
+| 파일 | 필요한 변경 |
+|---|---|
+| `scripts/review_pr.py` | `HEAD_SHA` env 읽기 → `post_comment()`에 `head_sha` 파라미터 전달 |
+| `.github/workflows/review-bot.yml` | Resolve PR 단계에서 head_sha 추출 → script env에 `HEAD_SHA` 전달 |
+| `.github/workflows/review-bot-reusable.yml` | review-bot.yml과 동일 |
+
+**빠진 증상 2가지**:
+- **review_pr.py만 수정**: workflow에서 HEAD_SHA를 env로 안 넘겨주면 script가 빈 문자열 받음 → 마커 생성 안 됨
+- **review-bot.yml만 수정**: review_pr.py가 head_sha 파라미터를 받지 않으면 post_comment()가 마커 무시
+
+**검증 방법**: PR의 review-bot comment body에 `<!-- sha: ... -->` 가 포함되었는지 확인:
+```bash
+gh pr view $N -R OWN/REPO --json comments --jq '.comments[] | select(.author.login=="github-actions[bot]") | .body' | grep -o '<!-- sha:' || echo "MISSING"
+```
+
+### 21. Workflow 파일 수정 PR push는 `workflow` scope token 필요 (실측 2026-07-20)
+
+`.github/workflows/*.yml` 파일을 수정한 branch를 push할 때, 일반 `GITHUB_TOKEN`
+(classic PAT with `repo` scope)만 있으면 **push가 reject**된다:
+
+```
+remote: refusing to allow a Personal Access Token to create or update
+workflow `.github/workflows/review-bot.yml` without `workflow` scope
+```
+
+**해결**: `workflow` scope이 포함된 token 사용 (예: `GH_TOKEN_V2` 환경변수):
+```bash
+# 실측 패턴
+git remote set-url origin "https://mybotagent:${GH_TOKEN_V2}@github.com/mybotagent/REPO.git"
+git push origin BRANCH
+```
+
+또는 fine-grained token에 **Contents: Read and write** + **Workflows: Read and write**
+권한을 부여한다. `gh secret set`으로 workflow file을 우회하거나, GitHub UI에서 직접
+PR을 생성할 수도 있다 (workflow 파일 제외 push → UI에서 별도 commit으로 추가).
 
 ## Cross-references
 

@@ -1,7 +1,7 @@
 # GitHub Repository Secret Registration
 
-Use the GitHub Actions Secrets API to set `MINIMAX_API_KEY` and
-`MINIMAX_BASE_URL` programmatically. Both values must be encrypted
+Use the GitHub Actions Secrets API to set `DEEPSEEK_API_KEY` and
+`DEEPSEEK_BASE_URL` programmatically. Both values must be encrypted
 with the repository's public key (sealed box / NaCl crypto_box_seal).
 
 ## Python (uses pynacl — already in `hermes-agent` venv)
@@ -45,8 +45,8 @@ def put_secret(name, value):
         return r.status
 
 for name, value in [
-    ("MINIMAX_API_KEY", os.environ["MINIMAX_API_KEY"]),
-    ("MINIMAX_BASE_URL", "https://api.minimax.io/anthropic"),
+    ("DEEPSEEK_API_KEY", os.environ["DEEPSEEK_API_KEY"]),
+    ("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
 ]:
     print(name, put_secret(name, value))
 ```
@@ -60,16 +60,32 @@ PAT settings UI.
 
 If `gh` is authenticated with a token that has Secrets: R&W:
 
+### First-time setup (new repo)
 ```bash
-gh secret set MINIMAX_API_KEY --repo owner/repo \
-  --body "$MINIMAX_API_KEY"
+gh secret set DEEPSEEK_API_KEY --repo owner/repo \
+  --body "$DEEPSEEK_API_KEY"
 
-gh secret set MINIMAX_BASE_URL --repo owner/repo \
-  --body "https://api.minimax.io/anthropic"
+gh secret set DEEPSEEK_BASE_URL --repo owner/repo \
+  --body "https://api.deepseek.com/v1"
 ```
 
-`gh` performs the sealed-box encryption internally. Faster than the
-Python path but requires `gh auth login` first.
+### Migration from MiniMax (old secrets exist)
+After code migration (MiniMax M3 → DeepSeek V4 Flash), the repo
+may still have `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` but NOT
+`DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL`. The workflow references
+`secrets.DEEPSEEK_*` so it silently breaks (no error until run).
+
+📛 **실제 사례 (2026-07-20)**: MiniMax→DeepSeek migration 후 secrets
+미등록으로 review-bot이 3일간 Broken 상태. 다음으로 복구:
+
+```bash
+source ~/.hermes/.env 2>/dev/null
+echo "$DEEPSEEK_API_KEY" | gh secret set DEEPSEEK_API_KEY --repo mybotagent/hermes-pr-gate
+echo "${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}" | gh secret set DEEPSEEK_BASE_URL --repo mybotagent/hermes-pr-gate
+```
+
+**반드시 검증**: `gh secret list --repo owner/repo` 로 DEEPSEEK_* 가
+보이는지 확인. MINIMAX_* 잔여는 무해하나 정리하면 좋음.
 
 ## Required token scopes
 
@@ -80,7 +96,7 @@ Python path but requires `gh auth login` first.
 
 The two-token pattern we use (classic + fine-grained) means:
 - `GITHUB_TOKEN` (classic, `repo` scope): can register secrets ✅
-- `GH_TOKEN_V2` (fine-grained): cannot register secrets (no R&W
-  on Secrets resource) — 403 returned.
+- `GH_TOKEN_V2` (fine-grained, `workflow` scope): **cannot register secrets**
+  (no R&W on Secrets resource) — 403 returned.
 
-So always use the classic token for secret registration.
+So always use the classic token (`GITHUB_TOKEN`) for secret registration.

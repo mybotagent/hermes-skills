@@ -50,6 +50,13 @@ jobs:
           N="${{ inputs.pr_number || github.event.pull_request.number }}"
           if [ -z "$N" ]; then echo "::error::PR number required"; exit 1; fi
           echo "number=${N}" >> "$GITHUB_OUTPUT"
+          # Resolve head SHA for auto-merge v2 sha marker
+          if [ -z "${{ github.event.pull_request.head.sha }}" ]; then
+            HEAD_SHA=$(gh api "repos/${{ github.repository }}/pulls/${N}" --jq '.head.sha')
+          else
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          fi
+          echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Run review
         env:
@@ -58,5 +65,6 @@ jobs:
           DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
         run: |
           cd scripts && python3 review_pr.py

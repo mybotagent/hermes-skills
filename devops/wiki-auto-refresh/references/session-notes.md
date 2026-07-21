@@ -301,5 +301,24 @@
 **교훈:**
 - **tag audit 대량 발견 시 taxonomy 확장이 개별 수정보다 40x 효율적.** 판단 프레임워크 명문화 필요 → SKILL.md v1.14.0에 2c-bis 추가.
 - **SCHEMA.md 테이블 `||` double pipe 형식은 patch 오염 위험 높음.** 확실하지 않으면 전체 블록 rewrite.
-- **logs submodule index는 주기적으로 확인 필요** — 4개가 누락되어 있었음. SCHEMA.md lint에 포함되지 않는 영역이므로 별도 절차 필요 → SKILL.md v1.14.0에 2c-ter 추가.
+|- **logs submodule index는 주기적으로 확인 필요** — 4개가 누락되어 있었음. SCHEMA.md lint에 포함되지 않는 영역이므로 별도 절차 필요 → SKILL.md v1.14.0에 2c-ter 추가.
+
+## 2026-07-20 (W29 weekly-recap-draft 등록)
+
+**사전 점검 (3종 audit 스크립트):**
+- wikilink-audit.py: 68 files, 0 broken, 4 cross-domain (P7), 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: REAL MISSING 1건 — `raw/2026-W29-weekly-recap-draft.md`.
+
+**발견/적용:**
+- `raw/2026-W29-weekly-recap-draft.md` tracked 상태지만 index.md 미등록 — PAT B 형식으로 raw/ 섹션에 등록 (2026-W28과 동일한 형식).
+- YAML/diff/3종 audit 재검증 모두 통과.
+- 0 broken wikilink, 0 broken markdown link, 0 dead link, REAL MISSING 0 (등록 완료).
+
+**Stale:**
+- 30일+ 18개 (변동 없음 — analysis 5, architecture 3, code 1, infra 5, people 1, solopreneur 2).
+
+**Git:**
+- commit `1dd3728 auto-sync 2026-07-20 21:00 KST: register raw/2026-W29-weekly-recap-draft in index.md` (1 file, +1).
+- push 성공 (`ccd1952..1dd3728`).
 

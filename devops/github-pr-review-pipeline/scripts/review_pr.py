@@ -31,6 +31,7 @@ API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 BASE_URL = os.environ.get("DEEPSEEK_BASE_URL") or "https://api.deepseek.com/v1"
 PR_NUMBER = os.environ.get("PR_NUMBER", "")
 REPO = os.environ.get("REPO", "") or os.environ.get("GITHUB_REPOSITORY", "")
+HEAD_SHA = os.environ.get("HEAD_SHA", "")
 MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")
 MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "3500"))
 DIFF_MAX_CHARS = int(os.environ.get("DIFF_MAX_CHARS", "50000"))
@@ -155,7 +156,10 @@ def parse_verdict(text: str) -> str:
     return m.group(1) if m else ""
 
 
-def post_comment(pr_number: str, body: str) -> None:
+def post_comment(pr_number: str, body: str, head_sha: str = "") -> None:
+    """Post a comment on a PR, optionally stamping a SHA marker for auto-merge v2."""
+    if head_sha:
+        body += f"\n\n<!-- sha: {head_sha} -->"
     subprocess.run(
         ["gh", "pr", "comment", pr_number, "--body-file", "-"],
         input=body.encode(), check=True,
@@ -177,10 +181,8 @@ def main() -> None:
         flush=True,
     )
     if not diff.strip():
-        post_comment(
-            PR_NUMBER,
-            f"🤖 review-bot: PR #{PR_NUMBER} has no diff. **Verdict:** Approve",
-        )
+        body = f"🤖 review-bot: PR #{PR_NUMBER} has no diff. **Verdict:** Approve"
+        post_comment(PR_NUMBER, body, head_sha=HEAD_SHA)
         return
 
     prompt = build_prompt(meta, diff)
@@ -197,8 +199,8 @@ def main() -> None:
             "DeepSeek response — defaulted to Changes Requested)_"
         )
 
-    post_comment(PR_NUMBER, review)
-    print("==> Comment posted", flush=True)
+    post_comment(PR_NUMBER, review, head_sha=HEAD_SHA)
+    print(f"   comment posted (sha={HEAD_SHA[:12] or 'none'})", flush=True)
 
 
 if __name__ == "__main__":
