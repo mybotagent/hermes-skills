@@ -322,3 +322,32 @@
 - commit `1dd3728 auto-sync 2026-07-20 21:00 KST: register raw/2026-W29-weekly-recap-draft in index.md` (1 file, +1).
 - push 성공 (`ccd1952..1dd3728`).
 
+## 2026-07-22 (tag audit fix — ax/hr/pm-prd-fast 제거, taxonomy SCHEMA 등록, gmail-himalaya updated: 채움)
+
+**사전 점검 (4종 audit 스크립트):**
+- wikilink-audit.py: 68 files, 0 broken, 4 cross-domain (P7), 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: 등록 69 (PAT A+B+C), 실제 70. snapshot 예외 `raw/sync/...` 1건.
+- tag-audit.py: **4 unknown** — `ax` (1 file), `hr` (1 file), `pm-prd-fast` (1 file), `taxonomy` (1 file, SCHEMA.md).
+
+**발견/적용:**
+- 자동화 스크립트 `auto-fill-dates.py`가 P16 위반 — `updated:`가 이미 있는 38개 파일에 중복 `updated: 2026-07-21`을 추가. 사람이 직접 38개 revert. **=> auto-fill-dates.py 수정 필요 (기존 updated: 감지 후 skip).**
+- tag audit: `ax`/`hr` → `architecture/ssot-single-source-of-truth.md`에서 제거 (1-file niche tag, `ssot`+`data-architecture`+`organization`으로 충분).
+- tag audit: `pm-prd-fast` → `infra/project-harness.md`에서 제거 (1-file 외부 방법론명, `workflow`+`project-management`로 충분).
+- tag audit: `taxonomy` → SCHEMA.md taxonomy 루트 태그에 추가 (운영상 유효한 루트 태그).
+- genuine missing `updated:`: `infra/gmail-himalaya.md`에 `updated: 2026-07-06` 채움 (git log 기반, 16일 < 30일 threshold).
+
+**Verification:**
+- 4종 audit 모두 ✅ (unknown 0, broken 0).
+- YAML safe_load + git diff --check ✅ (whitespace error 없음).
+- 0 dead link, 0 real missing.
+
+**Stale (30일+ 명시적 날짜):**
+- 8개 (2026-07-20 기록 18개에서 감소 — 다수는 auto-fill로 "fresh"가 아니라, 이전 실행에서 이미 updated:가 있던 파일이 대부분).
+- 실제 stale: architecture 3 (hybrid-ai-stack 48d, hermes-vs-chatbot 44d, ssot 36d), solopreneur 2 (upwork 43d, freelancing 43d), infra 3 (higgsfield 44d, apify 36d, obsidian 47d). 수동 확인 보류.
+
+**Git:**
+- commit `cf2fe1a auto-sync 2026-07-22 21:00 KST: fix unknown tags (ax/hr/pm-prd-fast→remove, taxonomy→add), fill gmail-himalaya updated: date` (4 files, +4/-3).
+- push 성공 (`8771356..cf2fe1a`).
+- 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
+

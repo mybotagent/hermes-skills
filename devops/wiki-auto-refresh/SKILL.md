@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.15.0
+version: 1.16.0
 changelog:
+  - "1.16.0 (2026-07-22): (a) P18 확장: index.md → 모든 파일로 범위 확대, 세션 노트(2026-07-22) 사례 추가, 발생 원인·탐지 기준·처리 절차 전면 보강; (b) scripts/auto-fill-dates.py P16 위반 버그 수정 — has_updated 감지 regex가 multi-line frontmatter에서 작동하지 않던 문제 (frontmatter block 기반 검사로 개선)"
   - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
   - "1.14.0 (2026-07-19): (a) 2c-bis 신규 — SCHEMA.md Tag Audit (Lint ⑧) 절차 추가; taxonomy 확장 vs 개별 페이지 수정 판단 프레임워크 명시; (b) 2c-ter 신규 — logs submodule index 일치 확인 절차 추가; (c) SCHEMA.md 테이블 `||` double pipe 형식 patch 위험 경고 보강"
   - "1.12.0 (2026-07-13): (a) P16 신규 — 명시적 updated/created가 있으면 최근 git commit이 stale 판정을 덮어쓰면 안 됨; git log는 날짜 필드가 없는 페이지에만 fallback; (b) raw/sync/snapshot/archive는 immutable/예외이므로 updated 자동 삽입 금지; (c) `git ls-files -v`의 대문자 H는 정상 tracked/cached, 소문자 h만 assume-unchanged — P1 진단 오류 수정; (d) 날짜 자동 채움 뒤 YAML·diff·3종 audit 재검증 추가; (e) P17 신규 — index-md-audit PAT B+C가 markdown 링크 destination을 재매치해 AGENTS/SCHEMA를 dead link로 오탐하던 문제 수정"
@@ -742,29 +743,30 @@ for dir_name, files in candidates.items():
 
 **해결:** PAT B+C 루프에도 `if path in SKIP_FILES: continue`를 동일하게 적용한다. 서로 겹치는 정규식 패스는 각 패스에서 동일 exclusion invariant를 지켜야 한다.
 
-### P18. Patch 도구로 index.md 수정 시 포맷 오염 (2026-07-17 추가)
+### P18. patch 도구로 read_file 출력 복사 시 포맷 오염 — 모든 파일 (2026-07-17 추가, 2026-07-22 확장)
 
-**증상:** `patch` 도구로 index.md에 새 줄을 추가한 후, 기존/신규 줄 앞에 불필요한 `|` 문자가 삽입되어 마크다운 리스트 포맷이 깨짐. 예: `- [text](link)` → `|- [text](link)`. 실제 사례(2026-07-17): 6개 줄이 `||-`로 나타나며 리스트 구조 손상.
+**증상:** `patch` 도구로 파일을 수정할 때, `read_file` 출력에서 line number prefix를 함께 복사하여 old_string에 포함하면 fuzzy matching이 mis-align되어 기존/신규 줄 앞에 불필요한 `|` 문자가 삽입됨. 예: `- [text](link)` → `|- [text](link)`. 실제 사례(2026-07-17): index.md 6개 줄이 `||-`로 나타나며 리스트 구조 손상. (2026-07-22): `references/session-notes.md`에서 동일 패턴 재발 — 7개 줄에 선행 `|` 추가됨.
 
-**원인:**
-- `read_file` 도구의 출력 포맷 `LINE_NUM|CONTENT`에서 line number 뒤의 `|`는 **구분자**이지 내용의 일부가 아니다. `read_file` 출력을 보면 `57|- [foo]`처럼 표시되는데, 실제 파일 내용은 `- [foo]`(파이프 없음)이다. line number와 파이프를 함께 복사하여 patch old_string에 포함하면 fuzzy matching이 mis-align되어 불필요한 `|`를 삽입한다.
-- offset/limit pagination 경고(`"was last read with offset/limit pagination (partial view)"`)가 발생한 파일은 patch 시점에 전체 파일 문맥이 LLM에 없으므로, fuzzy match 정확도가 떨어진다.
-- index.md의 리스트 항목은 항상 `- `(dash + space)로 시작한다. `|- `(pipe + dash + space)는 존재하지 않는 패턴이다.
+**왜 발생해도 이상하지 않은가:** `read_file` 출력은 `57|- [foo]`처럼 표시되는데, `57|`는 line number + 구분자, 실제 내용은 `- [foo]`(파이프 없음). 사람이 복사할 때 line number와 파이프를 old_string에 포함시키기 쉬움. PDF/스크린샷/터미널 출력과 달리 **read_file은 line number와 내용을 단일 문자(`|`)로 분리하므로, 구분자가 내용에 없는 `|`를 삽입하는 방아쇠가 됨.** 모든 파일 유형(index.md, session-notes.md, 기타 .md)에서 동일한 위험이 있음.
 
-**처리 (안전 순서):**
-1. `read_file`에서 복사한 old_string/new_string을 작성할 때, **line number와 구분 파이프(`|`)를 반드시 제거**했는지 확인. read_file 출력 `57|- [foo]`에서 내용은 `- [foo]`(line number 57 + 구분자 | 뒤부터).
-2. patch 적용 후 즉시 `read_file`로 해당 섹션을 읽어 포맷 체크: 리스트 아이템이 `- `(dash space)로 시작하는지 확인. `|- `(pipe dash space)가 보이면 오염.
-3. 포맷 오염 발견 시 즉시 재-patch: `|- ` → `- `로 치환 (선행 파이프 제거).
-4. offset/limit pagination 경고 발생 시, 전체 파일을 `read_file(path)`(offset/limit 없이)로 다시 읽은 후 patch하는 것이 더 안전하다.
-5. **예방:** index.md 편집 시 old_string은 항상 raw file content 기준으로 작성 (read_file의 line number prefix 포함 금지). 확신이 없으면 `grep -n '패턴' index.md`로 정확한 내용을 먼저 확인.
+**P18이 발생하기 쉬운 패턴 (실제 사례 2건):**
+1. **(2026-07-17, index.md):** 새 줄을 patch로 추가했는데 fuzzy match가 old_string을 `57|- [foo]`(line number 포함)로 인식, 내용 앞에 불필요한 `|`를 보존하면서 6개 줄 `||-` 오염. `|- ` → `- ` 재-patch로 복구.
+2. **(2026-07-22, session-notes.md):** session-notes.md에 2026-07-22 섹션을 append할 때, old_string을 `323||- push 성공...`(3개 `|` — line num `323`, 구분자 `|`, 오염된 내용 `| - push 성공...`)으로 읽고 patch. 결과적으로 7개 새 줄에 `||` prefix가 붙음. 재-patch로 복구.
 
-**판단 기준 — 포맷 오염 vs 정상 포맷 (read_file 출력 해석법):**
-- `55|- [foo]` — line 55, content `- [foo]` ✓ 정상 (line number 55, 구분자 `|`, 내용 `- [foo]`)
-- `55||- [foo]` — line 55, content `|- [foo]` ✗ 오염 (line number 55, 구분자 `|`, 내용이 `|- [foo]`)
+**P18 탐지 기준 (read_file 출력 해석법):**
+- `55|- [foo]` — line 55, content `- [foo]` ✓ 정상 (line number 55, 구분자 `|`, 내용 `- [foo]` — 파이프 없음)
+- `55||- [foo]` — line 55, content `|- [foo]` ✗ 오염 (구분자 `|` 뒤 내용 자체가 `|- `로 시작)
 - `55|  - [foo]` — line 55, content `  - [foo]` ✓ 정상 (nested list, 의도된 들여쓰기)
 - 구분: **line number 뒤 첫 `|` 이후의 텍스트에 `|- ` 패턴이 보이면 오염**
 
-**실제 사례 (2026-07-17):** index.md에 2개 줄을 추가하는 patch가 fuzzy matching 오염으로 6개 줄에 선행 `|`를 추가함. `read_file`로 발견 후 2회 patch로 복구 완료. commit `d36802c`.
+**처리 (안전 순서):**
+1. **old_string 작성 시 line number와 구분 파이프 절대 포함 금지.** read_file 출력 `57|- [foo]`의 old_string은 `- [foo]`여야 함. 확신이 없으면 `grep -n '패턴' file`로 raw content 먼저 확인.
+2. patch 적용 후 즉시 `read_file`로 수정한 섹션을 읽고 **`|- `(pipe dash space) 패턴 스캔**. 보이면 즉시 오염.
+3. 포맷 오염 발견 시 즉시 재-patch: `|- ` → `- `로 치환 (선행 파이프 제거).
+4. offset/limit pagination 경고 발생 시, 전체 파일을 `read_file(path)`(offset/limit 없이)로 다시 읽은 후 patch하는 것이 더 안전함.
+5. **확실하지 않으면 `grep -n '패턴' file` 로 raw line content 확인 후 old_string 작성.**
+
+**P18의 범용성:** 이 pitfall은 index.md에 국한되지 않음. session-notes.md, references/, 또는 read_file 출력에서 복사한 old_string으로 patch하는 **모든 파일**에서 발생 가능. 항상 line number + `|` 구분자를 제거했는지 확인할 것.
 
 ## 참고 자료
 - 위키 구조/스키마: `wiki/AGENTS.md`, `wiki/SCHEMA.md`

@@ -63,13 +63,18 @@ for f in sorted(wiki_root.rglob('*.md')):
 
     text = f.read_text(encoding='utf-8')
 
-    # Check if any date field exists
-    has_updated = bool(re.search(
-        r'^---\n.*?\nupdated:\s*\d{4}-\d{2}-\d{2}\n', text, re.MULTILINE
-    ))
-    has_created = bool(re.search(
-        r'^---\n.*?\ncreated:\s*\d{4}-\d{2}-\d{2}\n', text, re.MULTILINE
-    ))
+    # Extract frontmatter block first (between --- and ---)
+    fm_match = re.match(r'^---\s*\n(.*?)\n---', text, re.DOTALL)
+    has_updated = False
+    has_created = False
+    if fm_match:
+        frontmatter = fm_match.group(1)
+        has_updated = bool(re.search(
+            r'^updated:\s*\d{4}-\d{2}-\d{2}\s*$', frontmatter, re.MULTILINE
+        ))
+        has_created = bool(re.search(
+            r'^created:\s*\d{4}-\d{2}-\d{2}\s*$', frontmatter, re.MULTILINE
+        ))
     has_inline = bool(re.search(
         r'\*\*Last updated:\*\*\s*\d{4}-\d{2}-\d{2}', text
     ))
