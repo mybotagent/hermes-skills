@@ -322,6 +322,27 @@
 - commit `1dd3728 auto-sync 2026-07-20 21:00 KST: register raw/2026-W29-weekly-recap-draft in index.md` (1 file, +1).
 - push 성공 (`ccd1952..1dd3728`).
 
+## 2026-07-26 (주간 정리 — W30 등록, 중복 raw/sync 삭제, memory 비활성화 확인)
+
+**사전 점검:**
+- Memory tool: 환경에서 **비활성화됨** (config disabled) — 정리 불필요. wiki-architecture pitfall 8.5 재확인.
+- User profile: 동일하게 비활성화 — 정리 불필요.
+
+**발견/적용:**
+- INDEX.md 누락: `raw/2026-W30-weekly-recap-draft.md` — 파일은 존재하나 index.md raw/ 섹션에 미등록. PAT B 형식으로 등록 (W28/W29와 동일 패턴).
+- 중복 파일: `raw/sync/2026-07-02-2109-a-step-3-watcher--.md` — frontmatter에 `status: duplicate` 명시되어 있고, `architecture/memory-snapshots/`에 canonical 버전 존재. **삭제 완료** + 빈 `raw/sync/` 디렉토리 정리.
+- Patch 포맷 이슈: index.md의 raw/ 섹션에 W30을 추가할 때 `- W29-weekly-recap-draft`가 2회 등장해 "Found 2 matches" 오류. 해결: 앞선 `memory-pipeline-design` 라인을 old_string에 포함시켜 unique 매치 확보. (P18 관련 — read_file 출력 line number 파싱 주의.)
+
+**Wiki 상태 (2026-07-26):**
+- 133개 wiki 파일 (logs + raw + subagents-library 포함). infra/ 21개 페이지 — index.md와 100% 일치.
+- Memory: 비활성화 (추가 정리 불필요).
+- `raw/sync/` duplicate: 해소 완료 (이전 2026-07-19 세션에서 발견, 1주간 방치 후 금일 삭제).
+
+**교훈:**
+- 주간 WXX draft 등록 패턴이 3주째 반복됨 (W28→W29→W30). raw/ 섹션의 PAT B 등록은 안정적으로 작동.
+- `raw/sync/` duplicate는 2026-07-19에 발견됐으나 삭제되지 않고 1주 방치됨. **주의: 발견 시 즉시 삭제할 것** — 발견-처리 간격이 길어질수록 다른 cron이 같은 duplicate를 다시 찾아내는 중복 노동이 발생.
+- Memory 비활성화는 이 cron 환경의 고정 특성. 주간 정리에서 memory 부분은 항상 skip.
+
 ## 2026-07-22 (tag audit fix — ax/hr/pm-prd-fast 제거, taxonomy SCHEMA 등록, gmail-himalaya updated: 채움)
 
 **사전 점검 (4종 audit 스크립트):**
