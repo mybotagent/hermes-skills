@@ -372,3 +372,22 @@
 - push 성공 (`8771356..cf2fe1a`).
 - 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
 
+## 2026-07-27 (로그 인덱스 등록 1건)
+
+**사전 점검 (5종 audit 스크립트):**
+- wikilink-audit.py: 68 files, 0 broken, 4 cross-domain (P7, 의도된 외부 참조), 0 P9/P10.
+- markdown-link-audit.py: 0 broken, P11 0건.
+- index-md-audit.py: 등록 70 (PAT A+B+C), 실제 70. 0 real missing.
+- tag-audit.py: 145 taxonomy, 133 used, **0 unknown** ✅.
+- auto-fill-dates.py: 0 filled, 7 skipped (raw/ immutable).
+
+**발견/적용:**
+- audit 모두 clean. 변경 사항 없음 (위키 콘텐츠 차원).
+- logs submodule: `2026/2026-07-26-0700-weekly-cleanup.md` untracked → logs/index.md 등록.
+- logs submodule commit + push (e1c50c3, master).
+
+**Git:**
+- commit `cb66fee auto-sync 2026-07-27 21:00 KST — logs submodule bump (weekly-cleanup log)` (1 file, logs pointer).
+- push 성공 (`5cd1104..cb66fee`).
+- 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
+

@@ -1,8 +1,11 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.16.0
+version: 1.17.0
 changelog:
+  - "1.16.0 (2026-07-22): (a) P18 확장: index.md → 모든 파일로 범위 확대, 세션 노트(2026-07-22) 사례 추가, 발생 원인·탐지 기준·처리 절차 전면 보강; (b) scripts/auto-fill-dates.py P16 위반 버그 수정 — has_updated 감지 regex가 multi-line frontmatter에서 작동하지 않던 문제 (frontmatter block 기반 검사로 개선)"
+  - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
+  - "1.17.0 (2026-07-27): (a) 2c-ter logs submodule index 검사 강화 — `*.md` glob이 서브디렉토리(예: 2026/)를 놓치는 문제 수정, `find` 재귀 검사 추가; 실제 사례(2026/2026-07-26-0700-weekly-cleanup.md) 문서화"
   - "1.16.0 (2026-07-22): (a) P18 확장: index.md → 모든 파일로 범위 확대, 세션 노트(2026-07-22) 사례 추가, 발생 원인·탐지 기준·처리 절차 전면 보강; (b) scripts/auto-fill-dates.py P16 위반 버그 수정 — has_updated 감지 regex가 multi-line frontmatter에서 작동하지 않던 문제 (frontmatter block 기반 검사로 개선)"
   - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
   - "1.14.0 (2026-07-19): (a) 2c-bis 신규 — SCHEMA.md Tag Audit (Lint ⑧) 절차 추가; taxonomy 확장 vs 개별 페이지 수정 판단 프레임워크 명시; (b) 2c-ter 신규 — logs submodule index 일치 확인 절차 추가; (c) SCHEMA.md 테이블 `||` double pipe 형식 patch 위험 경고 보강"
@@ -257,24 +260,39 @@ SCHEMA.md lint ⑧ (tag audit)는 SCHEMA.md taxonomy에 등록되지 않은 태�
 
 #### 2c-ter. Logs submodule index 일치 확인
 
-`logs/` 서브모듈에 root-level `.md` 파일이 새로 추가되었을 때(예: self-heal 로그), `logs/index.md`에도 반영되었는지 확인:
+`logs/` 서브모듈에 `.md` 파일이 새로 추가되었을 때(예: self-heal 로그), `logs/index.md`에도 반영되었는지 확인:
 
 ```bash
 cd ~/.hermes/wiki/logs
+
+# root-level 파일 검사
 for f in *.md; do
   if [ "$f" != "index.md" ] && [ "$f" != "README.md" ] && ! grep -q "$f" index.md; then
-    echo "MISSING FROM LOGS INDEX: $f"
+    echo "MISSING FROM LOGS INDEX (root): $f"
+  fi
+done
+
+# ⚠ 서브디렉토리(예: 2026/) 파일도 검사 — *.md glob은 현재 디렉토리만 보므로
+#    find로 재귀 검색. grep은 basename(rather than full path)으로 매치.
+for f in $(find . -name '*.md' -not -path './index.md' -not -path './README.md' -not -path './.git/*' | sort); do
+  basename=$(basename "$f")
+  if ! grep -q "$basename" index.md 2>/dev/null; then
+    echo "MISSING FROM LOGS INDEX (subdir): $f"
   fi
 done
 ```
 
-root-level 로그 파일이 index.md에 누락된 경우:
+**주의:** `logs/` 레포는 연도별 서브디렉토리(예: `2026/`)에 로그 파일을 저장함. `*.md` glob만으로는 이 파일들을 잡지 못함. 반드시 `find`를 함께 사용할 것. `git status --porcelain`로 dirty submodule을 먼저 감지한 후, 변경된 파일만 집중 검사하는 것도 효율적인 방법.
+
+로그 파일이 index.md에 누락된 경우:
 1. 파일 mtime/content 확인 → 설명 작성
 2. `logs/index.md`에 적절한 섹션에 항목 추가 (역시간순 정렬 유지)
 3. logs 서브모듈 내부에서 git add/commit/push (`git push origin HEAD:master`)
 4. parent wiki에서 submodule pointer commit: `git add logs && git commit -m "wiki: bump logs" && git push`
 
 **실제 사례 (2026-W29):** `2026-06-10-2115.md`, `2026-07-17-selfheal-discord-thread.md`, `2026-07-17-selfheal-fundamental-fix.md`, `hermes-logs-hub.md` 4개가 logs/index.md에 누락되어 있음. 자체 로그는 root-level flat 구조라 logs/ 내 index.md 관리가 필요.
+
+**실제 사례 (2026-07-27):** `2026/2026-07-26-0700-weekly-cleanup.md`가 logs/index.md에 누락. `find` 검사로 발견. root-level `*.md` glob으로는 잡히지 않음 (서브디렉토리). logs/index.md July 섹션 최상단에 추가 후 commit `e1c50c3` (hermes-logs master). parent commit `cb66fee` (hermes-wiki main).
 
 ### 3. Git Push (GitHub 연동)
 
