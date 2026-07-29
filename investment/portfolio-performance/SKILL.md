@@ -17,7 +17,9 @@ description: Daily paper portfolio performance monitoring — reads portfolio al
 | `scripts/pipeline_healthcheck.py` | 전체 파이프라인 6종 검증 (파일/JSON/CSV/참조/Vercel) |
 | `scripts/collect_consensus.py` | 애널리스트 컨세서스 데이터 수집 (EPS/매출/목표가) — yfinance + FinanceDataReader, recent_targets.json calibration 포함 |
 | `scripts/collect_briefings.py` | 오전/오후 브리핑 마크다운 파일 → `today_briefings.json` — 대시보드 시황 브리핑 패널용 |
-| `scripts/collect_recent_targets.py` | tradingAgents-style recency-weighted target price 수집 → `recent_targets.json` — calibration_factor + per-source references |
+| `scripts/collect_recent_targets.py` | tradingAgents-style recency-weighted target price 수집 → `recent_targets.json` — calibration_factor + per-source references. Tier A(web analyst reports) weight_base=**5.0** vs Tier B(yfinance) 1.0 — 웹 출처가 5배 더 높은 가중치로 목표주가 결정 |  
+| `scripts/fetch_kr_stocks.py` | 네이버 Polling API → 한국주 현재가/전일종가/등락률(±). watchlist.json 단일진실공급원(SSoT)으로 코드 로드. **Naver `cr` 필드는 절대값이므로 nv-pcv 비교로 부호 직접 계산** |
+| `scripts/market_calendar.py` | KR(18개)+US(10개) 공휴일 DB + 장중/휴장/장마감 판단. `is_holiday()` / `last_trading_day()` / `market_status()` 제공 |
 | `scripts/compute_portfolio_target.py` | 매크로 추천 → 보유종목 실제 비중 매핑 |
 | `data/portfolio_dashboard.html` | Chart.js 기반 모바일-퍼스트 대시보드 |
 | `data/paper_tracker_daily.csv` | 일일 수익률 시계열 |
@@ -684,7 +686,21 @@ try와 catch 개수가 일치해야 함. 일치하지 않으면 catch 누락.
 - 기존 catch 블록을 재활용하지 말 것
 - catch 메시지는 각 기능별로 구분 (예: `console.log('briefing:',e.message)`)
 
-### 50. 🔴 tradingAgents-style Recency-Weighted Target Price Calibration (2026-07-17)
+### 51. 🔴🔴 "결과가 아니라 과정을 수정" — Display patch 금지, Pipeline-layer fix 우선 (2026-07-17)
+
+**사용자 교정**: 브리핑의 한국주 등락률 부호가 반전됐을 때, 대시보드 HTML만 고치려 하자 "결과를 업데이트하지 말고 과정을 업데이트해" 라고 지적받음.
+
+**원칙**: 문제 발견 시 수정 우선순위:
+1. **Pipeline-layer** (scripts/*.py) — 데이터 생성 파이프라인 자체 수정 (fetch_kr_stocks.py, market_calendar.py 등)
+2. **Cron-layer** (SKILL.md, prompt) — 크론이 데이터를 올바르게 생성하도록 skill/prompt 수정
+3. **Display-layer** (HTML/JS) — 마지막 수단, 오늘 표시용 임시 패치로만 사용
+
+**Naver Polling 사례**:
+- ❌ Display patch: 대시보드 HTML의 +8.77%를 -8.77%로 수정 (임시방편)
+- ✅ Pipeline fix: `fetch_kr_stocks.py`에서 `nv-pcv` 비교로 ±부호 계산 → 크론이 올바른 데이터 생성
+- ✅ Skill update: `fair-value-portfolio` Pitfall 50에 "raw Naver API 직접 호출 금지" 추가
+
+### 52. 🔴 tradingAgents-style Recency-Weighted Target Price Calibration (2026-07-17)
 
 **스크립트**: `scripts/collect_recent_targets.py` — v2에 웹서치 기반 개별 애널리스트 리포트 포함
 

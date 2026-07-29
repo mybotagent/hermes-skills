@@ -80,7 +80,6 @@ When today is a holiday:
 |:-------|:------------|
 | `collect_briefings.py` | Shows holiday note when no briefing found |
 | `portfolio_dashboard.html` | JS inline holiday map for US/KR status |
-| (future) `paper_tracker.py` | Should use last_trading_day for holiday ref dates |
 
 ## 🔴 Pitfall: Naver Polling `cr` sign on holidays
 
@@ -88,3 +87,11 @@ The Naver Polling API `cr` field is always absolute (positive). On a holiday, th
 
 **Always use**: `cd ~/trade-pipeline && python3 scripts/fetch_kr_stocks.py`
 **Never use**: raw `polling.finance.naver.com` curl/python calls.
+
+### Ticker code SSoT (Single Source of Truth)
+
+`fetch_kr_stocks.py` reads ticker codes from `watchlist.json`, NOT from a hardcoded list. The HD현대일렉 case demonstrated why:
+- ❌ Old hardcoded code **298040** → 효성중공업 (wrong company!)
+- ✅ watchlist.json code **267260.KS** → HD현대일렉트릭 (correct)
+
+**Rule**: Any new script that needs Korean stock ticker codes must read from `watchlist.json`. No exception.

@@ -8,7 +8,7 @@ yfinance info (targetMeanPrice / Median / High / Low / n_analysts)
   + Google News RSS (recent analyst actions, 30일, 3 queries per ticker)
   ↓
 collect_recent_targets.py
-  ├── Multi-tier Source Registry (A=3, B=1, C=0.5)
+  ├── Multi-tier Source Registry (A=5.0, B=1.0, C=0.5)
   ├── src_yfinance_targets()        — yfinance consensus targets
   ├── src_web_analyst_targets()     — Google News RSS로 개별 analyst 리포트 수집 (v2)
   ├── _extract_target_price()       — $/₩ 추출 + market cap filter + price sanity
@@ -178,7 +178,20 @@ Google News RSS는 `"Thu, 09 Jul 2026 13:47:11 GMT"` 형식 반환.
 `ANALYST_FIRMS` 리스트에 있는 firm name만 인식. 새로운 analyst firm이 등장하면 업데이트 필요.
 Firm 이름은 긴 순으로 정렬하여 짧은 이름(예: "Citi" vs "Citigroup")이 먼저 매칭되지 않도록 `sorted(key=len, reverse=True)`.
 
-### 4. 🔴 KR ticker web search limitation
+### 5. 🔴🔴 Web source weight domination (2026-07-17)
+
+사용자 요청: "목표주가는 최근에서 웹에서 조사한 것이 제일 가중치가 높아야해"
+
+Tier A weight_base를 **3.0 → 5.0**으로 상향. recency weight decay도 완화(`max(0.1, 1.0-day/30)` → `max(0.3, 1.0-day/40)`).
+
+**효과 (MU 기준)**: 웹 total_weight=7.3 vs yfinance=2.4 = **3.1x** ← 웹 출처 3배 우세.
+
+### 6. 🔴🔴 Ticker code SSoT — watchlist.json만 사용 (2026-07-17)
+
+HD현대일렉 코드가 `298040`(효성중공업)으로 잘못 하드코딩됨. 올바른 코드는 `267260`.
+
+**규칙**: 새로운 스크립트에 KR ticker 코드를 하드코딩하지 말 것. 반드시 `watchlist.json`에서 읽을 것.
+`fetch_kr_stocks.py`가 SSoT 패턴의 기준 구현체.
 한국주는 English Google News RSS에서 analyst coverage 거의 없음.
 종목 수 15개 중 4개(LG이노텍·현대차·기아·에이피알)는 web source 0개.
 → web source 0개여도 yfinance baseline은 유지, calibration factor = 1.0.

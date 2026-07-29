@@ -1,4 +1,5 @@
 ---
+archived: true
 name: airtable
 description: Airtable REST API via curl. Records CRUD, filters, upserts.
 version: 1.1.0

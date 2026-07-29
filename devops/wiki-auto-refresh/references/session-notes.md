@@ -372,22 +372,31 @@
 - push 성공 (`8771356..cf2fe1a`).
 - 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
 
-## 2026-07-27 (로그 인덱스 등록 1건)
+## 2026-07-28 (index.md P18 복구 + 신규 infra 페이지 등록 + SCHEMA taxonomy 확장 + logs submodule 7건 등록)
 
 **사전 점검 (5종 audit 스크립트):**
-- wikilink-audit.py: 68 files, 0 broken, 4 cross-domain (P7, 의도된 외부 참조), 0 P9/P10.
-- markdown-link-audit.py: 0 broken, P11 0건.
-- index-md-audit.py: 등록 70 (PAT A+B+C), 실제 70. 0 real missing.
-- tag-audit.py: 145 taxonomy, 133 used, **0 unknown** ✅.
-- auto-fill-dates.py: 0 filled, 7 skipped (raw/ immutable).
+- wikilink-audit.py: 70 files, 0 broken, 4 cross-domain (P7), 0 P9/P10 ✅
+- markdown-link-audit.py: 0 broken, P11 0건 ✅
+- index-md-audit.py: 등록 127 (PAT A+B+C), 실제 72. submodule logs/subagents-library dead link만 (의도된 제외). **0 real missing** ✅
+- tag-audit.py: 145 taxonomy, 137 used, **4 unknown** ⚠️ (`docker`, `management`, `self-improvement`, `meta` in 2 new infra files)
+- auto-fill-dates.py: 0 filled (모든 existing 페이지에 updated: 있음)
 
 **발견/적용:**
-- audit 모두 clean. 변경 사항 없음 (위키 콘텐츠 차원).
-- logs submodule: `2026/2026-07-26-0700-weekly-cleanup.md` untracked → logs/index.md 등록.
-- logs submodule commit + push (e1c50c3, master).
+- **P18 pipe 오염**: `index.md` lines 54-55 `||- [hermes-config-sync]`, `||- [hermes-management]` → `|- `로 복구. `infra/cron-jobs.md` lines 405-406 동일 오염 복구.
+- **잘못된 submodule 항목 제거**: index.md 하단에 `logs/` 및 `subagents-library/` 55개 항목이 "자동 추가"로 대량 삽입됨 (self_hermes.py 추정). 서브모듈이므로 전부 제거.
+- **신규 untracked 등록**: `infra/hermes-management.md` (Docker 인프라 저장소) + `infra/self-hermes.md` (Self-Improving Hermes Engine) — index.md infra/ 섹션에 정식 등록.
+- **SCHEMA.md taxonomy 확장 (+4):** `docker`, `management`, `self-improvement`, `meta`를 infra row에 추가.
+- **logs submodule**: 7개 July 7 로그 파일이 logs/index.md에 미등록 (1734-wiki-lint-8-run ~ 2400-pr-2tier-policy). 역시간순 정렬하여 July 테이블에 추가 + commit/push.
 
 **Git:**
-- commit `cb66fee auto-sync 2026-07-27 21:00 KST — logs submodule bump (weekly-cleanup log)` (1 file, logs pointer).
-- push 성공 (`5cd1104..cb66fee`).
-- 최종 local/remote SHA 일치, ahead/behind 0/0, working tree clean, stash empty.
+- hermes-wiki (main): commit `b59c603` (5 files, +175/-1 — index.md/cron-jobs P18 fix + SCHEMA taxonomy + 2 new infra pages).
+- hermes-wiki (main) 2nd: commit `5e5e06a` (logs submodule pointer bump).
+- hermes-logs (master): commit `b45a091` (logs/index.md +7 rows).
+- push 성공 (main + master). 최종 up-to-date.
+
+**Wiki 상태 (2026-07-28):**
+- 72개 wiki 페이지 (submodule 제외), index.md 등록 72 (1:1 일치).
+- 0 broken wikilink, 0 broken markdown link, 0 orphan.
+- 4 cross-domain (P7) 정상 유지.
+- SCHEMA.md taxonomy: 149 tags (145→+4), 0 unknown ✅.
 

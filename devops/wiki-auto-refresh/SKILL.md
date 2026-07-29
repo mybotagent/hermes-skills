@@ -1,9 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.17.0
+version: 1.18.0
 changelog:
-  - "1.16.0 (2026-07-22): (a) P18 확장: index.md → 모든 파일로 범위 확대, 세션 노트(2026-07-22) 사례 추가, 발생 원인·탐지 기준·처리 절차 전면 보강; (b) scripts/auto-fill-dates.py P16 위반 버그 수정 — has_updated 감지 regex가 multi-line frontmatter에서 작동하지 않던 문제 (frontmatter block 기반 검사로 개선)"
+  - "1.18.0 (2026-07-28): (a) P19 신규 — 외부 프로세스(self_hermes.py)가 index.md 하단에 서브모듈 항목을 대량 추가하는 패턴 탐지/복구 절차; (b) P18 확장 — cross-file 동시 발생 사례 추가, 모든 .md 파일 grep 스캔 절차 명시; (c) Taxonomy 확장 절차 2c-bis 보강 — post-edit 파이프 포맷 grep 검증 필수 단계 추가; (d) SCHEMA.md 테이블 포맷 오류 수정 (double pipe → single pipe)"
   - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
   - "1.17.0 (2026-07-27): (a) 2c-ter logs submodule index 검사 강화 — `*.md` glob이 서브디렉토리(예: 2026/)를 놓치는 문제 수정, `find` 재귀 검사 추가; 실제 사례(2026/2026-07-26-0700-weekly-cleanup.md) 문서화"
   - "1.16.0 (2026-07-22): (a) P18 확장: index.md → 모든 파일로 범위 확대, 세션 노트(2026-07-22) 사례 추가, 발생 원인·탐지 기준·처리 절차 전면 보강; (b) scripts/auto-fill-dates.py P16 위반 버그 수정 — has_updated 감지 regex가 multi-line frontmatter에서 작동하지 않던 문제 (frontmatter block 기반 검사로 개선)"
@@ -73,6 +73,26 @@ cat ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md | tail
 - audit 스크립트가 BROKEN/MDEXT/BARENAME을 자동 분류/수정하면 SKILL.md 본문의 동일 fix 코드를 다시 돌릴 필요 없음.
 
 **execute_code fallback (2026-07-07 검증):** Hermes cron 모드에서는 `execute_code` 도구가 "BLOCKED: ... Cron jobs run without a user present to approve it." 으로 거부됨. → **반드시 위 `python3 <script>` 직접 실행으로** audit 수행. `execute_code`에 의존하지 말 것.
+
+### 5. Rogue submodule entry 검사 (2026-07-28 추가)
+
+`self_hermes.py` 또는 다른 외부 자동화 프로세스가 **index.md 하단에 서브모듈(`logs/`, `subagents-library/`) 항목을 대량으로 추가**하는 패턴이 발견됨.
+
+```bash
+cd ~/.hermes/wiki
+
+# index.md 하단에 "자동 추가" 레이블이 붙은 서브모듈 항목이 있는지 확인
+tail -30 index.md | grep -E '자동 추가|subagents-library|logs/'
+# 발견 시: 해당 블록 전체를 제거 (서브모듈은 index 미등록 원칙)
+
+# 또는 index.md 전체에서 submodule 경로를 포함한 markdown link 패턴 검사
+grep -nE '\(subagents-library/|\(logs/' index.md
+# 위 패턴이 있으면 서브모듈 경로가 index.md에 잘못 등록된 것 → 전부 제거
+```
+
+**실제 사례 (2026-07-28):** `self_hermes.py`가 index.md 하단에 logs/ (49개) + subagents-library/ (5개) + self-hermes 1개 총 55개 항목을 "자동 추가 (2026-07-28)" 레이블로 대량 삽입. 서브모듈 경로는 전부 제거, `infra/self-hermes.md`는 infra 섹션에 정식 재등록.
+
+**이 검사는 pre-flight에 포함할 것** — index.md audit(index-md-audit.py)은 정규식 매치 기반이므로 `logs/` 같은 submodule 경로가 등록되어 있어도 broken으로 판단하지 않음. 별도 grep으로 조기 발견 필요.
 
 ## 실행 흐름
 
@@ -254,9 +274,19 @@ SCHEMA.md lint ⑧ (tag audit)는 SCHEMA.md taxonomy에 등록되지 않은 태�
 1. 발견된 미등록 태그를 카운트 (file별, 디렉토리별 집계)
 2. 각 태그를 SCHEMA.md taxonomy의 적절한 운영/리서치 카테고리에 매핑
 3. 기존 행에 추가하거나 새 행 생성 (가급적 기존 행 확장)
-4. `patch` 도구로 SCHEMA.md 수정 — **테이블 파이프 포맷 주의** (SCHEMA.md 테이블은 `||` double pipe 형식 행이 있음; patch로 수정 시 `|||` triple pipe 포맷 깨짐 위험. 확실하지 않으면 전체 테이블 블록 rewrite)
-5. lint 재실행으로 tag audit ✅ 확인
-6. `git commit`에 "SCHEMA.md tag taxonomy 확장: +N개 태그" 명시
+4. `patch` 도구로 SCHEMA.md 수정 — **테이블 파이프 포맷 주의** (SCHEMA.md 테이블은 `|` single pipe 형식; patch로 수정 시 `||` double pipe 또는 `|||` triple pipe로 오염 위험. 확실하지 않으면 전체 테이블 블록 rewrite)
+5. **필수 post-edit 파이프 검증** — patch 적용 직후 다음 명령으로 포맷 정합성 확인:
+   ```bash
+   # 수정한 행의 선행 파이프 개수 확인 (기존 행과 동일해야 함)
+   grep -n '^|`infra`' ~/.hermes/wiki/SCHEMA.md | head -3
+   # 출력이 '^||` 로 시작하면 오염 → 재-patch로 선행 파이프 정리
+   # 정상: "| \`infra\`, ..."  (single pipe)
+   # 오염: "|| \`infra\`, ..." (double pipe) 또는 "||| \`infra\`, ..." (triple pipe)
+   ```
+6. lint 재실행으로 tag audit ✅ 확인
+7. `git commit`에 "SCHEMA.md tag taxonomy 확장: +N개 태그" 명시
+
+**파이프 오염 복구 (발생 시):** `|| \`infra\`` → `| \`infra\`` (replace_all=true로 일괄 치환). 단, 다른 `||` 패턴(예: 테이블 헤더 `|:-----|`)과 충돌하지 않도록 old_string에 충분한 컨텍스트 포함.
 
 #### 2c-ter. Logs submodule index 일치 확인
 
@@ -784,7 +814,45 @@ for dir_name, files in candidates.items():
 4. offset/limit pagination 경고 발생 시, 전체 파일을 `read_file(path)`(offset/limit 없이)로 다시 읽은 후 patch하는 것이 더 안전함.
 5. **확실하지 않으면 `grep -n '패턴' file` 로 raw line content 확인 후 old_string 작성.**
 
-**P18의 범용성:** 이 pitfall은 index.md에 국한되지 않음. session-notes.md, references/, 또는 read_file 출력에서 복사한 old_string으로 patch하는 **모든 파일**에서 발생 가능. 항상 line number + `|` 구분자를 제거했는지 확인할 것.
+**P18의 범용성:** 이 pitfall은 index.md에 국한되지 않음. session-notes.md, references/, 또는 read_file 출력에서 복사한 old_string으로 patch하는 **모든 파일**에서 발생 가능. 항상 line number + `|` 구분자를 제거했을 것 확인할 것.
+
+**P18 cross-file 동시 발생 (2026-07-28):** 이번 실행에서 P18 pipe 오염이 **동시에 2개 파일**(`index.md` + `infra/cron-jobs.md`)에서 발견됨. 둘 다 같은 외부 프로세스(`self_hermes.py`)에 의해 같은 실행에서 오염된 것으로 추정. P18 발견 시 **모든 .md 파일**을 grep으로 스캔할 것: `grep -rn '^|- ' ~/.hermes/wiki/*.md`.
+
+### P19. 외부 프로세스에 의한 index.md 서브모듈 항목 오염 (2026-07-28 추가)
+
+**증상:** `git status`에 M index.md + untracked infra 파일들이 보이는데, index.md 하단을 보면 `- [Subagents Library Hub](subagents-library/...)`, `- [2026 07 07 ...](logs/...)` 같은 항목이 `— 자동 추가 (YYYY-MM-DD)` 레이블과 함께 50개 이상 대량으로 추가되어 있음.
+
+**원인:** `self_hermes.py` 또는 다른 자동화 프로세스가 `index.md`에 서브모듈(`logs/`, `subagents-library/`)의 모든 파일을 스캔해 등록함. 서브모듈은 별도 레포이므로 wiki index에 등록하지 않는다는 원칙을 위반.
+
+**탐지 기준:**
+1. index.md 하단에 `— 자동 추가 (YYYY-MM-DD)` 패턴이 있으면 P19 의심
+2. `logs/` 또는 `subagents-library/` 경로가 index.md 내 markdown link에 포함되어 있으면 P19
+3. P19가 index.md를 오염시킨 동시에 P18(`|- ` pipe corruption)도 `infra/cron-jobs.md`에서 발생할 가능성 높음 — **P18 검사와 P19 검사를 동시에 수행할 것**
+
+**처리 (안전 순서):**
+```bash
+# 1) 오염된 서브모듈 항목 전체 식별
+grep -n '자동 추가' ~/.hermes/wiki/index.md
+
+# 2) 서브모듈 경로 블록 제거 (logs/ + subagents-library/)
+#    patch 도구로 "서브모듈 블록 시작"부터 "끝"까지 한 번에 제거
+#    (P18 주의: old_string에 line number 포함 금지)
+
+# 3) 같은 실행에서 P18 pipe 오염도 함께 복구
+grep -rn '^|- ' ~/.hermes/wiki/*.md
+# 발견 시: |- → - 로 치환
+
+# 4) 정상 신규 파일(infra/ 아래 등)은 infra 섹션에 적절히 재등록
+#    서브모듈 블록에 섞여 있더라도 제거 대상이 아님
+```
+
+**실제 사례 (2026-07-28):** `self_hermes.py` 실행 후:
+- index.md: P18 pipe 오염 2줄 (`||- hermes-config-sync`, `||- hermes-management`) + 서브모듈 55개 항목 (logs/ 49개 + subagents-library/ 5개 + self-hermes 1개)
+- infra/cron-jobs.md: P18 pipe 오염 2줄 (`||- wiki/index.md`, `||- bfe5821b5e27`)
+- 복구: 서브모듈 54개 제거 + self-hermes 항목만 infra 섹션에 정식 이동 + P18 4줄 모두 복구
+- commit `b59c603` (5 files, +175/-1)
+
+**P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 
 ## 참고 자료
 - 위키 구조/스키마: `wiki/AGENTS.md`, `wiki/SCHEMA.md`

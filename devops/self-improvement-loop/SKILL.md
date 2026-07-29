@@ -110,6 +110,58 @@ T₀ = cron trigger (주 1회 또는 월 1회)
 
 ## Subagent 2종 정의 → see `templates/critic.md` and `templates/redefine.md`
 
+## 🆕 Self-Improving Hermes Engine (2026-07-28)
+
+**자체 개선을 위한 Python no_agent cron**. 기존 subagent 기반 이론적 프레임워크와 달리, **deterministic rule-based 실행**으로 Phase 3(EXECUTE) + Phase 4(MEASURE)를 실제로 자동화.
+
+### 단일 공식: OBSERVE → PLAN → EXECUTE → MEASURE
+
+| Phase | 역할 | no_agent 구현 |
+|---|---|---|
+| **OBSERVE** | 6축 시스템 상태 수집 (cron/skills/wiki/memory/scripts/disk) | Python `subprocess` + `os.statvfs` |
+| **PLAN** | rule-based 개선 후보 선정 (LLM 없음, 순수 Python) | 우선순위 매트릭스 (P1~P3) |
+| **EXECUTE** | 파일 수준 개선 적용 (스킬 archive, 위키 인덱스, 캐시 정리, 메모리 compact) | `write_file`, `rmdir`, subprocess 호출 |
+| **MEASURE** | ROI 측정 + history.json 누적 + 7일 추세 | JSON history + delta 계산 |
+
+### 이론적 프레임워크 vs 실제 구현 차이
+
+| 축 | 이론 (self-improvement-loop skill) | 실제 (self_hermes.py) |
+|---|---|---|
+| 접근법 | LLM subagent (critic + redefine) | Rule-based Python (no LLM 필요) |
+| 실행 모드 | agent cron (token 소모) | no_agent cron (token 0) |
+| Phase 3 | Kanban 생성 (인간이 실행) | **파일 직접 수정** (자동 실행) |
+| Phase 4 | 없음 (루프 종료) | ROI history + 추세 (feedback loop) |
+| Level 안전성 | Level 4 함정 경고 | **Safe automation**: 파일 수준, 외부 시스템 변경 없음 |
+
+### Safe automation — Level 4 오해 방지
+
+self_hermes.py는 **다음만** 자동 변경:
+- SKILL.md 프론트매터 (`archived: true` 추가)
+- wiki/index.md 링크 추가
+- `__pycache__` 디렉토리 정리
+- 메모리 compact (기존 스크립트 호출)
+
+**절대 자동 변경 안 함**: cron schedule, deliver target, GitHub push, 외부 API 호출, secret/key, Linear/Kanban.
+
+→ `self_improve_loop.py` (Kanban 생성)와 `self_hermes.py` (직접 실행)의 차이를 명확히 구분할 것. `self_improve_loop`는 인간 게이트 필요, `self_hermes`는 안전한 파일 수준만 자동.
+
+### 운영 cron
+
+| ID | 스케줄 | 스크립트 | 용도 |
+|---|---|---|---|
+| `a79d072b2447` | 매일 22:00 UTC = 07:00 KST | `daily_repo_orchestrator_mirror.sh` | daily-repo-orchestrator (mirror-only prod) |
+| `1387af94df7d` | 매주 일 12:00 UTC = 21:00 KST | `verdict_analyzer_weekly.sh` | PR verdict 분포/keyword 주간 분석 |
+| `4076b821ac31` | 매주 일 23:00 UTC = 22:00 KST | `memory_auto_curator.sh` | wiki/memory 상태 점검 + 추세 감지 |
+| `05bd40b25f6f` | **매일 22:50 KST** | `self_hermes.py` | **Self-Improving Hermes (no_agent, safe auto)** |
+
+### 관계도
+
+- `self_improve_loop.py` (기존) — 측정 → Kanban, 인간이 처리
+- `self_hermes.py` (신규) — 측정 → 자동 실행 → ROI 추적, token-free
+- 두 시스템은 **병행 운영** — self_hermes가 일상적 위생 작업을 자동 처리, self_improve_loop는 인간 결정이 필요한 큰 개선만 Kanban으로
+
+→ 전체 아키텍처 상세: `references/self-hermes-architecture.md`
+
 ## 📊 Skill 사용 빈도 측정 (idle hygiene의 Phase 1 핵심 데이터)
 
 SQLite `state.db`에서 skill_view 호출을 정확히 카운트하는 검증된 쿼리 + 통합 used 결정 절차 + 함정 정리. See `references/skill-usage-measurement.md`.

@@ -432,7 +432,7 @@ cronjob action=create \
 | `scripts/memory_auto_compact.py` | 🆕 Memory 90% 룰 자동 압축 (drift pre-check + 12 룰) | `python3 ~/.hermes/scripts/memory_auto_compact.py [--dry-run\|--force]` |
 | `scripts/memory_lazy_fetch.py` | 🆕 Memory lazy indexing — § fact → wiki 페이지 on-demand fetch (50% 이하 목표) | `python3 ~/.hermes/scripts/memory_lazy_fetch.py [--fact N\|--search Q\|--list]` |
 
-## Step Arc — 자율 기획 → 자가개선 → 진화 → 자율 운영 (2026-07-07 합의)
+## Step Arc — 자율 기획 → 자가개선 → 진화 → 자율 운영 (2026-07-28 갱신)
 
 사용자 목표: "내가 지시하지 않아도 자율 기획 → 자가 개선 → evolve step → 자율 운영". 위 스크립트 + cron이 정확히 4-step으로 매핑됨:
 
@@ -441,10 +441,10 @@ Step 0: 수동 운영       → idle hygiene (이 skill 본문)         → Kanb
 Step 1: 자율 기획       → daily-task-suggestion (별도 cron)    → 매일 07:00 KST Kanban 태스크 제안
 Step 2: 자가 개선       → self_improve_loop.py                → 매주 일 21:00 KST gap/drift/lint 측정 + 개선 Kanban 자동 생성
 Step 3: 진화           → kanban_linear_sync.py                → 평일 11:00 KST Kanban↔Linear 양방향 sync
-Step 4: 자율 운영       → (다음 단계, 미구현)                  → 사람 개입 0, 자가 측정 + 자가 조정
+Step 4: 자율 운영 ✅    → self_hermes.py                       → 매일 22:50 KST 자가 측정 + 자가 조정 + ROI 추적 (Phase 1~4 완전체)
 ```
 
-**진행 방식**: Step 0 → 1 → 2 → 3은 자동 운영 중 (위 cron 가동). Step 4 후보는 다음 idle 시 자율 진행 가능 — `references/step-4-candidates.md` 참고.
+**진행 방식**: Step 0 → 1 → 2 → 3 → 4 **모두 자동 운영 중**. Step 4는 2026-07-28 `self_hermes.py`로 구현 완료. 상세: `self-improvement-loop` skill → `references/self-hermes-architecture.md`, wiki `infra/self-hermes.md`.
 
 ### alert_only vs auto Kanban generation (자가개선 루프 핵심 패턴)
 
