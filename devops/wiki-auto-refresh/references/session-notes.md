@@ -400,3 +400,24 @@
 - 4 cross-domain (P7) 정상 유지.
 - SCHEMA.md taxonomy: 149 tags (145→+4), 0 unknown ✅.
 
+## 2026-07-29 (P19 rogue submodule + P18 pipe fix)
+
+**발견:**
+- P19 — `self_hermes.py`가 index.md 하단에 submodule 경로(logs/ 49개 + subagents-library/ 5개) markdown link 54개 + `infra/self-hermes.md` 1개를 `— 자동 추가 (2026-07-29)` 레이블로 대량 삽입 (총 55개).
+- P18 — 동시에 index.md raw/ 섹션 4개 줄에 `|- ` pipe corruption (P19 부수 효과).
+
+**적용:**
+- P19 복구: rogue 항목 55개 전부 index.md에서 제거.
+- P18 복구: 4개 줄 `|- ` → `- ` 치환.
+- auto-fill-dates.py: `infra/hermes-management.md` + `infra/self-hermes.md` → `updated: 2026-07-28` 추가.
+
+**Commit:** `9ae9fbf` auto-sync 2026-07-29 21:00 KST (3 files, +7/-5).
+- Push 성공. main up-to-date.
+
+**Wiki 상태 (2026-07-29):**
+- 72개 wiki 페이지, index.md 등록 72 (1:1 일치).
+- 0 broken wikilink, 0 broken markdown link, 0 orphan.
+- 4 cross-domain (P7) 정상 유지.
+- SCHEMA.md taxonomy: 149 tags, 0 unknown ✅.
+- updated: auto-fill 2건 완료.
+

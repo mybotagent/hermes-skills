@@ -1,9 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.18.0
+version: 1.19.0
 changelog:
-  - "1.18.0 (2026-07-28): (a) P19 신규 — 외부 프로세스(self_hermes.py)가 index.md 하단에 서브모듈 항목을 대량 추가하는 패턴 탐지/복구 절차; (b) P18 확장 — cross-file 동시 발생 사례 추가, 모든 .md 파일 grep 스캔 절차 명시; (c) Taxonomy 확장 절차 2c-bis 보강 — post-edit 파이프 포맷 grep 검증 필수 단계 추가; (d) SCHEMA.md 테이블 포맷 오류 수정 (double pipe → single pipe)"
+  - "1.19.0 (2026-07-29): (a) P18/P19 수정 — P18 cross-file grep 패턴이 `--include='*.md'` 없이 `*.md` glob만 사용해 서브디렉토리(infra/ 등) .md 파일을 놓치는 버그 수정; (b) P19 복구 단계 3에도 동일 grep 패턴 적용"
   - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
   - "1.17.0 (2026-07-27): (a) 2c-ter logs submodule index 검사 강화 — `*.md` glob이 서브디렉토리(예: 2026/)를 놓치는 문제 수정, `find` 재귀 검사 추가; 실제 사례(2026/2026-07-26-0700-weekly-cleanup.md) 문서화"
   - "1.16.0 (2026-07-22): (a) P18 확장: index.md → 모든 파일로 범위 확대, 세션 노트(2026-07-22) 사례 추가, 발생 원인·탐지 기준·처리 절차 전면 보강; (b) scripts/auto-fill-dates.py P16 위반 버그 수정 — has_updated 감지 regex가 multi-line frontmatter에서 작동하지 않던 문제 (frontmatter block 기반 검사로 개선)"
@@ -816,7 +816,15 @@ for dir_name, files in candidates.items():
 
 **P18의 범용성:** 이 pitfall은 index.md에 국한되지 않음. session-notes.md, references/, 또는 read_file 출력에서 복사한 old_string으로 patch하는 **모든 파일**에서 발생 가능. 항상 line number + `|` 구분자를 제거했을 것 확인할 것.
 
-**P18 cross-file 동시 발생 (2026-07-28):** 이번 실행에서 P18 pipe 오염이 **동시에 2개 파일**(`index.md` + `infra/cron-jobs.md`)에서 발견됨. 둘 다 같은 외부 프로세스(`self_hermes.py`)에 의해 같은 실행에서 오염된 것으로 추정. P18 발견 시 **모든 .md 파일**을 grep으로 스캔할 것: `grep -rn '^|- ' ~/.hermes/wiki/*.md`.
+**P18 cross-file 동시 발생 (2026-07-28):** 이번 실행에서 P18 pipe 오염이 **동시에 2개 파일**(`index.md` + `infra/cron-jobs.md`)에서 발견됨. 둘 다 같은 외부 프로세스(`self_hermes.py`)에 의해 같은 실행에서 오염된 것으로 추정. P18 발견 시 **모든 .md 파일**(서브디렉토리 포함)을 grep으로 스캔할 것:
+
+```bash
+# ⚠ ~/.hermes/wiki/*.md glob은 root-level만 검사.
+#    infra/, analysis/ 등 서브디렉토리의 .md 파일을 놓치므로 반드시 --include='*.md' 사용.
+grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
+# 또는 find 기반:
+find ~/.hermes/wiki -name '*.md' -not -path '*/.git/*' -exec grep -lP '^\|-' {} \;
+```
 
 ### P19. 외부 프로세스에 의한 index.md 서브모듈 항목 오염 (2026-07-28 추가)
 
@@ -839,7 +847,8 @@ grep -n '자동 추가' ~/.hermes/wiki/index.md
 #    (P18 주의: old_string에 line number 포함 금지)
 
 # 3) 같은 실행에서 P18 pipe 오염도 함께 복구
-grep -rn '^|- ' ~/.hermes/wiki/*.md
+#    ⚠ *.md glob은 root-level만 검사 → --include='*.md'로 서브디렉토리 포함
+grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 # 발견 시: |- → - 로 치환
 
 # 4) 정상 신규 파일(infra/ 아래 등)은 infra 섹션에 적절히 재등록
