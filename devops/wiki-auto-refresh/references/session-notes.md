@@ -421,3 +421,23 @@
 - SCHEMA.md taxonomy: 149 tags, 0 unknown ✅.
 - updated: auto-fill 2건 완료.
 
+## 2026-07-30
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 55개를 "자동 추가 (2026-07-30)" 레이블로 대량 삽입 (subagents-library 5 + logs 50).
+- 이번에는 working tree 오염에 그침 (HEAD에는 미반영).
+
+**적용:**
+- P19 복구: rogue 항목 55개 전부 index.md에서 제거 (working tree clean으로 복원).
+- commit/push 불필요 (HEAD가 이미 깨끗).
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 72 = 72 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅.
+- auto-fill-dates.py: 0 filled, 7 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅.
+- logs/index.md: 13개 May 31 파일 wildcard로 커버 ✅.
+- git status: clean, up-to-date with origin/main.
+
