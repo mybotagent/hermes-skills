@@ -441,3 +441,23 @@
 - logs/index.md: 13개 May 31 파일 wildcard로 커버 ✅.
 - git status: clean, up-to-date with origin/main.
 
+## 2026-07-31 (P19 4회 연속 재발 — working-tree 전용 오염 복구)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단(134~188줄)에 서브모듈 항목 55개를 "자동 추가 (2026-07-31)" 레이블로 대량 삽입 (subagents-library 5 + logs 50). 07-28/29/30에 이어 4일 연속 동일 패턴.
+- 이번에도 working tree 오염에 그침 (HEAD에는 미반영 — `git show HEAD:index.md` tail 정상).
+- P18 pipe 오염: 0건 (이번엔 부수 효과 없음).
+
+**적용:**
+- P19 복구: `git checkout HEAD -- index.md`로 working-tree 전용 오염 제거.
+- 검증: `git diff HEAD -- index.md` 0줄 → commit/push 불필요.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 72 = 72 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 7 skipped (raw/ immutable) ✅.
+- logs/index.md: 13개 May 31 파일 wildcard(`[2026-05-31-*]`)로 커버 확인 ✅.
+- git status: clean, up-to-date with origin/main.
+
