@@ -1,9 +1,9 @@
 {
-  "last_report_path": "/home/ubuntu/.hermes/logs/curator/20260726-031154",
-  "last_run_at": "2026-07-26T03:11:54.981037+00:00",
-  "last_run_duration_seconds": 1.798622,
-  "last_run_summary": "auto: no changes; llm: skipped (consolidation off)",
+  "last_report_path": "/home/ubuntu/.hermes/logs/curator/20260802-032940",
+  "last_run_at": "2026-08-02T03:29:40.442808+00:00",
+  "last_run_duration_seconds": 1.424385,
+  "last_run_summary": "auto: 14 marked stale; llm: skipped (consolidation off)",
   "last_run_summary_shown_at": "2026-06-28T00:23:36.557710+00:00",
   "paused": false,
-  "run_count": 8
+  "run_count": 9
 }

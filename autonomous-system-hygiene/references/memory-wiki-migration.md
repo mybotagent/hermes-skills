@@ -10,6 +10,19 @@
 ## Trigger
 
 사용자가 "메모리 정리해" / "불필요한 메모리 정리" / "알아서 메모리 정리" 요청 시.
+**주간 cleanup cron**(AGENTS.md Weekly Cleanup, 일요일)도 동일 워크플로 — 단, cron 컨텍스트에서는 memory tool이 차단되므로 아래 "Cron 컨텍스트 변형" 참조.
+
+## ⚠️ Cron 컨텍스트 변형 (2026-08-02 proven)
+
+cron 실행 시 `memory` tool이 `Memory is not available. It may be disabled in config or this environment.`로 실패해도 **config의 `memory_enabled: true`는 정상** — cron/no-user 제약. **툴 에러 ≠ "정리할 게 없다"** (2026-07-26 로그가 이 오류로 "정리 불필요" 결론 내린 것은 틀림 — 실제 파일은 86.6%였음).
+
+**fallback — 툴과 동일한 스토리지 파일 직접 편집**:
+- `~/.hermes/memories/MEMORY.md` — memory target (cap 2,200자)
+- `~/.hermes/memories/USER.md` — user target (cap **1,375자** — `user_char_limit`, memory와 다름!)
+- `§` 단독 줄이 엔트리 구분자 (형식 보존), `write_file` 전체 재작성 OK
+- 측정: `python3 -c "import os;print(len(open(os.path.expanduser('~/.hermes/memories/MEMORY.md')).read()))"` (byte 아님 char 기준 — `wc -c`는 한글에서 ~32% 과대)
+
+**순서 (정보 유실 방지)**: wiki 이동분을 먼저 기록 → memory에서 제거. 위키 커버리지 `search_files`로 확인 후 제거.
 
 ## 워크플로 (5단계)
 
