@@ -244,6 +244,15 @@ DRY_RUN=0 DRY_RUN_FIX=1 DRY_RUN_EMAIL=1 DRY_RUN_HARVEST=0 \
   python3 ~/.hermes/skills/daily-repo-orchestrator/scripts/daily_repo_orchestrator.py
 ```
 
+⚠️ **실행 파일 단일 진실 (2026-07-28 함정)**: cron wrapper(`daily_repo_orchestrator_mirror.sh`)는 **`~/.hermes/skills/daily-repo-orchestrator/scripts/daily_repo_orchestrator.py`** 를 호출한다. `/home/ubuntu/scripts/daily_repo_orchestrator.py` 는 **stale 사본** — 수정해도 cron에 반영 안 됨 (silent no-op). 코드 수정 시 반드시 skill scripts 경로를 편집할 것.
+
+## Linear project 할당 (2026-07-28 추가)
+
+모든 Linear 이슈는 `hermes` 프로젝트로 생성 — `mirror_to_linear()`의 `issueCreate` input에 `projectId: LINEAR_PROJECT_ID` 포함:
+- `LINEAR_PROJECT_ID = "8eaa5972-c38e-4f4d-b750-228aabbdb42d"` (skill script 상수, L204)
+- **주의**: 프로젝트 소속 이슈를 다시 생성하려 하면 Linear는 같은 title이어도 dedupe가 프로젝트와 무관하게 동작 → title 기반 `_linear_find_existing` reuse가 먼저 걸림 (안전)
+- 프로젝트 신설/이관 절차 → `linear` 스킬의 "Batch migrate issues to a project" 섹션
+
 ## Cron Registration (v1.3 검증된 2단 cron)
 
 **dry-run + prod 둘 다 등록** (사용자 confirm 전 dry-run이 stage 통과 시 prod cron 가동):

@@ -200,6 +200,9 @@ def prioritize(cands: list[dict]) -> list[dict]:
 # ---------------------------- mirror ----------------------------
 KANBAN_BOARD = "hermes"
 
+# hermes 프로젝트 (2026-07-28 생성) — 앞으로 모든 Linear 이슈는 여기서만
+LINEAR_PROJECT_ID = "8eaa5972-c38e-4f4d-b750-228aabbdb42d"
+
 
 def _issue_dedupe_key(c: dict) -> str:
     """candidate별 dedupe key: 동일 repo+title이면 같은 key → 같은 SHO/t_ 발번."""
@@ -256,6 +259,7 @@ def mirror_to_linear(top: list[dict]) -> list[dict]:
             continue
         variables = {"input": {
             "teamId": "acb9037a-9a30-4848-bb13-cf72c95c13e8",
+            "projectId": LINEAR_PROJECT_ID,
             "title": title,
             "description": body,
         }}

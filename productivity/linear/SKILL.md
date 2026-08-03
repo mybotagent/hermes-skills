@@ -299,6 +299,27 @@ curl -s -X POST https://api.linear.app/graphql \
   }' | python3 -m json.tool
 ```
 
+**참고**: `projectCreate`는 `state` 필드에 `backlog/planned/started/paused/completed/canceled` 문자열 사용 (planned 권장). 응답의 `project.id`는 이후 `issueUpdate(projectId:)`의 타깃.
+
+### Batch migrate issues to a project (실측 2026-07-28, 127 issues 단일 pass)
+
+기존 이슈를 새 프로젝트로 일괄 이관하는 패턴 (프로젝트 신설 + 전체 이관):
+
+1. **프로젝트 생성**: `projectCreate` (`teamIds` 필수 — 프로젝트는 workspace가 아니라 **team 소속**)
+2. **전체 이슈 조회**: Relay pagination `issues(first: 100, after: cursor)` → `id/identifier/title/project.name` 수집
+3. **이동 필터**:
+   - 이미 다른 프로젝트 소속 (`project.name` in EXCLUDE_PROJECTS) → skip (프로젝트는 1개만 소속 가능)
+   - 명시 제외 identifier set (`EXCLUDE = {'SHO-32', ...}`) → skip
+   - 이미 타깃 프로젝트에 있으면 skip (idempotent)
+4. **일괄 이동**: `issueUpdate(id: $issueUuid, input: { projectId: $projectId })` — 0.3s 간격 + 10개마다 progress print (rate limit 5,000/h 안전). 실패는 `(identifier, err)` 리스트로 수집, 중단하지 않음.
+5. **검증**: `project(id:) { issues { nodes { identifier state { name } } } }` → count + state 분포 (Counter)로 이관 확인.
+
+**함정**:
+- `issueUpdate`의 `id`는 **issue UUID** (`identifier` SHO-XX도 동작 — 스킬 상단 참고)
+- `first: 250`이 max — 100개씩 paginate (hasNextPage/endCursor 루프)
+- bulk mutation 시 sleep 없이 연타하면 429 위험 — 0.2~0.5s 간격 권장
+- 이관은 기존 프로젝트에서 자동 제거됨 (이동 = 소속 교체)
+
 ## Documents
 
 Linear **Documents** are prose docs (RFCs, specs, notes) stored alongside issues. They have their own `documents` root query and `document(id:)` single-fetch.
