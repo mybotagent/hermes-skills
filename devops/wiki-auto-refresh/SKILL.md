@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.20.0
+version: 1.21.0
 changelog:
+  - "1.21.0 (2026-08-03): (a) P18 스캔 패턴 정정 — find 기반 `^\\|-` broad regex가 markdown 테이블 separator(|--, |-----)와 셀을 false-positive로 잡음, 정확 패턴 `^|- `(pipe-dash-space) 사용; (b) P18 스캔 범위에 스킬 references/(session-notes.md) 추가 — 2026-W29 잔재 오염 발견 사례; (c) P19 5회 연속 재발(07-28~08-03) + committed 오염이 무관 커밋(weekly cleanup/docs)에 편승해 push되는 변형 + origin/main 검증 단계 추가; (d) 2c-ter 새 달 섹션 신설 절차(2026-08 August 사례); (e) tag-audit 1-file 케이스 교체 예시 명시 (`project` → `project-management`)"
   - "1.20.0 (2026-07-30): (a) P19 복구 절차에 단계 2.5 검증 추가 — working-tree 전용 오염 vs committed 오염 구분 (git diff HEAD + git show HEAD:index.md 검증); (b) P19 3회 연속 재발 사례 문서화 (2026-07-28/29/30)"
   - "1.19.0 (2026-07-29): (a) P18/P19 수정 — P18 cross-file grep 패턴이 `--include='*.md'` 없이 `*.md` glob만 사용해 서브디렉토리(infra/ 등) .md 파일을 놓치는 버그 수정; (b) P19 복구 단계 3에도 동일 grep 패턴 적용"
   - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
@@ -263,7 +264,7 @@ SCHEMA.md lint ⑧ (tag audit)는 SCHEMA.md taxonomy에 등록되지 않은 태�
 |:-----|:-----|:------|
 | 미등록 태그가 여러 파일에서 반복됨 (3+회) | **SCHEMA.md taxonomy 확장** | 개별 수정보다 확장이 효율적, 반복 태그는 자연스러운 분류 |
 | 미등록 태그가 특정 섹션에 집중 (예: infra/ 전체) | **SCHEMA.md taxonomy 확장** | 해당 섹션의 일반적인 태그 — 누락된 분류일 뿐 |
-| 미등록 태그가 1개 파일에만 있음 | **개별 페이지 수정** | 태그를 올바른 taxonomy 태그로 교체 |
+| 미등록 태그가 1개 파일에만 있음 | **개별 페이지 수정** | 태그를 올바른 taxonomy 태그로 교체 (실제 사례 2026-08-03: `project` → `project-management`, infra/linear-hermes-project.md — taxonomy에 이미 있는 의미상 가장 가까운 태그로 교체) |
 | 태그가 오타/스펠링 실수 | **개별 페이지 수정** | 올바른 태그로 교체 |
 | 태그가 운영상 유효하지만 taxonomy에 없음 | **SCHEMA.md taxonomy 확장** | 사용 중인 태그는 분류체계에 포함되어야 함 |
 
@@ -324,6 +325,8 @@ done
 **실제 사례 (2026-W29):** `2026-06-10-2115.md`, `2026-07-17-selfheal-discord-thread.md`, `2026-07-17-selfheal-fundamental-fix.md`, `hermes-logs-hub.md` 4개가 logs/index.md에 누락되어 있음. 자체 로그는 root-level flat 구조라 logs/ 내 index.md 관리가 필요.
 
 **실제 사례 (2026-07-27):** `2026/2026-07-26-0700-weekly-cleanup.md`가 logs/index.md에 누락. `find` 검사로 발견. root-level `*.md` glob으로는 잡히지 않음 (서브디렉토리). logs/index.md July 섹션 최상단에 추가 후 commit `e1c50c3` (hermes-logs master). parent commit `cb66fee` (hermes-wiki main).
+
+**실제 사례 (2026-08-03):** `2026/2026-08-02-0700-weekly-cleanup.md` 누락 발견 — logs/index.md에 "### August" 섹션 자체가 없었음. `### July` 위에 `### August` 섹션 신설 후 역시간순 최상단에 등록 (commit `163a5c5` hermes-logs master, parent `ebaec02`). **새 달의 첫 로그 등장 시 월 섹션 신설 필요** — 기존 월 섹션 존재만 확인하고 지나치지 말 것.
 
 ### 3. Git Push (GitHub 연동)
 
@@ -823,8 +826,16 @@ for dir_name, files in candidates.items():
 # ⚠ ~/.hermes/wiki/*.md glob은 root-level만 검사.
 #    infra/, analysis/ 등 서브디렉토리의 .md 파일을 놓치므로 반드시 --include='*.md' 사용.
 grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
-# 또는 find 기반:
-find ~/.hermes/wiki -name '*.md' -not -path '*/.git/*' -exec grep -lP '^\|-' {} \;
+# 또는 find 기반 — 패턴은 반드시 '^|- '(pipe-dash-space)로.
+# ⚠ '^\|-'(broad regex, 파이프 직후 대시)는 markdown 테이블 separator(|--, |-----)와
+#    테이블 셀을 false-positive로 잡음. 실제 사례(2026-08-03): broad regex로 20+ 파일이
+#    오염으로 표시됐으나 정확 패턴 '^|- '로 재검사하면 0건 — broad regex로 오염 확정 금지.
+find ~/.hermes/wiki -name '*.md' -not -path '*/.git/*' -exec grep -l '^|- ' {} \;
+
+# ⚠ 스킬 자체 references/도 스캔 대상 — wiki/ 밖에 있어 위 grep으로 못 잡음.
+# 실제 사례(2026-08-03): 2026-W29 시절 P18 잔재 `|- ` 1건이 session-notes.md에 방치되어
+# 있었고, wiki-scoped 스캔으로는 절대 발견되지 않았음. 스킬 파일 수정 후 반드시 스캔.
+grep -rn '^|- ' ~/.hermes/skills/devops/wiki-auto-refresh/references/
 ```
 
 ### P19. 외부 프로세스에 의한 index.md 서브모듈 항목 오염 (2026-07-28 추가)
@@ -859,6 +870,13 @@ git diff HEAD -- index.md
 git show HEAD:index.md | tail -3
 # "자동 추가" 패턴이 없어야 함. 있으면 HEAD 자체가 오염된 것 → 새 커밋 필요.
 
+# 추가: origin/main 상태도 확인 — committed 오염이 이미 push됐을 수 있음
+git show origin/main:index.md | grep -c '자동 추가'
+# 0이 아니면 원격에도 오염이 push된 것 → 복구 커밋을 반드시 push.
+# 실제 사례(2026-08-03): 07-30/31은 working-tree 전용이었으나, 08-01 오염(56개)이
+# weekly cleanup/Linear docs 커밋에 편승해 HEAD와 origin/main 모두에 반영됨
+# (`git status -sb`가 [ahead 2]). 복구 시 미푸시 커밋도 함께 push되므로 push 전 상태 확인 필수.
+
 # 3) 같은 실행에서 P18 pipe 오염도 함께 복구
 #    ⚠ *.md glob은 root-level만 검사 → --include='*.md'로 서브디렉토리 포함
 grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
@@ -873,6 +891,10 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 - infra/cron-jobs.md: P18 pipe 오염 2줄 (`||- wiki/index.md`, `||- bfe5821b5e27`)
 - 복구: 서브모듈 54개 제거 + self-hermes 항목만 infra 섹션에 정식 이동 + P18 4줄 모두 복구
 - commit `b59c603` (5 files, +175/-1)
+
+**실제 사례 (2026-08-03, 5회 연속 재발 — committed 오염):** 07-28~08-03 5일 연속 동일 패턴. 07-30/31은 working-tree 전용이었으나, 08-01 실행분(56개: subagents-library 5 + logs 50 + raw W31 1)이 weekly cleanup/Linear docs 커밋에 편승해 HEAD와 origin/main(d9fe56d) 모두에 반영됨.
+- 탐지: index-md-audit dead link 54건이 전부 logs/·subagents-library/ 경로 → P19 의심 → `grep -n '자동 추가' index.md` 56건 확정.
+- 복구: rogue 56개 제거 + raw/2026-W31-weekly-recap-draft.md만 raw/ 섹션 정식 재등록(PAT B) + P18 index.md 2건 수정 → commit `ebaec02` (3 files, +7/-61), push `d9fe56d..ebaec02` (미푸시 2건 포함 전량).
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 

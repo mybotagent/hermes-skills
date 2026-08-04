@@ -301,7 +301,7 @@
 **교훈:**
 - **tag audit 대량 발견 시 taxonomy 확장이 개별 수정보다 40x 효율적.** 판단 프레임워크 명문화 필요 → SKILL.md v1.14.0에 2c-bis 추가.
 - **SCHEMA.md 테이블 `||` double pipe 형식은 patch 오염 위험 높음.** 확실하지 않으면 전체 블록 rewrite.
-|- **logs submodule index는 주기적으로 확인 필요** — 4개가 누락되어 있었음. SCHEMA.md lint에 포함되지 않는 영역이므로 별도 절차 필요 → SKILL.md v1.14.0에 2c-ter 추가.
+- **logs submodule index는 주기적으로 확인 필요** — 4개가 누락되어 있었음. SCHEMA.md lint에 포함되지 않는 영역이므로 별도 절차 필요 → SKILL.md v1.14.0에 2c-ter 추가.
 
 ## 2026-07-20 (W29 weekly-recap-draft 등록)
 
@@ -460,4 +460,34 @@
 - auto-fill-dates.py: 0 filled, 7 skipped (raw/ immutable) ✅.
 - logs/index.md: 13개 May 31 파일 wildcard(`[2026-05-31-*]`)로 커버 확인 ✅.
 - git status: clean, up-to-date with origin/main.
+
+## 2026-08-03 (P19 5회 연속 재발 — committed 오염 복구)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단(135~190줄)에 서브모듈 항목 56개를 "자동 추가 (2026-08-01)" 레이블로 삽입 (subagents-library 5 + logs 50 + raw W31 1).
+- **이번엔 committed 오염** — HEAD와 origin/main(d9fe56d) 모두에 반영됨. `git show HEAD:index.md`에서 56개 확인. (07-30/31은 working-tree 전용이었으나 이번엔 weekly cleanup/Linear docs 커밋에 편승해 push됨)
+- P18 pipe 오염: index.md 2건 (`|- [hermes-management]`, `|- [linear-hermes-project]` 55~56줄). infra/cron-jobs.md는 깨끗.
+- tag-audit: `project` 1건 미등록 (infra/linear-hermes-project.md).
+- logs submodule: `2026/2026-08-02-0700-weekly-cleanup.md`가 logs/index.md에 누락 (find 검사로 발견).
+
+**적용:**
+- P19 복구: rogue 항목 56개 전부 index.md에서 제거 (patch로 footer 이후 블록 전체 삭제).
+- P18 복구: 2줄 `|- ` → `- ` 치환.
+- raw/2026-W31-weekly-recap-draft.md 정식 재등록 (raw/ 섹션 PAT B, W28~W30과 일관).
+- tag fix: `project` → `project-management` (1-file → 개별 페이지 수정 원칙).
+- auto-fill-dates: `infra/linear-hermes-project.md`에 `updated: 2026-08-03` 1건 채움, raw/ 8건 immutable skip.
+- logs: index.md August 섹션 신설 + 08-02 weekly cleanup 등록 → submodule commit `163a5c5` push (master).
+
+**Commit:** `ebaec02` auto-sync 2026-08-03 21:00 KST (3 files, +7/-61). Push 성공 (d9fe56d..ebaec02). 미푸시 2건(971627a, 4c73f5e) 포함 전부 push 완료.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 74 = 74 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 1 filled, 8 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅.
+- P19 scan: index.md '자동 추가' 0건 ✅.
+- git status: clean, up-to-date with origin/main.
+- logs submodule: clean, index 일치 (May 31 wildcard + 08-02 신규 등록).
 
