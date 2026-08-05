@@ -47,7 +47,7 @@ def main():
     titles = Counter(t["title"] for t in open_tasks)
     dup = {title: c for title, c in titles.items() if c > 1}
     if dup:
-        for title, c in dup.most_common():
+        for title, c in sorted(dup.items(), key=lambda x: -x[1]):
             print(f"  {c}x :: {title[:100]}")
     else:
         print("  (none)")
