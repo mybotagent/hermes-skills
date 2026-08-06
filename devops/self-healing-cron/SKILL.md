@@ -397,6 +397,7 @@ rm ~/.hermes/cron/.tick.lock
    - XML API는 `<last>`, `<previous_day_closing>`, `<change>`, `<change_pct>`를 모두 제공, `change_pct` 누락 문제 없음
    - XML API는 `fundamentalData` 섹션에 52주 고가/저가(`yrhiprice`/`yrloprice`) 포함
    - `curl -s "https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols={SYMBOL}&requestMethod=itk"` 로 호출
+   - **⚠️ 복수 심볼 1회 요청 금지 (2026-08-05 확인)**: `symbols=.SPX,.KS11,US10Y`처럼 콤마 구분 다중 심볼을 한 번에 요청하면 `<code>1</code>` 에러 응답 (요청한 심볼만 echo되고 quote 데이터 없음). **심볼당 1회 호출 + sleep 1 루프** 필수. (8개 지수/선물 일괄 수집 시 각각 개별 호출로 정상 동작 검증 완료 — 2026-08-05: .SPX/.KS11/.KQ11/.VIX/.DXY/US10Y/@CL.1/@GC.1 전부 OK)
    - 자세한 사용법: `references/cron-mode-data-sources.md`의 "CNBC REST XML API" 섹션 참조
    - 작동 심볼 예: US10Y, .SPX(S&P500), .KS11(KOSPI), @GC.1(금), @CL.1(WTI), **.DXY(달러인덱스)**
    - **DXY 주의**: `.DXY`는 CNBC에서 달러인덱스로 인식. 2026-06-18 검증 완료 (100.646)
@@ -896,6 +897,7 @@ Step 4: 리포트 Narrative 재구성
 - 보고서 구조는 유지하되, 모든 섹션(Executive Summary/Current Macro/.../Priority Matrix)이 사건을 중심으로 재구성되어야 함.
 - **CNBC `change_pct` 필드 누락 주의** (2026-06-24 확인): KOSPI·S&P 등 일부 지수에서 CNBC HTML이 `change_pct`를 반환하지 않는 경우 있음. 이때는 Yahoo `chartPreviousClose`와 CNBC `last` 값으로 직접 계산: `change_pct = (last - prev_close) / prev_close * 100`. 또는 Yahoo Finance JSON의 `regularMarketPreviousClose` 사용.
 - **⬆️ 방향성 고려**: +5% 초과 급등이 -10% 폭락 이후의 반등(recovery rally)인 경우, escalation 대상이 아님. escalation은 **새로운 충격**(fresh shock)에만 적용. 반등의 원인(실적 서프라이즈, 지정학 리스크 해소 등)이 명확하고 시장이 정상화 과정 중이면 Report의 Narrative를 재구성할 필요 없음. 기준: (1) 방향이 crash 방향과 반대인가? (2) 원인이 기존 악재의 해소인가? (3) 거래량이 폭락일보다 감소했는가? → 셋 다 YES면 recovery, escalation 생략.
+- **⚠️ WTI 급락이 '지정학 해소'(공급측 완화)로 확인되면 escalation 대상이 아니라 risk-on Key Driver로 승격** (2026-08-05 사례: 호르무즈 재개방 합의 임박 → WTI 이틀 누적 -11% → S&P 7,736.52 사상 최고 + 코스피 +3.76% 매수 사이드카 발동). 유가 급락의 원인이 수요 악화가 아니라 공급측 정상화(호르무즈 협상, OPEC+ 증산 등)면 인플레 완화 경로 = 증시에 긍정. **판정 순서**: ① Google News로 급락 원인 확인 → ② 수요/공급측 구분 → ③ 공급측이면 Key Driver 승격 + risk-on 프레이밍 (지수/개별주 랠리와 병행 해석), 수요측(경기침체 공포)이면 escalation. 급락 후 소폭 반등(WTI 76.69 +1.21%)은 뉴스 원인과 함께 "급락 후 반등"으로 명시.
 
 ---
 

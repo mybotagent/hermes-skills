@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.21.0
+version: 1.22.0
 changelog:
+  - "1.22.0 (2026-08-05): (a) P20 신규 — patch 도구 fuzzy-match mis-anchor: session-notes.md의 근미동일 섹션(매일 같은 감사결과 footer 반복)에서 old_string이 이전 섹션 footer에 잘못 앵커되어 섹션 본문 교체·중복·유실 발생 (실제 사례: 08-05 append 중 08-04 섹션 유실, 3회 patch로 복구). append 시 날짜-유일 판별자 앵커 필수, patch 후 grep 헤더 카운트 검증; (b) P19 빠른 복구 경로 — git diff HEAD가 rogue 추가분뿐이면 patch 대신 `git restore index.md` 원복 (P18/P20 위험 회피); (c) markdown-link-audit.py는 위치 인자([WIKI_ROOT]) 미지원 명시"
   - "1.21.0 (2026-08-03): (a) P18 스캔 패턴 정정 — find 기반 `^\\|-` broad regex가 markdown 테이블 separator(|--, |-----)와 셀을 false-positive로 잡음, 정확 패턴 `^|- `(pipe-dash-space) 사용; (b) P18 스캔 범위에 스킬 references/(session-notes.md) 추가 — 2026-W29 잔재 오염 발견 사례; (c) P19 5회 연속 재발(07-28~08-03) + committed 오염이 무관 커밋(weekly cleanup/docs)에 편승해 push되는 변형 + origin/main 검증 단계 추가; (d) 2c-ter 새 달 섹션 신설 절차(2026-08 August 사례); (e) tag-audit 1-file 케이스 교체 예시 명시 (`project` → `project-management`)"
   - "1.20.0 (2026-07-30): (a) P19 복구 절차에 단계 2.5 검증 추가 — working-tree 전용 오염 vs committed 오염 구분 (git diff HEAD + git show HEAD:index.md 검증); (b) P19 3회 연속 재발 사례 문서화 (2026-07-28/29/30)"
   - "1.19.0 (2026-07-29): (a) P18/P19 수정 — P18 cross-file grep 패턴이 `--include='*.md'` 없이 `*.md` glob만 사용해 서브디렉토리(infra/ 등) .md 파일을 놓치는 버그 수정; (b) P19 복구 단계 3에도 동일 grep 패턴 적용"
@@ -50,6 +51,8 @@ python3 "$SCRIPTS/wikilink-audit.py" [WIKI_ROOT]
 # 분류 출력: BROKEN_MD / BROKEN_WL / CROSSDOM(P7) / BARENAME(P9, auto-fixable) / MDEXT(P10, auto-fixable)
 
 # 3) markdown link audit — P11 sibling cross-ref 자동 감지/수정
+#    ⚠ 다른 audit 스크립트(wikilink/index-md/tag/auto-fill)와 달리 위치 인자([WIKI_ROOT])를
+#    받지 않음 — 인자 전달 시 "unrecognized arguments" usage 오류 발생 (2026-08-05 확인).
 python3 "$SCRIPTS/markdown-link-audit.py"          # audit only (exit 1 if P11 발견)
 python3 "$SCRIPTS/markdown-link-audit.py" --fix    # audit + auto-fix (파일 직접 수정)
 
@@ -857,6 +860,10 @@ grep -n '자동 추가' ~/.hermes/wiki/index.md
 # 2) 서브모듈 경로 블록 제거 (logs/ + subagents-library/)
 #    patch 도구로 "서브모듈 블록 시작"부터 "끝"까지 한 번에 제거
 #    (P18 주의: old_string에 line number 포함 금지)
+#    ⚠ 빠른 경로 (2026-08-04/05 검증): `git diff HEAD -- index.md`가 rogue 추가분
+#    외 아무 변경도 없으면 patch 대신 `git restore index.md` (또는
+#    `git checkout HEAD -- index.md`)로 working tree 원복 — 50+줄 patch의
+#    P18/P20 오염 위험을 회피하고 검증(빈 diff)이 즉시 완료됨.
 
 # 2.5) 복구 검증 — working-tree 전용 오염 vs committed 오염 구분
 #      patch 후 git diff HEAD가 빈 결과면 HEAD가 이미 깨끗했던 것.
@@ -895,8 +902,40 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 **실제 사례 (2026-08-03, 5회 연속 재발 — committed 오염):** 07-28~08-03 5일 연속 동일 패턴. 07-30/31은 working-tree 전용이었으나, 08-01 실행분(56개: subagents-library 5 + logs 50 + raw W31 1)이 weekly cleanup/Linear docs 커밋에 편승해 HEAD와 origin/main(d9fe56d) 모두에 반영됨.
 - 탐지: index-md-audit dead link 54건이 전부 logs/·subagents-library/ 경로 → P19 의심 → `grep -n '자동 추가' index.md` 56건 확정.
 - 복구: rogue 56개 제거 + raw/2026-W31-weekly-recap-draft.md만 raw/ 섹션 정식 재등록(PAT B) + P18 index.md 2건 수정 → commit `ebaec02` (3 files, +7/-61), push `d9fe56d..ebaec02` (미푸시 2건 포함 전량).
+- 이후 08-04/08-05에도 동일 패턴 재발 (working-tree 전용) — diff가 rogue 추가분뿐임을 확인 후 `git restore index.md` 빠른 경로로 복구, 커밋 불필요.
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
+
+### P20. patch 도구 fuzzy-match mis-anchor — session-notes.md 근미동일 섹션 (2026-08-05 추가)
+
+**증상:** session-notes.md에 새 날짜 섹션을 append할 때 old_string이 (a) 공통 footer 줄(`- git status: clean, up-to-date with origin/main.` 등 매일 반복되는 감사 결과 줄)과 (b) 새 헤더만으로 구성된 경우, patch fuzzy matcher가 **파일 앞쪽의 동일한 footer 줄에 앵커를 잘못 잡아**:
+- 이전 날짜 섹션의 마지막 줄이 새 variant로 덮어써짐 (실제: 08-03 마지막 줄 "+ 08-02 신규 등록" → "커버 확인"으로 오변경)
+- 새 섹션이 의도와 다른 위치에 삽입되고 기존 섹션 본문이 교체됨
+- 파일 끝에 기존 섹션이 중복 복사됨
+
+**실제 사례 (2026-08-05):** 08-05 append 중 첫 patch가 08-03 footer에 mis-anchor → 08-04 본문이 08-05 본문으로 교체 + 파일 끝에 08-04 중복. 중복 제거 patch 후 **08-04 섹션이 완전히 유실된 것을 `grep '^## '`로 발견** → 세 번째 patch로 08-04 원문 복원. 한 번의 mis-anchor가 3회 patch 소요 + 섹션 유실 위험 초래.
+
+**왜 발생하는가:** session-notes.md의 각 날짜 섹션 "감사 결과 (모두 통과)" 블록은 매일 거의 동일(복붙 수준). `- git status: clean, up-to-date with origin/main.` 같은 줄이 파일 전체에 수십 회 반복됨. 헤더(`## 2026-08-04`)는 유일해도 footer 줄들이 동일해서 mis-anchor 발생. offset/limit 부분 읽기 상태에서 patch하면 더 위험 (patch 도구의 "partial view" 경고 = mis-anchor 위험 신호).
+
+**예방 (필수):**
+1. **old_string에 날짜-유일 판별자 포함** — 해당 섹션에서만 존재하는 줄을 앵커로: `- auto-fill-dates.py: N filled` (날짜마다 N 다름), 발견 줄의 날짜 레이블(`"자동 추가 (2026-08-05)"`), `**Commit:** <hash>` 줄.
+2. **append 시 파일의 진짜 마지막 줄을 앵커로 하되, 그 줄이 다른 섹션에도 존재하면 위쪽 2~3줄의 유일 컨텍스트까지 포함** — 마지막 줄 단독으로는 부족.
+3. **전체 파일 재읽기 후 patch** — offset/limit 부분 읽기 상태에서 patch 금지 (P18과 동일 규칙).
+
+**탐지 (patch 후 즉시):**
+```bash
+grep -n '^## ' ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md | tail -6  # 순서/누락 확인
+grep -c '^## 2026-08-04' ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md  # 0=유실, 2+=중복
+# 내용도 검증: sed -n '<범위>p'로 발견 줄의 날짜 레이블이 해당 섹션과 일치하는지 확인
+# (헤더는 맞는데 본문이 다른 섹션 것으로 교체된 경우가 있음 — 헤더 개수만으로는 못 잡음)
+```
+
+**복구:**
+- 중복 발생: 각 블록이 동일한지 확인 후 중복 블록만 제거
+- 유실/교체 발생: 중복본이 남아 있으면 원위치 복원, 없으면 직전 read/대화 기록에서 원문 재구성 (이번 사례: 첫 read_file에서 확보한 08-04 원문으로 복원)
+- 복구 후 **헤더 개수 + 본문 날짜 레이블 + 순서** 3가지 모두 검증
+
+**핵심 교훈:** session-notes.md는 매일 같은 구조로 append되는 파일 — **근미동일 섹션 반복이 구조적 위험**. append 시 유일 앵커 확보는 선택이 아니라 필수. patch 실수로 섹션이 유실되어도 원문을 재구성할 수 있도록 patch 전 read 결과를 보존할 것.
 
 ## 참고 자료
 - 위키 구조/스키마: `wiki/AGENTS.md`, `wiki/SCHEMA.md`

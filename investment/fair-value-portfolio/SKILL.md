@@ -867,6 +867,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/briefing-timestamp-system.md`** — Briefing timestamp 파이프라인 + market status 표시 + cron timing (2026-07-17 신규)
 - **`references/market-calendar-module.md`** — `scripts/market_calendar.py` — KR/US holiday calendar + market open/close detection + pipeline consumers (2026-07-17 신규)
 - **`references/process-update-theater.md`** —** `execution-discipline` skill의 process-update theater variant. display-layer patching 대신 pipeline-layer fix 우선 원칙. 본 SKILL의 Pitfall 49와 연결됨.
+- **`references/narrative-rotation-analysis.md`** — 네러티브·순환매 분석 프레임워크 (2026-08-06 신규). 종목별 3요소(네러티브/순환매/PER), Google News RSS 패턴, 대량 종목 delegate_task 병렬 패턴, 사이클 정점 PER 판정 원칙
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
 - `build_macro_summary()`가 `macro_ctx`의 모든 필드를 추출하지 않음
@@ -1339,9 +1340,45 @@ outer try { ... }  // main data fetch
 
 **08:10 크론 리포트 생성 시 이 규칙을 반드시 준수할 것.**
 
-### 53. 🔴 18:30 매크로 크론 6종목 vs watchlist 5종목 불일치 (2026-07-31 신규)
+### 54. 🔴 한국주 PER 계산 — yfinance trailingPE/trailingEps 미지원 시 (2026-08-06 신규)
 
-18:30 매크로 전략 리포트 크론 프롬프트는 **6종목**(삼성전자·SK하이닉스·삼성전기·현대차·에이피알·HD현대일렉) 뉴스를 요구하지만, `data/watchlist.json`의 KR 종목은 **5개**(삼성전자·SK하이닉스·현대차·HD현대일렉·LG이노텍)만 존재:
+**문제**: `000660.KS`(SK하이닉스) 등 한국주는 yfinance에서 `trailingPE`, `trailingEps`, `priceToBook`이 **None**으로 자주 누락됨. `info.get('currentPrice')`로 현재가만 얻고 PER은 계산 불가.
+
+**올바른 PER 계산 경로**:
+1. **현재가**: Naver Polling이 가장 실시간 (`fetch_kr_stocks.py` 사용, Pitfall 50 참조)
+2. **EPS**: `Ticker.quarterly_financials`의 `Diluted EPS` 행 (최근 분기) 또는 `Ticker.financials`의 연간 `Diluted EPS`
+   ```python
+   qf = t.quarterly_financials
+   eps_q = qf.loc['Diluted EPS', qf.columns[0]]  # 최근 분기
+   fs = t.financials
+   eps_annual = fs.loc['Diluted EPS', fs.columns[0]]  # 최근 회계연도
+   ```
+3. **EPS 컨센서스/실적발표일**: `Ticker.earnings_dates` (EPS Estimate vs Reported EPS vs Surprise%) + `Ticker.calendar` (Earnings Date, EPS 범위)
+4. **PER = Naver 현재가 / EPS** — Q1 단일 분기 EPS는 연환산하면 PER이 비현실적으로 낮아지므로(사이클 정점), TTM(직전 4분기 합) 또는 연간 EPS 기준으로 표기
+
+**주의**: 실적발표 직후(1~2일)엔 `earnings_dates`에 Reported EPS가 아직 NaN일 수 있음 (yfinance 지연). 뉴스로 실적 수치를 확인하고 추정 EPS로 계산하되 "추정"임을 명시.
+
+### 55. 🔴 사이클 정점 PER 함정 — 네러티브·순환매 고려 필수 (2026-08-06 신규)
+
+**사용자 요구**: "네러티브와 순환매도 고려해줘" — 단순 PER 수치만으로 매수/저평가 판단 금지.
+
+**핵심 함정**: 사이클 기업(SK하이닉스, MU, SNDK 등)은 **이익 정점에서 PER이 항상 낮게 보임** (FPE 3~8x). "PER 5x = 싸다"는 **평균회귀 오류** — 시장이 정점 이후 이익 감소를 선반영해 할인하는 것.
+
+**분석 프레임워크 (종목별 3요소)**:
+1. **네러티브**: 시장이 말하는 스토리 (불/곰). 뉴스 헤드라인에서 수집 — "피크아웃 우려", "실적 미스에도 사상 최대", "수퍼사이클 지속" 등
+2. **순환매 신호**: 자금이 이 종목/섹터로 들어오는지 나가는지. 최근 7~10일 주가 흐름 + 섹터 뉴스 (예: 반도체 → 전력·배터리·방산 순환)
+3. **가격·PER**: 현재가 + Fwd/Trailing P/E — 이때 낮은 PER이 "저평가"인지 "정점 할인"인지 네러티브로 판별
+
+**판정 원칙**:
+- 피크아웃 내러티브 + 낮은 PER → "관망" (진짜 매수는 2027년 EPS 전망 상향 확인 후)
+- 순환매 이탈 중 (장비주 KLAC/LRCX/TER) → 비중 점검
+- "셀 더 뉴스" 패턴 (실적 서프라이즈에도 급락) → 차익실현 국면, 가이던스 확인 전 매수 금지
+
+**대량 종목 조사 기법**: 30개+ 종목이면 `delegate_task` 병렬 분산 (클러스터당 ≤6종목, 3개 배치). 각 서브에이전트가 Google News RSS(`{ticker} stock outlook 2026`)로 뉴스 수집 + CNBC quote API(Yahoo 429 rate-limit 발생 시 대체)로 가격/P/E 확보. 서브에이전트 결과는 8/5 등 **데이터 기준일 명시** 필수.
+
+**참조**: `references/narrative-rotation-analysis.md`
+
+### 53. 🔴 18:30 매크로 크론 6종목 vs watchlist 5종목 불일치 (2026-07-31 신규)(삼성전자·SK하이닉스·삼성전기·현대차·에이피알·HD현대일렉) 뉴스를 요구하지만, `data/watchlist.json`의 KR 종목은 **5개**(삼성전자·SK하이닉스·현대차·HD현대일렉·LG이노텍)만 존재:
 - **삼성전기(`009150`)와 에이피알(`278470`)은 watchlist에 없음** → `fetch_kr_stocks.py --json`이 이 2종목 가격을 반환하지 않음
 - LG이노텍(`011070`)은 watchlist에 있으나 프롬프트 6종목에는 없음 (리포트 표에 추가해도 무방 — 2026-07-31 매크로 리포트에 포함됨)
 
@@ -1398,7 +1435,16 @@ JS 코드는 `new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'})`로 KST
 
 **Source Registry**: 각 source는 독립적 tier + weight + reference 보유
 - yfinance target_mean(B, 1.0), target_median(B, 0.8), sentiment_delta(B, 0.5), high/low(C, 0.3)
-- Google News RSS (C, 0.1~1.0, 최근 30일) — **v2: 개별 analyst 리포트 추출 (Tier A, weight 3.0)**
+- Google News RSS (C, 0.1~1.0, 최근 30일) — **v2: 개별 analyst 리포트 추출 (Tier A, weight 3.0)** / **v3: weight_base 5.0**
+
+**v3 Web Search 가중치 정책 (2026-08-06, 사용자 지시 "웹에서 조사한 것이 제일 가중치 높아야해")**:
+- **Tier A weight_base = 5.0** (v2의 3.0에서 상향) — 웹 애널리스트 리포트가 yfinance(B=1.0)보다 압도적으로 우세
+- recency weight 최소 0.3 (`max(0.3, 1.0 - days_old/40)`) — 30일 지난 리포트도 70% 가중치 유지 (v2는 최소 0.1)
+- 실효 가중치: MU 사례 웹 7.3 vs yfinance 2.4 = **3.1배** 우세
+- **오탐지 필터 2종**:
+  1. `_extract_firm()`이 회사명(Inc/Corp/Ltd/(NASDAQ:) 포함) 반환 시 → "Report {ticker}"로 낮춤 (weight 최소 0.2)
+  2. 목표가 sanity check: `current_price`의 20%~400% 밖이면 `value=None` (false positive 제거)
+- yfinance target_mean/median(B)는 fallback 역할 — 웹 리포트 없을 때만 결정적
 
 **v2 Web Search**: US 종목당 3개 검색어로 Google News RSS 검색 → `_extract_target_price()` (market cap filter + sanity 50%~500% of current price) + `_extract_firm()` (40+ firm dictionary) → `action` 필드 (upgrade/downgrade/initiate)
 
