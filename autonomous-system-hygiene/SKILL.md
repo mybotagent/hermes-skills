@@ -252,7 +252,24 @@ python3 -c "import os;print(len(open(os.path.expanduser('~/.hermes/memories/MEMO
 
 **⚠️ 함정 (2026-07-26 로그 오류)**: 이전 주간 cleanup 로그가 "Memory tool 비활성화 상태 → 정리 불필요"라고 기록 — **틀렸다**. 툴이 차단돼도 파일은 존재했고 86.6%였다. **툴 에러 ≠ "정리할 게 없다"**. 파일을 직접 읽어 사용률 측정 후 정리해야 한다.
 
-**정리 순서 (정보 유실 방지)**: wiki로 이동할 정보를 **먼저** wiki 페이지에 기록 → 그 다음 memory 파일에서 제거 (grep으로 wiki 커버리지 확인 후). infra/ index 누락 검사는 `search_files(target='files', path='wiki/infra')` ↔ index.md의 `(infra/xxx.md)` 링크 대조로 수행.
+**정리 순서 (정보 유실 방지)**: wiki로 이동할 정보를 **먼저** wiki 페이지에 기록 → 그 다음 memory 파일에서 제거 (grep으로 wiki 커버리지 확인 후).
+
+**가장 빠른 사용률 측정 (proven 2026-08-09)**: `python3 ~/.hermes/scripts/memory_query.py --stats`가 MEMORY.md 크기/퍼센트 + key 등록 수 + wiki 도달 가능 수(21/21)를 한 번에 출력. `--list`로 key별 wiki 페이지 ✓/✗ 확인도 가능.
+
+### 🆕 USER.md 정리 recipe (2026-08-09 proven — USER.md가 임계 초과한 첫 사례)
+
+MEMORY.md와 USER.md의 cap이 **비대칭** (2,200 vs 1,375) — **둘 다 각자 cap 대비로 측정**해야 한다. 08-09: MEMORY.md 20.7% (여유)였지만 USER.md 1293/1375 = **94.0%** → 정리 대상. 80% 문턱은 MEMORY.md 기준이고 USER.md는 90% 기준 (memory tool 배치 가이드의 user 90% 규칙).
+
+1. USER.md 섹션(§ 구분) 중 wiki에 없는 상세 식별 → **먼저** wiki 페이지 확장 (08-09: `people/aiprofit.md` 전면 확장 — Investment Philosophy/Work Style/Communication Style/Dashboard Preferences 5개 섹션, 2.2KB)
+2. USER.md를 **포인터형으로 압축**: 각 섹션 1줄 핵심 + `상세: people/aiprofit.md` 참조만 남김 (§ 구분자 보존)
+3. `python3 -c "print(len(open('~/.hermes/memories/USER.md').read()))"`로 재측정 → 보고 시 시작/종료 % 둘 다
+4. logs/에 이관 내역 기록 (어떤 항목 → 어느 wiki 페이지인지 표)
+
+**infra/ index 누락 검사 — 정확한 1-liner (proven 2026-08-09)**: `search_files` 대조보다 다음 comm 1-liner가 정확 (파일명 정규화 + 중복 제거):
+```bash
+cd ~/.hermes/wiki && comm -23 <(ls infra/*.md | sed 's|infra/||;s|\.md||' | sort) <(grep -oE 'infra/[a-z0-9-]+\.md' index.md | sed 's|infra/||;s|\.md||' | sort -u) | wc -l
+# 0 = 누락 없음. 반대 방향 comm -13 = index에만 있는 dangling 확인
+```
 
 ## Design-execution gap measurement — exact recipe (2026-07-07 proven)
 

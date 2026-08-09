@@ -21,7 +21,7 @@ quick_start:
 
 ## Why (architecture rationale)
 
-**memory.md는 key만 (목표 ≤ 50%, 현재 13.9%).** 본문은 모두 위키에 있고, 에이전트는 key 호출 시에만 lazy fetch한다.
+**memory.md는 key만 (목표 ≤ 50%, 현재 20.7%).** 본문은 모두 위키에 있고, 에이전트는 key 호출 시에만 lazy fetch한다.
 
 ### 왜 본질을 바꿨는가 (user-explicit 2026-07-07)
 
@@ -83,7 +83,8 @@ discord_only, user_style, gh_pr_policy, ssot
 - **목표**: ≤ 50% (1,100 chars)
 - **alert**: ≥ 90% (1,980 chars)
 - **max**: 2,200 chars (cap)
-- **현재**: 306 chars (13.9%) — 여유 충분
+- **현재**: 455 chars (20.7%, 2026-08-09 측정) — 여유 충분
+- ⚠️ **USER.md는 별도 cap 1,375자** (`config.yaml` `user_char_limit`; MEMORY.md 2,200과 다름). `--stats`는 MEMORY.md만 보고하므로 USER.md는 `python3 -c "print(len(open(…'USER.md').read()))"`로 측정해야 함. 주간 cleanup에서 "MEMORY.md 여유 = USER.md 여유"로 착각하지 말 것.
 
 ### 5. KEY_MAP 동기화 시 wiki 페이지 존재 확인
 `KEY_MAP`에 key 추가 시 반드시 대응 wiki 페이지 존재 확인. `--list` 출력에서 ✓/✗로 표시.

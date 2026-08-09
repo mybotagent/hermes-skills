@@ -23,19 +23,19 @@
       "schedule_display": "0 8 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 31
+        "completed": 56
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T10:49:42.151683+08:00",
-      "next_run_at": "2026-07-06T08:00:00+08:00",
-      "last_run_at": "2026-07-03T08:00:46.187550+08:00",
+      "next_run_at": "2026-08-10T08:00:00+08:00",
+      "last_run_at": "2026-08-07T08:25:42.373653+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1520640537995247698",
+      "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
         "platform": "discord",
         "chat_id": "1510416479932121220",
@@ -70,15 +70,15 @@
       "schedule_display": "30 8 * * 1",
       "repeat": {
         "times": null,
-        "completed": 5
+        "completed": 10
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T10:49:43.158073+08:00",
-      "next_run_at": "2026-07-06T08:30:00+08:00",
-      "last_run_at": "2026-06-29T08:40:22.469139+08:00",
+      "next_run_at": "2026-08-10T08:30:00+08:00",
+      "last_run_at": "2026-08-03T08:36:30.425982+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -91,7 +91,8 @@
       },
       "enabled_toolsets": null,
       "workdir": null,
-      "profile": null
+      "profile": null,
+      "fire_claim": null
     },
     {
       "id": "d3080e6f3789",
@@ -115,15 +116,15 @@
       "schedule_display": "0 8 1 * *",
       "repeat": {
         "times": null,
-        "completed": 6
+        "completed": 7
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T21:35:27.511479+08:00",
-      "next_run_at": "2026-08-01T08:00:00+08:00",
-      "last_run_at": "2026-07-01T08:22:18.857704+08:00",
+      "next_run_at": "2026-09-01T08:00:00+08:00",
+      "last_run_at": "2026-08-01T08:22:00.520796+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -139,7 +140,8 @@
         "file"
       ],
       "workdir": null,
-      "profile": null
+      "profile": null,
+      "fire_claim": null
     },
     {
       "id": "6297df83d4f3",
@@ -164,15 +166,15 @@
       "schedule_display": "10 8 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 30
+        "completed": 55
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T22:08:35.538013+08:00",
-      "next_run_at": "2026-07-06T08:10:00+08:00",
-      "last_run_at": "2026-07-03T08:12:16.159485+08:00",
+      "next_run_at": "2026-08-10T08:10:00+08:00",
+      "last_run_at": "2026-08-07T08:52:12.217713+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -212,15 +214,15 @@
       "schedule_display": "0 4 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 26
+        "completed": 51
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-06T15:25:15.413856+08:00",
-      "next_run_at": "2026-07-06T04:00:00+08:00",
-      "last_run_at": "2026-07-03T04:00:17.180393+08:00",
+      "next_run_at": "2026-08-10T04:00:00+08:00",
+      "last_run_at": "2026-08-07T04:00:50.169603+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -258,15 +260,15 @@
       "schedule_display": "10 8 1 * *",
       "repeat": {
         "times": null,
-        "completed": 4
+        "completed": 5
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T02:16:06.049605+08:00",
-      "next_run_at": "2026-08-01T08:10:00+08:00",
-      "last_run_at": "2026-07-01T08:32:35.496882+08:00",
+      "next_run_at": "2026-09-01T08:10:00+08:00",
+      "last_run_at": "2026-08-01T08:25:18.545634+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -282,7 +284,8 @@
         "file"
       ],
       "workdir": null,
-      "profile": null
+      "profile": null,
+      "fire_claim": null
     },
     {
       "id": "2916cc9c2ceb",
@@ -307,19 +310,19 @@
       "schedule_display": "0 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 24
+        "completed": 50
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T03:29:23.410939+08:00",
-      "next_run_at": "2026-07-06T18:00:00+08:00",
-      "last_run_at": "2026-07-03T18:01:42.062317+08:00",
+      "next_run_at": "2026-08-10T18:00:00+08:00",
+      "last_run_at": "2026-08-07T18:14:16.534769+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1520640537995247698",
+      "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
         "platform": "discord",
         "chat_id": "1510404235915694170",
@@ -357,19 +360,19 @@
       "schedule_display": "30 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 24
+        "completed": 49
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T03:29:29.821827+08:00",
-      "next_run_at": "2026-07-06T18:30:00+08:00",
-      "last_run_at": "2026-07-03T18:33:07.378248+08:00",
+      "next_run_at": "2026-08-10T18:30:00+08:00",
+      "last_run_at": "2026-08-07T18:36:28.791156+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1520640537995247698",
+      "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
         "platform": "discord",
         "chat_id": "1510404235915694170",
@@ -403,15 +406,15 @@
       "schedule_display": "35 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 23
+        "completed": 48
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T03:29:32.215561+08:00",
-      "next_run_at": "2026-07-06T18:35:00+08:00",
-      "last_run_at": "2026-07-03T18:41:13.969319+08:00",
+      "next_run_at": "2026-08-10T18:35:00+08:00",
+      "last_run_at": "2026-08-07T18:44:25.588669+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -453,15 +456,15 @@
       "schedule_display": "0 20 * * *",
       "repeat": {
         "times": null,
-        "completed": 27
+        "completed": 64
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-10T05:07:06.194725+08:00",
-      "next_run_at": "2026-07-05T20:00:00+08:00",
-      "last_run_at": "2026-07-04T20:01:00.286321+08:00",
+      "next_run_at": "2026-08-09T20:00:00+08:00",
+      "last_run_at": "2026-08-08T20:05:22.807017+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -499,15 +502,15 @@
       "schedule_display": "0 6 * * *",
       "repeat": {
         "times": null,
-        "completed": 28
+        "completed": 63
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-10T20:40:58.847234+08:00",
-      "next_run_at": "2026-07-06T06:00:00+08:00",
-      "last_run_at": "2026-07-05T06:00:54.285443+08:00",
+      "next_run_at": "2026-08-10T06:00:00+08:00",
+      "last_run_at": "2026-08-09T06:02:31.449713+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -545,15 +548,15 @@
       "schedule_display": "0 8 1 * *",
       "repeat": {
         "times": null,
-        "completed": 4
+        "completed": 5
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-13T17:59:01.110311+08:00",
-      "next_run_at": "2026-08-01T08:00:00+08:00",
-      "last_run_at": "2026-07-01T08:22:07.177479+08:00",
+      "next_run_at": "2026-09-01T08:00:00+08:00",
+      "last_run_at": "2026-08-01T08:12:41.833529+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -569,7 +572,8 @@
         "file"
       ],
       "workdir": null,
-      "profile": null
+      "profile": null,
+      "fire_claim": null
     },
     {
       "id": "af8dcb9a1cce",
@@ -591,15 +595,15 @@
       "schedule_display": "*/15 6-21 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 62
+        "completed": 1391
       },
-      "enabled": false,
-      "state": "paused",
-      "paused_at": "2026-06-18T17:46:31.168178+08:00",
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T18:28:23.747299+08:00",
-      "next_run_at": "2026-06-18T18:00:00+08:00",
-      "last_run_at": "2026-06-18T17:46:53.036936+08:00",
+      "next_run_at": "2026-08-10T06:00:00+08:00",
+      "last_run_at": "2026-08-07T21:45:25.724086+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -615,7 +619,8 @@
         "cronjob"
       ],
       "workdir": null,
-      "profile": null
+      "profile": null,
+      "fire_claim": null
     },
     {
       "id": "894e773a9a2b",
@@ -637,15 +642,15 @@
       "schedule_display": "*/10 6-22 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 1232
+        "completed": 3757
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T18:28:26.523764+08:00",
-      "next_run_at": "2026-07-06T06:00:00+08:00",
-      "last_run_at": "2026-07-03T22:50:32.188754+08:00",
+      "next_run_at": "2026-08-10T06:00:00+08:00",
+      "last_run_at": "2026-08-07T22:50:07.468972+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -681,15 +686,15 @@
       "schedule_display": "0 6 * * 1",
       "repeat": {
         "times": null,
-        "completed": 2
+        "completed": 7
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-23T08:19:31.196104+08:00",
-      "next_run_at": "2026-07-06T06:00:00+08:00",
-      "last_run_at": "2026-07-01T06:02:33.714583+08:00",
+      "next_run_at": "2026-08-10T06:00:00+08:00",
+      "last_run_at": "2026-08-03T06:00:23.618109+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -701,7 +706,8 @@
         "thread_id": "1514011922981326858"
       },
       "enabled_toolsets": null,
-      "workdir": null
+      "workdir": null,
+      "fire_claim": null
     },
     {
       "id": "537dfbb83b81",
@@ -725,15 +731,15 @@
       "schedule_display": "0 20 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 7
+        "completed": 35
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-25T22:11:44.206839+08:00",
-      "next_run_at": "2026-07-06T20:00:00+08:00",
-      "last_run_at": "2026-07-03T20:02:53.941758+08:00",
+      "next_run_at": "2026-08-10T20:00:00+08:00",
+      "last_run_at": "2026-08-07T20:14:01.066131+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -770,15 +776,15 @@
       "schedule_display": "0 6 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 7
+        "completed": 32
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-25T22:11:54.923354+08:00",
-      "next_run_at": "2026-07-06T06:00:00+08:00",
-      "last_run_at": "2026-07-03T06:01:31.526946+08:00",
+      "next_run_at": "2026-08-10T06:00:00+08:00",
+      "last_run_at": "2026-08-07T06:11:49.275267+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -807,21 +813,21 @@
       "context_from": null,
       "schedule": {
         "kind": "cron",
-        "expr": "15 8 * * 1-5",
-        "display": "15 8 * * 1-5"
+        "expr": "50 8 * * 1-5",
+        "display": "50 8 * * 1-5"
       },
-      "schedule_display": "15 8 * * 1-5",
+      "schedule_display": "50 8 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 5
+        "completed": 40
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T11:49:21.446172+08:00",
-      "next_run_at": "2026-07-06T08:15:00+08:00",
-      "last_run_at": "2026-07-03T08:15:16.585497+08:00",
+      "next_run_at": "2026-08-10T08:50:00+08:00",
+      "last_run_at": "2026-08-07T08:50:55.063601+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -856,15 +862,15 @@
       "schedule_display": "40 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 5
+        "completed": 44
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T11:49:22.451470+08:00",
-      "next_run_at": "2026-07-06T18:40:00+08:00",
-      "last_run_at": "2026-07-03T18:40:31.843169+08:00",
+      "next_run_at": "2026-08-10T18:40:00+08:00",
+      "last_run_at": "2026-08-07T18:40:06.510869+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -902,19 +908,19 @@
       "schedule_display": "0 8 * * 0",
       "repeat": {
         "times": null,
-        "completed": 1
+        "completed": 6
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T12:18:28.603694+08:00",
-      "next_run_at": "2026-07-12T08:00:00+08:00",
-      "last_run_at": "2026-07-05T08:01:10.688390+08:00",
+      "next_run_at": "2026-08-16T08:00:00+08:00",
+      "last_run_at": "2026-08-09T08:17:01.210064+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1520640537995247698",
+      "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
         "platform": "discord",
         "chat_id": "1520640537995247698",
@@ -948,19 +954,19 @@
       "schedule_display": "0 20 * * 0",
       "repeat": {
         "times": null,
-        "completed": 1
+        "completed": 6
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T12:18:29.609205+08:00",
-      "next_run_at": "2026-07-05T20:00:00+08:00",
-      "last_run_at": "2026-06-28T20:08:56.678228+08:00",
+      "next_run_at": "2026-08-09T20:00:00+08:00",
+      "last_run_at": "2026-08-02T20:09:47.200904+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1520640537995247698",
+      "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
         "platform": "discord",
         "chat_id": "1520640537995247698",
@@ -968,7 +974,8 @@
         "thread_id": "1520640537995247698"
       },
       "enabled_toolsets": null,
-      "workdir": null
+      "workdir": null,
+      "fire_claim": null
     },
     {
       "id": "fe96a2422b91",
@@ -990,15 +997,15 @@
       "schedule_display": "0 11 * * *",
       "repeat": {
         "times": null,
-        "completed": 6
+        "completed": 42
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T12:20:42.091243+08:00",
-      "next_run_at": "2026-07-05T11:00:00+08:00",
-      "last_run_at": "2026-07-04T11:00:39.517538+08:00",
+      "next_run_at": "2026-08-10T11:00:00+08:00",
+      "last_run_at": "2026-08-09T11:00:33.306256+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1033,15 +1040,15 @@
       "schedule_display": "0 6 * * *",
       "repeat": {
         "times": null,
-        "completed": 8
+        "completed": 48
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T07:24:58.698355+08:00",
-      "next_run_at": "2026-07-06T06:00:00+08:00",
-      "last_run_at": "2026-07-05T06:00:47.363251+08:00",
+      "next_run_at": "2026-08-10T06:00:00+08:00",
+      "last_run_at": "2026-08-09T06:00:28.553262+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1076,15 +1083,15 @@
       "schedule_display": "0 7 * * *",
       "repeat": {
         "times": null,
-        "completed": 6
+        "completed": 41
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T12:03:02.265401+08:00",
-      "next_run_at": "2026-07-06T07:00:00+08:00",
-      "last_run_at": "2026-07-05T07:00:50.704651+08:00",
+      "next_run_at": "2026-08-10T07:00:00+08:00",
+      "last_run_at": "2026-08-09T07:00:31.065081+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1119,15 +1126,15 @@
       "schedule_display": "0 2 * * *",
       "repeat": {
         "times": null,
-        "completed": 7
+        "completed": 44
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T12:03:06.379003+08:00",
-      "next_run_at": "2026-07-06T02:00:00+08:00",
-      "last_run_at": "2026-07-05T02:01:13.719072+08:00",
+      "next_run_at": "2026-08-10T02:00:00+08:00",
+      "last_run_at": "2026-08-09T02:04:06.346721+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1144,7 +1151,927 @@
       ],
       "workdir": null,
       "fire_claim": null
+    },
+    {
+      "id": "a79d072b2447",
+      "name": "daily-repo-orchestrator-mirror",
+      "prompt": "Daily 07:00 KST (= 22:00 UTC) `daily-repo-orchestrator`\ub97c mirror-only prod \ubaa8\ub4dc\ub85c \uc2e4\ud589. \uc2e4\uc81c \ub3d9\uc791: GitHub repo \uc2a4\uce94(30\uac1c), \ud6c4\ubcf4 7\uac1c \uc911 top-3 \uc120\uc815, Linear SHO + kanban mirror (idempotent: \ub3d9\uc77c title \uc7ac\uc0ac\uc6a9, \uc911\ubcf5 \uc0dd\uc131 \uc548 \ud568). \uc704\ud5d8\ud55c \uac83 (push/PR open/email \ubc1c\uc1a1)\uc740 dry \uc720\uc9c0. stdout\uc744 log_file\uc5d0 \uc800\uc7a5. \ud558\ub8e8 1\ud68c.\n\nmode: production (mirror only, fix/email dry)\n- harvest=real (GitHub read-only GET)\n- mirror=real (Linear GraphQL create + Kanban CLI create, dedupe \ub3d9\uc77c title skip)\n- fix=dry (clone+push \uc548 \ud568)\n- email=dry (himalaya send \uc548 \ud568)\n\n\uc2a4\ud06c\ub9bd\ud2b8 \uc2e4\ud589 \ud6c4 stdout \ub05d\ubd80\ubd84\uc744 \ubcf4\uace0. \ub9e4\uc77c 1\ud68c, error \uc2dc 1\uc904\ub85c \uc54c\ub9bc. \uac80\uc99d\uc740 `~/.hermes/scripts/logs/orchestrator-YYYYMMDD-HHMMSS.log`.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "daily_repo_orchestrator_mirror.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 * * *",
+        "display": "0 22 * * *"
+      },
+      "schedule_display": "0 22 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 33
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T01:45:32.688905+08:00",
+      "next_run_at": "2026-08-09T22:00:00+08:00",
+      "last_run_at": "2026-08-08T22:00:49.543863+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "1387af94df7d",
+      "name": "verdict-analyzer-weekly",
+      "prompt": "Weekly Sunday 21:00 KST = 12:00 UTC. `verdict_analyzer_weekly.sh` \uc2e4\ud589 \u2192 GitHub PR review-bot verdict \ucf54\uba58\ud2b8 1\uc8fc\uc77c\uce58 \ubd84\uc11d (read-only, GET\ub9cc) \u2192 verdict \ubd84\ud3ec/severity freq/top keyword \ucd9c\ub825 \u2192 local log \uc800\uc7a5.\n\n\uc790\uc8fc \uc9c0\uc801\ub418\ub294 \ud328\ud134\uc774 \ub4e4\uc5b4\uc624\uba74 \uc790\ub3d9 skill/scripts\ub85c \uc790\uac00\uac1c\uc120. \ub9e4\uc8fc \uc77c\uc694\uc77c \uc800\ub141 1\ud68c. deliver=origin + \ubd84\uc11d stdout \ub05d 1\uac1c \ub2e8\ub77d\ub9cc \uc54c\ub9bc.\n\n\uc2a4\ud06c\ub9bd\ud2b8: `verdict_analyzer_weekly.sh` (= `~/.hermes/scripts/verdict_analyzer_weekly.sh`)\n\uae30\ubcf8 repo list: mybotagent/{hermes-pr-gate, mybotagent.github.io, hermes-wiki-super, hermes-stock-briefings}\n\uc790\uc8fc \uc9c0\uc801 \ud328\ud134 top 5\ub97c \ub2e4\uc74c \ud1a0\ud070\uc73c\ub85c \ud568\uaed8 \uc54c\ub9bc: `[verdict-analyzer] cycle-1 / N=33 prs / \ud83d\udd34={count} \ud83d\udfe0={count} \ud83d\udfe1={count} / top={kw1, kw2, kw3}`",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "verdict_analyzer_weekly.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 20 * * 0",
+        "display": "0 20 * * 0"
+      },
+      "schedule_display": "0 20 * * 0",
+      "repeat": {
+        "times": null,
+        "completed": 5
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T01:46:44.938615+08:00",
+      "next_run_at": "2026-08-09T20:00:00+08:00",
+      "last_run_at": "2026-08-02T20:01:16.658724+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "4076b821ac31",
+      "name": "memory-curator-weekly",
+      "prompt": "Weekly Monday 08:00 KST = 23:00 UTC Sunday. `memory_auto_curator.sh` \uc2e4\ud589 \u2192 wiki/memory/skill \uc0c1\ud0dc \uc810\uac80 + INDEX/MEMORY/USER \ub77c\uc778\uc218 + LOG 5\uac1c \u2192 stdout \ub9ac\ud3ec\ud2b8\ub9cc. read-only \uc808\ub300.\n\n\ubaa9\uc801: \uc704\ud0a4/memory\uac00 \ube44\ub300\ud574\uc9c0\uae30 \uc804\uc5d0 \ucd94\uc138 \uac10\uc9c0. SKILL.md\uac00 5\uac1c \uc774\uc0c1 \uc904\uc5c8\uac70\ub098, INDEX\uac00 100\uc904 \uc99d\uac00\ud558\uba74 \uc54c\ub9bc.\nstdout \ub05d \ubd80\ubd84\uc744 \ub2e8 \ud55c \ub2e8\ub77d\ub9cc \uc54c\ub9bc. \ube48 stdout\ub3c4 OK (silent).\n\uc2a4\ud06c\ub9bd\ud2b8 = `memory_auto_curator.sh` (relative path from ~/.hermes/scripts/)",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "memory_auto_curator.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 23 * * 0",
+        "display": "0 23 * * 0"
+      },
+      "schedule_display": "0 23 * * 0",
+      "repeat": {
+        "times": null,
+        "completed": 5
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T01:47:26.181560+08:00",
+      "next_run_at": "2026-08-09T23:00:00+08:00",
+      "last_run_at": "2026-08-02T23:00:59.620564+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "491c817d9ed4",
+      "name": "trigger-backlog-swipper-hourly",
+      "prompt": "Hourly cycle (KST 0-8 \uc708\ub3c4\uc6b0, 4\ud68c/\uc77c): 00:30 / 02:30 / 04:30 / 05:30. `trigger_backlog_swipper.py` \uc2e4\ud589 \u2192 Kanban TODO + GitHub Issues sweep + threshold sanity. SAFE: read-only.\n\nNOTE: \uae30\uc874 cron\uacfc \uc548 \uacb9\uce58\uac8c:\n- 02:00 neo4j-incremental-index (30\ubd84 gap)\n- 04:00 \uc0c8\ubcbd wiki \ub3d9\uae30\ud654 \ud3c9\uc77c (30\ubd84 gap)\n- 06:00~08:00 \uad6c\uac04\uc740 watchdog(*/10) + survey-morning + neo4j-health + \ub9e4\uc77c\uc544\uce68\uc77c\uc815 \ub4f1 \ube7d\ube7d \u2192 06:00 \uc774\uc804\uc73c\ub85c \uc555\ucd95.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "trigger_backlog_swipper.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 0,2,4,5 * * *",
+        "display": "30 0,2,4,5 * * *"
+      },
+      "schedule_display": "30 0,2,4,5 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 134
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T02:25:24.552405+08:00",
+      "next_run_at": "2026-08-10T00:30:00+08:00",
+      "last_run_at": "2026-08-09T05:30:31.046324+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "da557233e6ac",
+      "name": "self-consistency-check-3h",
+      "prompt": "KST 0-8 \uc708\ub3c4\uc6b0 \uc548 3h cycle 2\ud68c: 01:30 / 05:30. `self_consistency_check.py` \u2192 cron health / wiki / memory counts / log anomaly. SAFE: read-only.\n\nNOTE: \uae30\uc874 cron\uacfc \uc548 \uacb9\uce58\uac8c:\n- 00:30 trigger-backlog-swipper (1h gap)\n- 02:00 neo4j-incremental-index, 02:30 trigger-backlog-swipper, 04:00 \uc0c8\ubcbd wiki \ub3d9\uae30\ud654, 04:30 trigger-backlog-swipper \u2192 \uadf8 \uc678 \uc2dc\uac04 \ud53c\ud574\uc11c \ubc30\uce58\n- 05:30\uc740 trigger-backlog-swipper\uc640 \uac19\uc740 \uc2dc\uac01\uc774\ub77c \ube44\ub300\uc911\ubcf4\ub2e4 \uc77c\uad00\uc131 \uc6b0\uc120 \u2192 \uadf8\ub798\ub3c4 \uc704 cron \ub9c8\uc9c0\ub9c9 \ubc1c\ud654(05:30)\uac00 \ub05d\ub098\uae30 \uc804 1\ubd84 \ucc28\uc774\ub85c \ubbf8\uc138 \ubd84\ub9ac: 05:29\ub85c \ubcc0\uacbd.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "self_consistency_check.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "29 1,5 * * *",
+        "display": "29 1,5 * * *"
+      },
+      "schedule_display": "29 1,5 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 67
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T02:25:28.597399+08:00",
+      "next_run_at": "2026-08-10T01:29:00+08:00",
+      "last_run_at": "2026-08-09T05:29:28.068383+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "c172635927c2",
+      "name": "wiki-auto-maintainer-weekly",
+      "prompt": "weekly Saturday 03:30 KST = Saturday 18:30 UTC (Fri). run `wiki_auto_maintainer.py` \u2192 orphan page + broken wikilink + index \uc77c\uad00\uc131 lint. SAFE: read-only.\n\nscript: `wiki_auto_maintainer.py`",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "wiki_auto_maintainer.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 18 * * 5",
+        "display": "30 18 * * 5"
+      },
+      "schedule_display": "30 18 * * 5",
+      "repeat": {
+        "times": null,
+        "completed": 6
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T02:25:33.315122+08:00",
+      "next_run_at": "2026-08-14T18:30:00+08:00",
+      "last_run_at": "2026-08-07T18:30:05.405029+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "dadb1f540867",
+      "name": "evening-optimization-cycle-daily",
+      "prompt": "\ub9e4\uc77c KST 02:50 (UTC 17:50). `evening_optimization_cycle.py` \u2192 log stats + cycle count + cron drift summary. SAFE: read-only.\n\nNOTE: KST 0-8 \uc708\ub3c4\uc6b0 \uc548, \uae30\uc874 cron\uacfc \uc548 \uacb9\uce58\uac8c:\n- 02:00 neo4j-incremental-index, 02:30 trigger-backlog-swipper, 04:00 \uc0c8\ubcbd wiki \ub3d9\uae30\ud654, 04:30 trigger-backlog-swipper\n- 02:50\uc740 02:30 trigger\uc640 20\ubd84 gap + 04:00 dawn-wiki\uc640 1h 10\ubd84 gap \u2192 \ucda9\ub3cc \uc5c6\uc74c\n- 02:30\uc744 \ud53c\ud574\uc11c 02:50\uc73c\ub85c \ubbf8\uc138 \uc774\ub3d9 (\uc0ac\uc6a9\uc790 \"\uae30\uc874 cron\uacfc \uacb9\uce58\uc9c0 \uc54a\ub3c4\ub85d\").",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "evening_optimization_cycle.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "50 2 * * *",
+        "display": "50 2 * * *"
+      },
+      "schedule_display": "50 2 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 35
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T02:25:37.356860+08:00",
+      "next_run_at": "2026-08-10T02:50:00+08:00",
+      "last_run_at": "2026-08-09T02:50:26.208041+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "8ecfa3081d3b",
+      "name": "weekly-draft-generator",
+      "prompt": "\ub9e4\uc8fc \ud1a0\uc694\uc77c KST 07:30 (UTC \uae08\uc694\uc77c 22:30). `weekly_draft_generator.py` \u2192 wiki/raw/<YYYY-Wxx>-weekly-report.md skeleton \uc0dd\uc131 + GitHub raw publish. SAFE: read-only skeleton only (\uc2e4\uc81c mirror\uc740 \ubcc4\ub3c4).\n\nNOTE: KST 0-8 \uc708\ub3c4\uc6b0 \uc548, \uae30\uc874 cron\uacfc \uc548 \uacb9\uce58\uac8c:\n- \ud1a0\uc694\uc77c 04:00 \uc0c8\ubcbd wiki \ub3d9\uae30\ud654 \ube44\ud65c\uc131 (\uc6d4-\uae08\ub9cc) \u2192 \ucda9\ub3cc X\n- 04:30 trigger-backlog-swipper (3h gap)\n- 05:29 self-consistency-check (2h gap)\n- 02:50 evening-optimization (4h 40m gap)\n- 07:30\uc740 \uc77c\uc694\uc77c \uc0c8\ubcbd 12:00 UTC verdict-analyzer, 23:00 UTC memory-curator(\ub2e4\uc74c\ub0a0)\uc640\ub3c4 \ubd84\ub9ac.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "weekly_draft_generator.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 22 * * 5",
+        "display": "30 22 * * 5"
+      },
+      "schedule_display": "30 22 * * 5",
+      "repeat": {
+        "times": null,
+        "completed": 6
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T02:25:42.160708+08:00",
+      "next_run_at": "2026-08-14T22:30:00+08:00",
+      "last_run_at": "2026-08-07T22:30:08.355491+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "19703b962de7",
+      "name": "dawn-heartbeat-15m",
+      "prompt": "\uc0c8\ubcbd heartbeat (KST 0-5\uc2dc, \ub9e4 15\ubd84). 15 * * * * KST = KST 00:15 / 00:30...05:45. \ube44\ub300\uc911 \uac00\ub4dc: \ub2e4\ub978 \ud65c\uc131 cron \ubc1c\ud654 \uc2dc\uac01 \u00b12\ubd84 \uc548\uc774\uba74 90\ucd08 sleep \u2192 1\ud68c retry \u2192 silent exit. \uc2dc\uc2a4\ud15c sanity (disk/mem/load) + GitHub reachability check. \uc815\uc0c1 = silent, \uc774\uc0c1\ub9cc stdout + log append. SAFE: read-only.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "dawn_heartbeat.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "*/15 0-5 * * *",
+        "display": "*/15 0-5 * * *"
+      },
+      "schedule_display": "*/15 0-5 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 797
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T02:56:32.539317+08:00",
+      "next_run_at": "2026-08-10T00:00:00+08:00",
+      "last_run_at": "2026-08-09T05:45:29.324537+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "f405cd52a6e8",
+      "name": "\ud83e\udde0 Memory Usage Alert (\ud3c9\uc77c 09:00 KST)",
+      "prompt": "memory_alert cron. \ud3c9\uc77c 09:00 KST = 00:00 UTC. ~1\ucd08 \uc2e4\ud589. `python3 ~/.hermes/scripts/memory_alert.py check` \u2192 90%\u2191\uc774\uba74 stdout \"\u26a0 MEMORY ALERT\" \u2192 \uc790\ub3d9 Discord \ubc1c\uc1a1. <90%\uba74 silent. SAFE: read-only.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "memory_alert.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 0 * * 1-5",
+        "display": "0 0 * * 1-5"
+      },
+      "schedule_display": "0 0 * * 1-5",
+      "repeat": {
+        "times": null,
+        "completed": 44
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T17:35:56.891051+08:00",
+      "next_run_at": "2026-08-10T00:00:00+08:00",
+      "last_run_at": "2026-08-07T00:00:56.817260+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "discord:1510397804139515945:1510404235915694170",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "eba5518c2e16",
+      "name": "\ud83d\udcd0 Design-Execution Gap Monthly (\ub9e4\uc6d4 1\uc77c 09:00 KST)",
+      "prompt": "\ub514\uc790\uc778-\uc2e4\ud589 \uac2d \uc6d4\uac04 \uce21\uc815. \ub9e4\uc6d4 1\uc77c 09:00 KST = 1\uc77c 00:00 UTC. \\`python3 ~/.hermes/scripts/design_exec_gap.py\\` \u2192 JSON \uacb0\uacfc\ub97c ~/.hermes/cron/output/<job_id>/\uc5d0 \uc800\uc7a5. SAFE: read-only.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "design_exec_gap.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 0 1 * *",
+        "display": "0 0 1 * *"
+      },
+      "schedule_display": "0 0 1 * *",
+      "repeat": {
+        "times": null,
+        "completed": 2
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T18:07:32.352301+08:00",
+      "next_run_at": "2026-09-01T00:00:00+08:00",
+      "last_run_at": "2026-08-01T00:29:39.579601+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "5e3402867d0c",
+      "name": "\ud83d\udd04 Self-Improve Loop (\ub9e4\uc77c 21:00 KST)",
+      "prompt": "\uc790\uac00\uac1c\uc120 \ub8e8\ud504 (Step 2). \ub9e4\uc8fc \uc77c\uc694\uc77c 21:00 KST = 12:00 UTC. \\`python3 ~/.hermes/scripts/self_improve_loop.py\\` \u2192 \uce21\uc815 + \uac1c\uc120 \uc0ac\ud56d Kanban \uc790\ub3d9 \uc0dd\uc131 + alert. \uac1c\uc120 \uc0ac\ud56d 0\uac74\uc774\uba74 silent. SAFE: Kanban \uc0dd\uc131\ub9cc, \uc678\ubd80 \ud6a8\uacfc \uc5c6\uc74c.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "self_improve_loop.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 12 * * *",
+        "display": "0 12 * * *"
+      },
+      "schedule_display": "0 12 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 33
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T18:28:40.305142+08:00",
+      "next_run_at": "2026-08-10T12:00:00+08:00",
+      "last_run_at": "2026-08-09T12:00:37.934903+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "4610bc039434",
+      "name": "\ud83d\udd17 Kanban \u2194 Linear Auto-Sync (\ud3c9\uc77c 11:00 KST)",
+      "prompt": "Kanban \u2194 Linear \uc591\ubc29\ud5a5 \uc790\ub3d9 sync (Step 3 \uc9c4\ud654). \ud3c9\uc77c 11:00 KST = 02:00 UTC. \\`python3 ~/.hermes/scripts/kanban_linear_sync.py --apply\\` \u2192 Kanban done \u2194 Linear Done \uc790\ub3d9 \ub9e4\uce6d. \ubcc0\uacbd 0\uac74\uc774\uba74 silent. SAFE: \ub9e4\ud551 \uae30\ubc18, \uc678\ubd80 effect \ucd5c\uc18c\ud654.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "kanban_linear_sync.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 2 * * 1-5",
+        "display": "0 2 * * 1-5"
+      },
+      "schedule_display": "0 2 * * 1-5",
+      "repeat": {
+        "times": null,
+        "completed": 23
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T18:29:58.859391+08:00",
+      "next_run_at": "2026-08-10T02:00:00+08:00",
+      "last_run_at": "2026-08-07T02:00:09.309772+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "cb2ee5fafc5d",
+      "name": "\ud83e\uddf9 memory daily auto-compact (\ub9e4\uc77c 06:30 KST, \uc0ac\uc6a9\uc790 \ub8f0: 90% \ub118\uc73c\uba74 \uc790\uc728 \uc815\ub9ac)",
+      "prompt": "no_agent",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "memory_daily_compact.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 21 * * *",
+        "display": "30 21 * * *"
+      },
+      "schedule_display": "30 21 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 33
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-07T19:23:54.667037+08:00",
+      "next_run_at": "2026-08-09T21:30:00+08:00",
+      "last_run_at": "2026-08-08T21:30:22.067016+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1523627322153107476",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
+        "thread_id": "1523627322153107476",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "91059d1e3d31",
+      "name": "\ud83d\udd04 hermes-config-sync (KST 22:30, push-first)",
+      "prompt": "Hermes config sync cron. \ub9e4\uc77c KST 22:30 = 13:30 UTC. hermes_config_sync.sh \uc2e4\ud589 (default DRY_RUN=1). stdout \ub9c8\uc9c0\ub9c9 50\uc904\ub9cc origin\uc73c\ub85c \ubc1c\uc1a1 (full log\ub294 ~/.hermes/cron/output/ \uc5d0 \uc790\ub3d9 \uc800\uc7a5\ub428).\n\n\uc0ac\uc6a9\uc790 \uc758\ub3c4: memory, cron, code \ub4f1\uc744 github\uc5d0 \ub9e4\uc77c \uae30\ub85d\uc6a9 push (\ub2e8\ubc29\ud5a5, \uc0ac\uc6a9\uc790\uac00 'github\uc740 \uae30\ub85d\uc6a9' \uc73c\ub85c \uba85\uc2dc). DRY-first \uc6b4\uc601 \u2014 \uc0ac\uc6a9\uc790\uac00 \"prod \ucf1c\" \ud55c\ub9c8\ub514 \uc548 \ud558\uba74 \uc808\ub300 push \uc548 \ud568.\n\n## No-agent \ubaa8\ub4dc\n- \uc774 cron\uc740 --script \ubaa8\ub4dc(no_agent=true)\ub85c \uc2e4\ud589. LLM \ud638\ucd9c \uc5c6\uc774 stdout \uadf8\ub300\ub85c \ubc1c\uc1a1\ub428.\n- \uc774\ubc88 prompt\ub294 cron \ub4f1\ub85d meta\uc6a9. \uc2e4\uc81c \uc2e4\ud589\uc740 \uc2a4\ud06c\ub9bd\ud2b8\uac00 \ub2f4\ub2f9.\n\n## Core Rules\n- **DRY-first \uc808\ub300 \uc6d0\uce59**: \uc0ac\uc6a9\uc790\uac00 'prod \ucf1c' / '\uc774\uc81c \ud478\uc2dc\ud574' \ub958 \uba85\uc2dc \uc5c6\uc774 DRY_RUN=0 \uae08\uc9c0\n- \uc2a4\ud06c\ub9bd\ud2b8 \uc2e4\ud589 \uc2e4\ud328\ud574\ub3c4 cron \uc790\uccb4 \uc8fd\uc9c0 \uc54a\uac8c set -uo pipefail (not -e) \uc720\uc9c0\n- stdout\uc774 \ube44\uba74 (quiet \uc2dc \u2014 no changes) \uc0ac\uc6a9\uc790\ud55c\ud14c \ubc1c\uc1a1 \uc548 \ub418\ub3c4\ub85d cron \uae30\ubcf8 \ubc1c\uc1a1 noop\n- push/PR/fork/SMTP \ubc1c\uc1a1 \u274c \u2014 read-only + dry record \ub9cc\n\n## Push targets (\uc2e4\uce21 \uac80\uc99d, 2026-07-07)\n- \u2460 mybotagent/hermes-wiki \u2192 200 OK, origin \uc774\ubbf8 \uc124\uc815\ub428\n- \u2461 mybotagent/hermes-skills \u2192 404 (\uc0ac\uc6a9\uc790 \uc0dd\uc131 \ud544\uc694)\n- \u2462 mybotagent/hermes-scripts \u2192 404 (\uc0ac\uc6a9\uc790 \uc0dd\uc131 \ud544\uc694)\n- \u2463 mybotagent/hermes-config \u2192 404 (\uc0ac\uc6a9\uc790 \uc0dd\uc131 \ud544\uc694)\n\u2192 \u2461\u2462\u2463\ub294 safe-skip + \uc0ac\uc6a9\uc790 1\ud68c \uc0dd\uc131 \uc694\uccad \uba54\uc2dc\uc9c0\ub9cc \ucd9c\ub825. \u2460\ub9cc \uc815\uc0c1 \ucc98\ub9ac.\n\n## Secret safety\n- \uc808\ub300 commit \uae08\uc9c0: .env, *.token, *.pem\n- jobs.json (12MB) commit \uae08\uc9c0; jobs.meta.json \ub9cc \ud478\uc2dc (\uc774\ub984/\uc2a4\ucf00\uc904 \uba54\ud0c0)\n- memory.md\ub294 redaction \uac70\uce5c people/memory-snapshot \ucd94\ucd9c\ubcf8\ub9cc\n\n## \ucc38\uace0\n- DESIGN.md: ~/.hermes/projects/hermes-architecture-deck/DESIGN.md\n- \uc2a4\ud06c\ub9bd\ud2b8: ~/.hermes/scripts/hermes_config_sync.sh\n- \uae30\uc874 wiki-auto-refresh (cron 537dfbb83b81) \u2192 \ubcf8 cron \ub3c4\uc785 \ud6c4 \ub3d9\uc77c scope \uc911\ubcf5. \uc0ad\uc81c \uacb0\uc815\uc740 \ub2e4\uc74c cycle \uc0ac\uc6a9\uc790 confirm \ud6c4.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "hermes_config_sync.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 13 * * *",
+        "display": "30 13 * * *"
+      },
+      "schedule_display": "30 13 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 32
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-08T00:10:35.959212+08:00",
+      "next_run_at": "2026-08-09T13:30:00+08:00",
+      "last_run_at": "2026-08-08T13:30:25.083586+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1524078379832180777",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #hermes\uad00\ub9ac / \ub9e4\uc77c \ud5e4\ub974\uba54\uc2a4 \uc124\uc815(memory , cron , code\ub4f1)\uc774 github\ub0b4\uc6a9\uacfc \ub3d9\uae30\ud654\uac00 \ub418\uc5b4\uc57c\ub418 \uc774 \uac83\uc744 cron\uc73c\ub85c \ud574\uc918 \uae30\uc874 \uc791\uc5c5\uc774 ...",
+        "thread_id": "1524078379832180777",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "0e095c406dae",
+      "name": "\ud83e\uddf9 disk hygiene watchdog (KST 06:50, DRY-first)",
+      "prompt": "disk hygiene watchdog (DRY-first). \ub9e4\uc77c KST 06:50 = 21:50 UTC. hermes_disk_hygiene.py \uc2e4\ud589 (default DRY \ubaa8\ub4dc). stdout\ub9cc \ubc1c\uc1a1 (origin \ub610\ub294 local).\n\n\uc0ac\uc6a9\uc790 \uc758\ub3c4: \"\uba54\ubaa8\ub9ac, \ub514\uc2a4\ud06c \uc6a9\ub7c9 \uad00\ub9ac, \uc790\uc728 \uc6b4\uc601 \ud575\uc2ec\". \ub514\uc2a4\ud06c \uc790\ub3d9 \uad00\ub9ac cron \ubd80\uc7ac\uc600\uc74c (memory_alert/curator\ub294 memory\ub9cc). \ubcf8 cron\uc774 \uadf8 \uac2d\uc744 \ucc44\uc6c0.\n\n## No-agent \ubaa8\ub4dc\n- LLM \ud638\ucd9c 0. hermes_disk_hygiene.py \ub2e8\uc77c \uc2e4\ud589.\n- \ubaa8\ub4dc \uacb0\uc815: cron prompt\uc5d0\uc11c DRY_RUN=0 \uba85\uc2dc \uc548 \ud568 \u2192 default DRY \ubaa8\ub4dc.\n\n## Core Rules\n- DRY-first \uc808\ub300 \uc6d0\uce59. \uc0ac\uc6a9\uc790\uac00 \"prod \ucf1c\" \ud55c\ub9c8\ub514 \uc548 \ud558\uba74 mutation 0.\n- 6\ucd95 \uce21\uc815 (df / state.db / snapshots / sessions / logs / tmp_pack_) \ubaa8\ub450 \uc9c4\ud589, \ucd9c\ub825.\n- 80%+ \uc2dc silent, 90%+ \uc2dc \uc0ac\uc6a9\uc790 Discord, 95%+ \uc2dc aggressive cleanup (\ubaa8\ub450 DRY \ubaa8\ub4dc\uc5d0\uc120 \ubcf4\uace0\ub9cc).\n- state.db / snapshot / session \uc0ad\uc81c \u274c (\uc0ac\uc6a9\uc790 \uacb0\uc815 \u2014 alert only).\n- \uc808\ub300 \uc548 \ud568: state.db truncate, snapshot \uc0ad\uc81c, node_modules \uc815\ub9ac.\n\n## Tier thresholds (\ub2e8\uc77c\uacf5\uc2dd, \uace0\uc815)\n- df 80%  caution  (silent)\n- df 90%  warn     (alert, + log truncate)\n- df 95%  critical (alert, + tmp_pack git gc)\n\n## Push target\n- origin = \uc0ac\uc6a9\uc790\uac00 \ubcf4\uace0 \ubc1b\uae30. local = silent (Slack only).\n\n## \ucc38\uace0\n- \uc2a4\ud06c\ub9bd\ud2b8: ~/.hermes/scripts/hermes_disk_hygiene.py\n- \uc2a4\ud0ac: ~/.hermes/skills/autonomous-system-hygiene/ (system-audit-methodology.md, step-4-candidates.md \ucc38\uc870)\n- \uae30\uc874 cron: memory_alert (f405cd52a6e8, \ud3c9\uc77c 09:00 KST)\uc640\ub294 \ubcc4\uac1c (memory vs disk).",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "hermes_disk_hygiene.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "50 21 * * *",
+        "display": "50 21 * * *"
+      },
+      "schedule_display": "50 21 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 32
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-08T01:16:00.139876+08:00",
+      "next_run_at": "2026-08-09T21:50:00+08:00",
+      "last_run_at": "2026-08-08T21:50:28.052963+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1524078379832180777",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #hermes\uad00\ub9ac / \ub9e4\uc77c \ud5e4\ub974\uba54\uc2a4 \uc124\uc815(memory , cron , code\ub4f1)\uc774 github\ub0b4\uc6a9\uacfc \ub3d9\uae30\ud654\uac00 \ub418\uc5b4\uc57c\ub418 \uc774 \uac83\uc744 cron\uc73c\ub85c \ud574\uc918 \uae30\uc874 \uc791\uc5c5\uc774 ...",
+        "thread_id": "1524078379832180777",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "142cadb58551",
+      "name": "\ud83e\uddf9 \uc8fc\uac04 \uba54\ubaa8\ub9ac/wiki \uc790\ub3d9 \uc815\ub9ac",
+      "prompt": "\uc8fc\uac04 \uba54\ubaa8\ub9ac/wiki \uc790\ub3d9 \uc815\ub9ac \ud0dc\uc2a4\ud06c:\n\n1. memory tool\ub85c \ud604\uc7ac \uba54\ubaa8\ub9ac \uc0c1\ud0dc \ud655\uc778 (target='memory')\n2. 80% \uc774\uc0c1\uc774\uba74 \ubd88\ud544\uc694\ud55c \uc5d4\ud2b8\ub9ac \uc2dd\ubcc4 \u2192 wiki\uc5d0 \uc0c1\uc138 \uc815\ubcf4\uac00 \uc788\ub294 \ud56d\ubaa9\uc740 \uc81c\uac70\n3. user profile\ub3c4 \ud655\uc778 (target='user') \u2192 90% \uc774\uc0c1\uc774\uba74 \uc815\ub9ac\n4. wiki index.md \uc77d\uc5b4\uc11c infra/ \ub514\ub809\ud1a0\ub9ac \uc2e0\uaddc \ud398\uc774\uc9c0 \ub204\ub77d \ud655\uc778\n5. \uc815\ub9ac \uacb0\uacfc\ub97c \uc694\uc57d (\uc2dc\uc791/\uc885\ub8cc \uc0ac\uc6a9\ub960, \uc81c\uac70 \ud56d\ubaa9, wiki \uc5c5\ub370\uc774\ud2b8 \ub0b4\uc5ed)\n\n*** \uc911\uc694: \uc815\ub9ac \uc791\uc5c5\uc740 \uc2e4\uc81c\ub85c \uc218\ud589\ud560 \uac83 (memory operation batch \uc0ac\uc6a9). \ub2e8\uc21c \ubcf4\uace0\ub9cc \ud558\uc9c0 \ub9d0 \uac83.\n*** meta automation \ubc94\uc8fc\uc5d0 \uc18d\ud558\uc9c0 \uc54a\uc74c \u2014 \uc774 cron\uc740 \uae30\uc874 wiki AGENTS.md\uc5d0 \uc815\uc758\ub41c weekly cleanup\uc758 \uad6c\ud604\uccb4.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": "deepseek",
+      "model_snapshot": "deepseek-v4-flash",
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 7 * * 0",
+        "display": "0 7 * * 0"
+      },
+      "schedule_display": "0 7 * * 0",
+      "repeat": {
+        "times": null,
+        "completed": 4
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-17T04:01:22.496464+08:00",
+      "next_run_at": "2026-08-16T07:00:00+08:00",
+      "last_run_at": "2026-08-09T07:11:53.109672+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1520640537995247698",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \uc77c\uc815\uad00\ub9ac",
+        "thread_id": "1520640537995247698",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "276405a79d88",
+      "name": "\ud83d\udcca Paper Portfolio \uc77c\uc77c \uac31\uc2e0 + GitHub push + Vercel",
+      "prompt": "Run paper_tracker_daily.sh to update portfolio data and push to GitHub. Vercel auto-deploys from GitHub.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "paper_tracker_daily.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 18 * * 1-5",
+        "display": "45 18 * * 1-5"
+      },
+      "schedule_display": "45 18 * * 1-5",
+      "repeat": {
+        "times": null,
+        "completed": 19
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-17T05:34:12.986262+08:00",
+      "next_run_at": "2026-08-10T18:45:00+08:00",
+      "last_run_at": "2026-08-07T19:00:41.164923+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1510404235915694170",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #\uc8fc\uc2dd-\uc99d\uc2dc / Hermes",
+        "thread_id": "1510404235915694170",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "05bd40b25f6f",
+      "name": "\ud83d\udd04 Self-Improving Hermes (22:50 KST, Phase 1~4)",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "self_hermes.py",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "50 13 * * *",
+        "display": "50 13 * * *"
+      },
+      "schedule_display": "50 13 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 11
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-28T19:04:55.161595+08:00",
+      "next_run_at": "2026-08-09T13:50:00+08:00",
+      "last_run_at": "2026-08-08T13:50:19.077406+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1531617389869928459",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #hermes\uad00\ub9ac / \uc2a4\uc2a4\ub85c \uc790\uac00\uac1c\uc120 \ud788\ub294 \ud558\ub124\uc2a4\ub97c \uad6c\ucd95\ud574",
+        "thread_id": "1531617389869928459",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
+    },
+    {
+      "id": "bfe5821b5e27",
+      "name": "\ud83d\udc33 hermes-management \uc5c5\ub370\uc774\ud2b8 (git pull + Docker rebuild)",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "provider_snapshot": null,
+      "model_snapshot": null,
+      "base_url": null,
+      "script": "hermes_management_update.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 20 * * *",
+        "display": "0 20 * * *"
+      },
+      "schedule_display": "0 20 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 12
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-28T19:21:49.771412+08:00",
+      "next_run_at": "2026-08-09T20:00:00+08:00",
+      "last_run_at": "2026-08-08T20:00:22.326166+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1524078379832180777",
+        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #hermes\uad00\ub9ac / \ub9e4\uc77c \ud5e4\ub974\uba54\uc2a4 \uc124\uc815(memory , cron , code\ub4f1)\uc774 github\ub0b4\uc6a9\uacfc \ub3d9\uae30\ud654\uac00 \ub418\uc5b4\uc57c\ub418 \uc774 \uac83\uc744 cron\uc73c\ub85c \ud574\uc918 \uae30\uc874 \uc791\uc5c5\uc774 ...",
+        "thread_id": "1524078379832180777",
+        "user_id": "1327192313616797706"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "fire_claim": null
     }
   ],
-  "updated_at": "2026-07-05T08:01:10.688857+08:00"
+  "updated_at": "2026-08-09T12:00:37.935321+08:00"
 }
