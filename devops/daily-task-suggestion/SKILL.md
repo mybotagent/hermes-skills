@@ -74,7 +74,7 @@ metadata:
 - `Kanban 중복 정리` / `Backlog 정리` — ready 5개 이상 (정리 제안 자체가 미실행으로 쌓임)
 
 자식 태스크 생성 전 반드시:
-1. `kanban_health.py`의 중복 title 목록과 스테일 ready 목록을 보고, **제안하려는 주제와 동일/유사한 open 태스크가 이미 있는지 확인**.
+1. `kanban_health.py`의 중복 title 목록과 스테일 ready 목록을 보고, **제안하려는 주제와 동일/유사한 open 태스크가 이미 있는지 확인**. kanban_health.py는 *기존 title 간* 중복만 보여주므로, 후보 주제별로 open title 전체를 키워드 grep하는 스캔을 추가로 수행할 것 (예: `cron-jobs`, `recap`, `W32`, `README` — python3 heredoc은 cron 모드 허용, `/tmp/kanban_list.json` 읽기). 후보 키워드에 기존 open 태스크가 걸리면 그 주제는 신규 생성 금지 (2026-08-10 실측: cron-jobs 3건, recap 2건 이미 존재 → 제안에서 제외).
 2. 있으면 새로 생성하지 말고 **백로그 정리(중복 dedup + 스테일 archive)를 최우선 제안(P1)으로 올린다**. 오늘의 제안 2~4개 중 1개는 항상 백로그 정리를 포함하는 것을 기본값으로.
 3. 진짜 새 태스크를 만들 때는 body에 "기존 태스크(t_xxxx)가 해결되면 그것도 complete/archive"라고 명시해 중복 처리 연결.
 4. 이미 20개+ 중복이 있는 title의 태스크는 절대 다시 만들지 말 것.
@@ -152,3 +152,4 @@ cron의 최종 응답으로 아래 형식을 그대로 출력:
 | README.md가 INDEX.md 역할 | AGENTS.md는 index.md 요구하나 실제로는 README.md가 catalog | README.md 확인 후 index.md 생성 고려 |
 | 동일 제안이 매일 반복 생성되어 중복 백로그 누적 (예: 'Wiki lint 13건' todo 29개, 'Wiki logs/index.md 갱신' ready 7개) | cron이 매일 실행되며 같은 주제를 재제안 — idempotency-key는 부모만 방지, 자식은 무방비 | 제안 전 open 태스크 title 중복 스캔 → 중복 주제는 신규 생성 금지, 대신 백로그 정리 태스크를 P1로 제안 (섹션 2 참조) |
 | `python3 - <<'EOF'` heredoc (stdin 리다이렉트)은 cron 모드에서 허용됨 | 차단되는 것은 파이프-to-인터프리터(`\| jq` 등)뿐 — stdin heredoc은 Tirith 통과 (2026-08-05 확인) | 복잡한 JSON 분석은 임시 파일 저장 후 `python3 - <<'EOF'` heredoc으로 안전하게 실행 가능 |
+| kanban JSON에 parent 링크 필드 없음 — `parent_id`로 자식 조회 시 0건 (2026-08-10 실측) | `hermes kanban list --json` 출력에 parent 연관 정보가 전혀 노출되지 않음 | 자식 생성 검증은 title로 조회(`title.startswith(...)` 또는 키워드), 상태는 parent complete 후 `ready` 승격 확인 |
