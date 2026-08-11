@@ -568,6 +568,29 @@
 - P19 복구: `git restore index.md`로 working-tree 전용 오염 제거 (57개 rogue 항목, 1.22.0 빠른 복구 경로).
 - 검증: `git diff HEAD -- index.md` 0줄 → commit/push 불필요.
 
+## 2026-08-10 (P19 10회 연속 재발 — committed 오염 복구 + push)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 57건을 "자동 추가 (2026-08-08)" 레이블로 대량 삽입 (subagents-library 5 + logs 51 + raw W32 1). 07-28~08-09에 이어 10일 연속 동일 패턴.
+- 이번엔 **committed 오염** — 08-08 오염분이 08-09 weekly cleanup 커밋(55a0768)에 편승해 HEAD와 origin/main 모두에 반영됨. `git status` clean이어도 `git show HEAD:index.md` '자동 추가' 57건 확인 (index-md-audit dead link 56건이 logs/·subagents-library/ 경로 → P19 의심).
+- P18 pipe 오염: 0건 (부수 효과 없음). logs submodule: clean (May 31 wildcard 커버로 2c-ter 누락 아님).
+
+**적용:**
+- P19 복구: `git show ebaec02:index.md > index.md`로 committed 오염 제거 (57개 rogue 항목) — HEAD~1(ebaec02)이 깨끗함을 `grep -c '자동 추가'`=0으로 확인 후 이전 버전 복원 (57줄 patch의 P18/P20 위험 회피).
+- raw/2026-W32-weekly-recap-draft.md는 실제 파일(08-07 생성)이므로 raw 섹션에 PAT B로 정식 재등록 (W28~W31 패턴과 동일, 🆕 마커 포함).
+- commit `d9c577a` (1 file, +2/-58), push `55a0768..d9c577a` ✅.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 75 = 75 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 9 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅.
+- P19 scan: index.md '자동 추가' 0건 ✅.
+- git status: clean, up-to-date with origin/main.
+- logs submodule: clean, index 일치 (May 31 wildcard 커버 확인).
+
 **감사 결과 (모두 통과):**
 - wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
 - markdown-link-audit.py: 0 broken, 0 P11 ✅.

@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.22.0
+version: 1.23.0
 changelog:
+  - "1.23.0 (2026-08-10): (a) P19 committed+clean-status 변형 — git status clean이어도 HEAD/origin/main이 오염된 케이스 (08-08 오염분 57건이 08-09 weekly cleanup 커밋 55a0768에 편승해 push, 10회 연속 재발); `git restore index.md`는 오염된 HEAD를 복원하므로 무용 → `git show <clean-parent>:index.md > index.md` 복원 경로 추가 (검증: 오염 커밋의 index.md diff가 rogue 추가분뿐 + parent '자동 추가' 0건); (b) P19 탐지 보강 — git status clean ≠ index.md clean, `git show HEAD:index.md` 직접 검사 필수, index-md-audit dead link가 logs/·subagents-library/ 경로에 집중되면 committed P19 의심"
   - "1.22.0 (2026-08-05): (a) P20 신규 — patch 도구 fuzzy-match mis-anchor: session-notes.md의 근미동일 섹션(매일 같은 감사결과 footer 반복)에서 old_string이 이전 섹션 footer에 잘못 앵커되어 섹션 본문 교체·중복·유실 발생 (실제 사례: 08-05 append 중 08-04 섹션 유실, 3회 patch로 복구). append 시 날짜-유일 판별자 앵커 필수, patch 후 grep 헤더 카운트 검증; (b) P19 빠른 복구 경로 — git diff HEAD가 rogue 추가분뿐이면 patch 대신 `git restore index.md` 원복 (P18/P20 위험 회피); (c) markdown-link-audit.py는 위치 인자([WIKI_ROOT]) 미지원 명시"
   - "1.21.0 (2026-08-03): (a) P18 스캔 패턴 정정 — find 기반 `^\\|-` broad regex가 markdown 테이블 separator(|--, |-----)와 셀을 false-positive로 잡음, 정확 패턴 `^|- `(pipe-dash-space) 사용; (b) P18 스캔 범위에 스킬 references/(session-notes.md) 추가 — 2026-W29 잔재 오염 발견 사례; (c) P19 5회 연속 재발(07-28~08-03) + committed 오염이 무관 커밋(weekly cleanup/docs)에 편승해 push되는 변형 + origin/main 검증 단계 추가; (d) 2c-ter 새 달 섹션 신설 절차(2026-08 August 사례); (e) tag-audit 1-file 케이스 교체 예시 명시 (`project` → `project-management`)"
   - "1.20.0 (2026-07-30): (a) P19 복구 절차에 단계 2.5 검증 추가 — working-tree 전용 오염 vs committed 오염 구분 (git diff HEAD + git show HEAD:index.md 검증); (b) P19 3회 연속 재발 사례 문서화 (2026-07-28/29/30)"
@@ -851,6 +852,8 @@ grep -rn '^|- ' ~/.hermes/skills/devops/wiki-auto-refresh/references/
 1. index.md 하단에 `— 자동 추가 (YYYY-MM-DD)` 패턴이 있으면 P19 의심
 2. `logs/` 또는 `subagents-library/` 경로가 index.md 내 markdown link에 포함되어 있으면 P19
 3. P19가 index.md를 오염시킨 동시에 P18(`|- ` pipe corruption)도 `infra/cron-jobs.md`에서 발생할 가능성 높음 — **P18 검사와 P19 검사를 동시에 수행할 것**
+4. **git status clean ≠ index.md clean (2026-08-10)**: 오염분이 무관 커밋(weekly cleanup 등)에 편승해 committed되면 `git status -sb`가 깨끗해 보임. working tree가 clean이어도 **`git show HEAD:index.md | grep -c '자동 추가'` 로 HEAD 직접 검사 필수** (clean인데 오염 = committed 변형).
+5. **index-md-audit.py dead link 집중 패턴**: dead link가 전부 `logs/`, `subagents-library/` 경로에 몰려 있으면 committed P19 의심 (실제 사례 2026-08-10: dead link 56건이 전부 submodule 경로 → grep '자동 추가' 57건 확정).
 
 **처리 (안전 순서):**
 ```bash
@@ -864,6 +867,13 @@ grep -n '자동 추가' ~/.hermes/wiki/index.md
 #    외 아무 변경도 없으면 patch 대신 `git restore index.md` (또는
 #    `git checkout HEAD -- index.md`)로 working tree 원복 — 50+줄 patch의
 #    P18/P20 오염 위험을 회피하고 검증(빈 diff)이 즉시 완료됨.
+#    ⚠ committed+clean-status 경로 (2026-08-10 검증): git status가 clean인데 HEAD도
+#    오염된 경우(오염분이 무관 커밋에 편승해 push됨) `git restore index.md`는 **오염된
+#    HEAD 버전을 복원**하므로 무용. 대신 마지막 깨끗한 커밋에서 복원:
+#       (1) `git show <오염 커밋> -- index.md` diff가 rogue 추가분뿐인지 확인
+#       (2) `git show <parent>:index.md | grep -c '자동 추가'` = 0 으로 parent 청정 확인
+#       (3) `git show <parent>:index.md > index.md` 로 복원 (57줄 patch의 P18/P20 위험 회피)
+#    복원 후 rogue 블록에 섞여 있던 실제 파일(예: raw/*.md)은 해당 섹션에 PAT B로 정식 재등록.
 
 # 2.5) 복구 검증 — working-tree 전용 오염 vs committed 오염 구분
 #      patch 후 git diff HEAD가 빈 결과면 HEAD가 이미 깨끗했던 것.
@@ -903,6 +913,7 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 - 탐지: index-md-audit dead link 54건이 전부 logs/·subagents-library/ 경로 → P19 의심 → `grep -n '자동 추가' index.md` 56건 확정.
 - 복구: rogue 56개 제거 + raw/2026-W31-weekly-recap-draft.md만 raw/ 섹션 정식 재등록(PAT B) + P18 index.md 2건 수정 → commit `ebaec02` (3 files, +7/-61), push `d9fe56d..ebaec02` (미푸시 2건 포함 전량).
 - 이후 08-04/08-05에도 동일 패턴 재발 (working-tree 전용) — diff가 rogue 추가분뿐임을 확인 후 `git restore index.md` 빠른 경로로 복구, 커밋 불필요.
+- **2026-08-10 (10회 연속, 첫 clean-status committed 사례):** 08-08 오염분(57건: subagents-library 5 + logs 51 + raw W32 1)이 08-09 weekly cleanup 커밋(55a0768)에 편승해 HEAD+origin/main 모두 push됨. `git status` clean이었으나 `git show HEAD:index.md` '자동 추가' 57건으로 탐지. 55a0768의 index.md diff가 rogue 추가분뿐임과 ebaec02 청정(0건)을 확인 후 `git show ebaec02:index.md > index.md`로 parent 복원 + raw/2026-W32-weekly-recap-draft.md만 raw 섹션 PAT B 재등록 → commit `d9c577a` (1 file, +2/-58), push `55a0768..d9c577a`.
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 
