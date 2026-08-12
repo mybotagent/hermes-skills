@@ -591,14 +591,27 @@
 - git status: clean, up-to-date with origin/main.
 - logs submodule: clean, index 일치 (May 31 wildcard 커버 확인).
 
+## 2026-08-11 (P19 11회 연속 재발 — working-tree 전용 오염 복구 + P18 committed 복구)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 57건을 "자동 추가 (2026-08-11)" 레이블로 대량 삽입 (subagents-library 5 + logs 52). 07-28~08-10에 이어 11일 연속 동일 패턴. 이번엔 **working-tree 전용** (HEAD/origin/main 모두 '자동 추가' 0건).
+- P18 pipe 오염: index.md 58-59행 `|- ` 2건 (linear-hermes-project, dev-harness-kit-daily-review) — **committed 상태** (39f01b2에서 도입, 아직 미push).
+- session-notes.md: 08-10 섹션 뒤에 08-07 감사 결과 블록(74=74) 중복 복사 (P20 패턴) — 제거.
+
+**적용:**
+- P19 복구: `git restore index.md`로 working-tree 전용 오염 제거 (57개 rogue 항목, 빠른 복구 경로). 검증: `git diff HEAD -- index.md` 0줄.
+- P18 복구: index.md 58-59행 `|- ` → `- ` (patch 2건).
+- session-notes 중복 블록 제거 (594-603행, 08-07 감사 결과 74=74).
+- tag fix: infra/dev-harness-kit-daily-review.md `dev-harness-kit` → `harness` (1-file 미등록 태그, taxonomy에 harness 기존 존재 — 2026-08-03 project→project-management 사례와 동일 패턴).
+- auto-fill-dates: infra/dev-harness-kit-daily-review.md에 `updated: 2026-08-11` 채움 (1건).
+
 **감사 결과 (모두 통과):**
 - wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
 - markdown-link-audit.py: 0 broken, 0 P11 ✅.
-- index-md-audit.py: 74 = 74 (1:1 일치), 0 dead link ✅.
+- index-md-audit.py: 76 = 76 (1:1 일치), 0 dead link ✅.
 - tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
-- auto-fill-dates.py: 0 filled, 8 skipped (raw/ immutable) ✅.
-- P18 cross-file scan: 0 실제 오염 ✅.
-- P19 scan: index.md '자동 추가' 0건 ✅.
-- git status: clean, up-to-date with origin/main.
+- auto-fill-dates.py: 1 filled, 9 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅ (wiki + 스킬 references).
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
 - logs submodule: clean, index 일치 (May 31 wildcard 커버 확인).
 

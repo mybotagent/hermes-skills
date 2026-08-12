@@ -1,7 +1,22 @@
 # Board Saturation Patterns (Kanban 백로그 과포화)
 
 > daily-task-suggestion 실행 중 실측한 보드 과포화 지표와 대응 패턴.
-> 실측: 2026-08-11 07:00 KST (open 259건)
+> 실측: 2026-08-11 07:00 KST (open 259건), 2026-08-12 07:00 KST (open 267건)
+
+## 실측 스냅샷 (2026-08-12)
+
+| 지표 | 값 |
+|:-----|:---|
+| open 태스크 | 267 (todo 36 / ready 229 / in_progress 1 / backlog 1) |
+| todo 중복 | 'Wiki lint 13건' 동일 title **36개** (todo 전부 차지 — 08-11의 35개에서 1 증가, 보드 정체 지속) |
+| ready 스테일 (≥7d) | 189건 (그중 P0/P1 117건) — 08-11 178건에서 +11 |
+| [Auto] 태스크 | 104건 (08-11 101건 → +3) |
+| self-improve-loop 일일 중복 | 39건 (08-11 37건 → +2, 8/11분 신규 생성 확인) |
+| cleanup/정리 태스크 누적 | **37건** (P1 30 + P2 7) — 08-11 34건 → +3 |
+| lint 관련 | 57건 (todo 36 + ready 21) |
+| 기타 중복 클러스터 | README 48건, cron 39건, logs/index 10건, how-to-use-hermes 7건, W33 회고 0건 |
+
+**핵심 관찰 (2026-08-12):** 08-11 생성한 supersede cleanup 태스크 `t_771dbc18`가 하루 뒤에도 **미실행으로 ready에 그대로 존재**. cleanup 태스크는 '생성'만 되고 dispatcher가 실행하지 않아 매일 쌓이는 구조적 문제 → 08-12에 root-cause 태스크 제안: `t_4fe0e249` (dispatcher 실행 경로 점검 — cleanup 전용 cron 또는 priority 임계 조정). 즉 supersede 태스크를 만들어도 실행 주체가 없으면 무의미하므로, 과포화가 3일 연속 지속되면 cleanup 생성과 함께 root-cause 분석을 병행 제안할 것.
 
 ## 실측 스냅샷 (2026-08-11)
 
@@ -30,6 +45,8 @@
    - 2026-08-11 예시 ID: t_c3664df5, t_e542403b, t_dcdef0c6, t_7686c81a, t_295e7f68, t_63617983, t_458e8e0b, t_db7285b8, t_1275bb8d, t_4adc845c, t_c1f9cd45, t_c3544f5a, t_ba8ef66e, t_01526389, t_4c863a0c, t_217001bc, t_4303b5a7, t_5e0e6fc0, t_01d6cc75, t_ee34ded5, t_f0682ac1, t_9a8ced85, t_c0207961, t_cb0b7ac3, t_547a15e8, t_73dbde1b, t_e1150a89, t_e9c9cd2b, t_865b61bc, t_cc07e3ab
 3. body에 실행 순서: kanban_health.py → lint 중복 1개만 keep → [Auto]/self-improve-loop false positive archive → 기존 cleanup ID들 complete/archive → kanban_health.py 재실행으로 검증
 4. P1으로 생성. 성공 결과: 2026-08-11 부모 t_4a8d88b4 + 자식 3건 ready 승격 확인.
+5. 2026-08-12 재적용 결과: 부모 t_7e218b37 + 자식 3건 (t_64227dd5 cleanup P1, t_8b49d9a3 dev-harness-kit 문서화 P2, t_4fe0e249 dispatcher root-cause P2) ready 승격. cleanup body에 기존 cleanup 37건 ID 전체 나열해 supersede 명시.
+6. **실행 주체 부재 확인 (2026-08-12)**: supersede 태스크를 생성해도 다음 날까지 미실행으로 남음 (t_771dbc18 사례) → 2일 연속 동일 수치 상승 시 cleanup + root-cause 분석을 세트로 제안할 것. root-cause는 cleanup과 별개 태스크로 생성 (cleanup body에 흡수하지 말 것 — dispatcher가 cleanup을 실행하지 않는 것이 문제이므로).
 
 ## 오염원 클러스터 스캔 (python3 heredoc — cron 모드 허용)
 
@@ -48,3 +65,4 @@ for k in clusters:
 - self-improve-loop 일일 중복 37건 → cron 스킬/스크립트에 "기존 open 태스크 있으면 신규 생성 금지" 규칙 추가 (2026-08-11에 P2 태스크로 제안, t_01b6e0f0).
 - README 동기화 8+건 반복 → index.md ↔ README.md 역할 단일화 방안 (기계적 sync 대신 구조적 해결).
 - [Auto] 에픽 101건 → daily-repo-orchestrator false positive 필터 개선 (t_f2f7ec38, 2026-08-10 생성).
+- cleanup 태스크 37건 미실행 (supersede 포함) → dispatcher가 ready P1을 실행하지 않는 경로 분석 + cleanup 전용 실행 cron 제안 (t_4fe0e249, 2026-08-12 생성).

@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.23.0
+version: 1.24.0
 changelog:
+  - "1.24.0 (2026-08-11): (a) 2c-ter logs index wildcard false-positive — logs/index.md의 glob 항목(예: `[2026-05-31-*](2026/)`)이 basename grep으로 매치되지 않아 05-31 배치 13건이 매회 MISSING 오탐, MISSING 판정 전 prefix+glob grep 필수; (b) P18 committed 변형 — `|- ` 오염이 커밋된 채 잔존 (git diff HEAD 미표시 = committed), `git log -S`로 도입 커밋 추적, 복구 시 commit+push 필요; (c) P20 탐지 보강 — 마지막 섹션 뒤 이전 섹션 '감사 결과' 블록 중복 복사 (08-10 뒤 08-07 74=74, 숫자 불일치로 탐지), EOF 중복 블록 제거"
   - "1.23.0 (2026-08-10): (a) P19 committed+clean-status 변형 — git status clean이어도 HEAD/origin/main이 오염된 케이스 (08-08 오염분 57건이 08-09 weekly cleanup 커밋 55a0768에 편승해 push, 10회 연속 재발); `git restore index.md`는 오염된 HEAD를 복원하므로 무용 → `git show <clean-parent>:index.md > index.md` 복원 경로 추가 (검증: 오염 커밋의 index.md diff가 rogue 추가분뿐 + parent '자동 추가' 0건); (b) P19 탐지 보강 — git status clean ≠ index.md clean, `git show HEAD:index.md` 직접 검사 필수, index-md-audit dead link가 logs/·subagents-library/ 경로에 집중되면 committed P19 의심"
   - "1.22.0 (2026-08-05): (a) P20 신규 — patch 도구 fuzzy-match mis-anchor: session-notes.md의 근미동일 섹션(매일 같은 감사결과 footer 반복)에서 old_string이 이전 섹션 footer에 잘못 앵커되어 섹션 본문 교체·중복·유실 발생 (실제 사례: 08-05 append 중 08-04 섹션 유실, 3회 patch로 복구). append 시 날짜-유일 판별자 앵커 필수, patch 후 grep 헤더 카운트 검증; (b) P19 빠른 복구 경로 — git diff HEAD가 rogue 추가분뿐이면 patch 대신 `git restore index.md` 원복 (P18/P20 위험 회피); (c) markdown-link-audit.py는 위치 인자([WIKI_ROOT]) 미지원 명시"
   - "1.21.0 (2026-08-03): (a) P18 스캔 패턴 정정 — find 기반 `^\\|-` broad regex가 markdown 테이블 separator(|--, |-----)와 셀을 false-positive로 잡음, 정확 패턴 `^|- `(pipe-dash-space) 사용; (b) P18 스캔 범위에 스킬 references/(session-notes.md) 추가 — 2026-W29 잔재 오염 발견 사례; (c) P19 5회 연속 재발(07-28~08-03) + committed 오염이 무관 커밋(weekly cleanup/docs)에 편승해 push되는 변형 + origin/main 검증 단계 추가; (d) 2c-ter 새 달 섹션 신설 절차(2026-08 August 사례); (e) tag-audit 1-file 케이스 교체 예시 명시 (`project` → `project-management`)"
@@ -319,6 +320,8 @@ done
 ```
 
 **주의:** `logs/` 레포는 연도별 서브디렉토리(예: `2026/`)에 로그 파일을 저장함. `*.md` glob만으로는 이 파일들을 잡지 못함. 반드시 `find`를 함께 사용할 것. `git status --porcelain`로 dirty submodule을 먼저 감지한 후, 변경된 파일만 집중 검사하는 것도 효율적인 방법.
+
+**⚠ Wildcard/glob 항목 false positive (2026-08-11 검증):** `logs/index.md`에 와일드카드 경로로 배치 등록된 항목(예: `| 05-31 | Initial wiki setup batch (10 files) | [2026-05-31-*](2026/) |`)은 basename grep으로 개별 매치되지 않아 위 검사가 MISSING으로 오탐한다. 실제 사례: `2026/2026-05-31-*.md` 13건이 매회 "MISSING FROM LOGS INDEX"로 보고되지만 모두 이 와일드카드 항목에 커버됨 (2026-08-06 이후 세션 노트의 "May 31 wildcard 커버" = 이 케이스). **MISSING 판정 전에** index.md에서 파일명 prefix + glob 패턴을 먼저 확인할 것: `grep -n '05-31' index.md` → `[2026-05-31-*]` 항목 발견 시 false positive로 분류.
 
 로그 파일이 index.md에 누락된 경우:
 1. 파일 mtime/content 확인 → 설명 작성
@@ -824,6 +827,8 @@ for dir_name, files in candidates.items():
 
 **P18의 범용성:** 이 pitfall은 index.md에 국한되지 않음. session-notes.md, references/, 또는 read_file 출력에서 복사한 old_string으로 patch하는 **모든 파일**에서 발생 가능. 항상 line number + `|` 구분자를 제거했을 것 확인할 것.
 
+**P18 committed 변형 (2026-08-11):** `|- ` 오염이 **커밋된 채** 잔존할 수 있음 — working tree에서 보여도 `git diff HEAD -- <file>`이 해당 줄 변경을 표시하지 않으면 HEAD에 이미 반영된 상태 (실제 사례: index.md 58-59행, 39f01b2에서 도입·미push). 판별: `git diff HEAD`에서 해당 줄이 안 보이면 committed. 도입 커밋 추적: `git log -S '|- [파일명]' --oneline -- index.md`. committed P18은 working-tree patch 후 반드시 commit + push (미push 상태면 다음 auto-sync 커밋에 편승해 함께 푸시됨 — push 전 `git show origin/main:<file> | grep -c '^|- '`로 원격 오염 여부도 확인).
+
 **P18 cross-file 동시 발생 (2026-07-28):** 이번 실행에서 P18 pipe 오염이 **동시에 2개 파일**(`index.md` + `infra/cron-jobs.md`)에서 발견됨. 둘 다 같은 외부 프로세스(`self_hermes.py`)에 의해 같은 실행에서 오염된 것으로 추정. P18 발견 시 **모든 .md 파일**(서브디렉토리 포함)을 grep으로 스캔할 것:
 
 ```bash
@@ -939,6 +944,11 @@ grep -n '^## ' ~/.hermes/skills/devops/wiki-auto-refresh/references/session-note
 grep -c '^## 2026-08-04' ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md  # 0=유실, 2+=중복
 # 내용도 검증: sed -n '<범위>p'로 발견 줄의 날짜 레이블이 해당 섹션과 일치하는지 확인
 # (헤더는 맞는데 본문이 다른 섹션 것으로 교체된 경우가 있음 — 헤더 개수만으로는 못 잡음)
+# ⚠ 파일 끝 중복 블록 (2026-08-11): 마지막 섹션 뒤에 이전 섹션의 "감사 결과" 블록이 통째로
+#   복사된 사례 — 08-10 섹션(75=75) 뒤에 08-07 블록(74=74)이 붙어있어 감사 숫자 불일치로 탐지.
+#   헤더 개수·순서가 정상이어도 EOF에 중복이 남을 수 있음. 마지막 섹션의 감사 숫자
+#   (index-md-audit N=N, auto-fill-dates filled N, skipped N)가 해당 날짜와 일치하는지 확인하고,
+#   EOF 블록이 이전 섹션과 동일 텍스트면 제거.
 ```
 
 **복구:**
