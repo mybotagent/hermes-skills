@@ -615,3 +615,23 @@
 - P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
 - logs submodule: clean, index 일치 (May 31 wildcard 커버 확인).
 
+## 2026-08-12 (P19 12회 연속 재발 — working-tree 전용 오염 복구)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 57건을 "자동 추가 (2026-08-12)" 레이블로 대량 삽입 (subagents-library 5 + logs 52). 07-28~08-11에 이어 12일 연속 동일 패턴. 이번엔 **working-tree 전용** (HEAD/origin/main 모두 '자동 추가' 0건, diff가 rogue 추가분 + newline 변경뿐 — raw/ 실제 파일 혼입 없음).
+- P18 pipe 오염: 0건 (부수 효과 없음). logs submodule: clean (May 31 wildcard 커버로 2c-ter 누락 아님).
+
+**적용:**
+- P19 복구: `git restore index.md`로 working-tree 전용 오염 제거 (57개 rogue 항목, 빠른 복구 경로). 검증: `git diff HEAD -- index.md` 0줄, `grep -c '자동 추가'` 0건 → commit/push 불필요.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 76 = 76 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 9 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅ (wiki + 스킬 references).
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+- logs submodule: clean, index 일치 (May 31 wildcard 커버 확인).
+

@@ -449,6 +449,51 @@ git push origin BRANCH
 권한을 부여한다. `gh secret set`으로 workflow file을 우회하거나, GitHub UI에서 직접
 PR을 생성할 수도 있다 (workflow 파일 제외 push → UI에서 별도 commit으로 추가).
 
+## 🍴 Fork-based PR review for upstreams we don't own (pull-only token)
+
+**Situation**: user asks for a daily review + PR pipeline on a repo owned by ANOTHER
+account (e.g. `sh-ai-x/dev-harness-kit`), and our token has only `pull` permission on it.
+
+**User's preferred answer (corrected 2026-08-12)**: do NOT ask the user for the other
+account's token or admin access to upstream. **Use our own fork for everything** — fork the
+repo, set secrets/variables on the fork, enable Actions on the fork, and let the review
+pipeline run there. The user said explicitly: "그냥 포크한거에 설정하면 되지" / "계정을 왜 접속할 필요가 있나".
+
+Setup (verified 2026-08-12):
+1. Fork: `POST /repos/<owner>/<repo>/forks` → `mybotagent/<repo>`
+2. Clone with token in URL (`https://mybotagent:${GITHUB_TOKEN}@github.com/mybotagent/<repo>.git`), add `upstream` remote (fetch-only — never push to upstream).
+3. **Enable Actions on the fork** — forks often report `total: 0` workflows until enabled:
+   ```bash
+   curl -sX PUT -H "Authorization: token $GITHUB_TOKEN" \
+     "https://api.github.com/repos/mybotagent/<repo>/actions/permissions" \
+     -d '{"enabled": true}'
+   ```
+   Then `GET .../actions/workflows` lists the copied workflows (e.g. 7 for dev-harness-kit).
+4. Set review secrets/variables **on the fork** (no upstream access needed):
+   - secrets: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`
+   - variable: `CI_REVIEW_PROVIDER=deepseek` (dev-harness-kit's provider picker)
+   - `gh secret set ... --repo mybotagent/<repo>` works with our own token.
+5. PR flow: work on a fork branch → open PR to upstream (`head=mybotagent:<branch>`, `base=main`).
+
+Pitfalls (all real, verified 2026-08-12):
+- **workflow_dispatch on review.yml fails at "Resolve PR + provider"** — a dispatch has no
+  PR number context, so the resolve step dies and the LLM jobs are skipped. The review
+  pipeline only works on a real PR (`pull_request` event). Test with a fork-internal PR
+  (fork branch → fork main) instead of dispatch.
+- **docs-only PRs get skipped by the scope gate** — review/security jobs are skipped and the
+  audit comment says `verdict=MISSING`; that is *designed* behavior in dev-harness-kit
+  (scope job gates LLM jobs on production-code touches), not a failure. Real code changes
+  trigger the LLM review.
+- **"리뷰 전 반드시 pull" (user hard rule)** — a daily review cron must
+  `git pull upstream main --ff-only` BEFORE reviewing AND again right before cutting the
+  branch. Stale local state produces wrong reviews/PRs. Pull failure = abort review.
+- **docs-only PRs are rejected by this user** — the daily PR must be real code review
+  (bugs, test gaps, code smells in `lib/`/`tools/`/`hooks/`/`skills/`), never just adding a
+  missing doc or `.ko` translation. The user closed the docs-only PR (#611) without merge and
+  said "프로젝트 목적을 이해못한거 같은데". Understand the repo's purpose first (read README/AGENTS.md) before proposing changes.
+
+Daily-review cron recipe with this pattern → `references/fork-based-pr-review.md`.
+
 ## Cross-references
 
 - `references/deepseek-openai-compat.md` — 🆕 DeepSeek V4 Flash API: endpoint,

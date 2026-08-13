@@ -1,7 +1,28 @@
 # Board Saturation Patterns (Kanban 백로그 과포화)
 
 > daily-task-suggestion 실행 중 실측한 보드 과포화 지표와 대응 패턴.
-> 실측: 2026-08-11 07:00 KST (open 259건), 2026-08-12 07:00 KST (open 267건)
+> 실측: 2026-08-11 07:00 KST (open 259건), 2026-08-12 07:00 KST (open 267건), 2026-08-13 07:00 KST (open 275건)
+
+## 실측 스냅샷 (2026-08-13) — 4일 연속 과포화, 신규 0건 판단 적용
+
+| 지표 | 값 |
+|:-----|:---|
+| open 태스크 | 275 (todo 37 / ready 236 / in_progress 1 / backlog 1) — 08-12 267건 → +8 |
+| todo 중복 | 'Wiki lint 13건' 동일 title **37개** (todo 전부 차지 — 08-12 36개 → +1, 보드 정체 지속) |
+| ready 스테일 (≥7d) | 193건 (그중 P0/P1 120건) — 08-12 189건 → +4 |
+| [Auto] 태스크 | 105건 (08-12 104건 → +1) |
+| self-improve-loop 일일 중복 | 40건 (08-12 39건 → +1) |
+| cleanup/정리 태스크 누적 | 37건 (P1 30 + P2 7) — 08-12 37건 → ±0 (신규 생성 없음) |
+| lint 관련 | 59건 (todo 37 + ready 22) |
+| 기타 중복 클러스터 | README 49건, logs/index 10건, cron-jobs 3건, memory 6건, dev-harness 1건, W32 1건, recap 0건 |
+
+**핵심 관찰 (2026-08-13):** 08-12 생성한 supersede cleanup `t_64227dd5`와 dispatcher root-cause `t_4fe0e249`가 하루 뒤에도 **둘 다 미실행으로 ready에 그대로 존재**. 4일 연속 과포화 + 모든 후보 주제(cleanup, lint, README, logs/index, dev-harness, 회고, memory)가 기존 open 태스크와 중복 → **rule 2/4/5 적용 결과 오늘은 신규 태스크 0건 생성, 상태 경고 리포트만 출력** (SILENT 아님 — 스테일 수치 상승 + 어제 태스크 미실행은 보고할 가치 있는 상태 변화). supersede를 매일 재생성하는 것은 오염 재현임을 재확인: cleanup supersede 생성은 **직전일 생성분(t_64227dd5 등)이 ready에 남아 있는 동안 절대 재생성 금지**.
+
+**대응 원칙 (2026-08-13 확정):**
+- cleanup supersede는 이미 1건 존재(가장 최신: t_64227dd5) → 그 실행을 기다릴 것. 신규 생성 금지.
+- root-cause 분석(t_4fe0e249)도 이미 존재 → 재생성 금지.
+- 모든 신규 주제 후보는 open title 키워드 grep으로 사전 차단됨 → **신규 0건이 올바른 출력**. 리포트는 보드 상태 실측 수치 + 미실행 경고 + 권장 행동(dispatcher 실행 우선)으로 구성.
+- 다음 실행(08-14): t_64227dd5/t_4fe0e249가 여전히 ready면 동일하게 신규 0건 리포트. 실행/archive된 경우에만 새 supersede 생성 가능.
 
 ## 실측 스냅샷 (2026-08-12)
 
