@@ -1,7 +1,23 @@
 # Board Saturation Patterns (Kanban 백로그 과포화)
 
 > daily-task-suggestion 실행 중 실측한 보드 과포화 지표와 대응 패턴.
-> 실측: 2026-08-11 07:00 KST (open 259건), 2026-08-12 07:00 KST (open 267건), 2026-08-13 07:00 KST (open 275건), 2026-08-14 07:00 KST (open 280건)
+> 실측: 2026-08-11 07:00 KST (open 259건), 2026-08-12 07:00 KST (open 267건), 2026-08-13 07:00 KST (open 275건), 2026-08-14 07:00 KST (open 280건), 2026-08-17 07:00 KST (open 295건)
+
+## 실측 스냅샷 (2026-08-17) — 6일차 과포화 가속, 신규 0건 판단 적용 (08-15/08-16 실행 기록 없음, 3일 갭)
+
+| 지표 | 값 |
+|:-----|:---|
+| open 태스크 | 295 (todo 41 / ready 252 / in_progress 1 / backlog 1) — 08-14 280건 → **+15** (3일간) |
+| todo 중복 | 'Wiki lint 13건' 동일 title **41개** (todo 전부 차지 — 08-14 38개 → +3, 보드 정체 지속) |
+| ready 스테일 (≥7d) | 215건 (그중 P0/P1 134건) — 08-14 203건 → +12 |
+| [Auto] 태스크 | 119건 (08-14 110건 → +9 — daily-repo-orchestrator가 08-15/08-16에도 신규 생성) |
+| self-improve-loop 일일 중복 | 44건 (08-14 41건 → +3) |
+| cleanup/정리 클러스터 | 정리 32 + 백로그 15 + 스테일 14 + archive 20 = 합계 81건 |
+| 대정리 supersede ready 누적 | **7건 전부 미실행**: t_c1f9cd45(21d), t_295e7f68(14d), t_2bb5a6fc(12d), t_dcdef0c6(11d), t_c3664df5(7d), t_771dbc18(6d), t_64227dd5(5d) + root-cause t_4fe0e249(5d) |
+| lint 관련 | 63건 (todo 41 + ready 22) |
+| 기타 중복 클러스터 | README 53건, logs/index 10건, how-to-use-hermes 7건, memory 6건, cron-jobs 3건, 회고 3건, recap 0건, W34/W33 0건 |
+
+**핵심 관찰 (2026-08-17):** 6일째 과포화가 가속 중. 08-11~08-12 생성한 supersede cleanup 7건 + root-cause 1건이 모두 ready에 미실행으로 잔존 (최고 21일). dispatcher가 ready P1/P2를 실행하지 않는 구조적 문제가 해소되지 않았고, 그 사이 [Auto] +9, self-improve +3, lint todo +3만 계속 누적. 모든 후보 주제(cleanup, lint, README, logs/index, memory, 회고)가 기존 open 태스크와 중복 → **rule 2/4/5 적용 결과 신규 태스크 0건, 상태 경고 리포트만 출력** (SILENT 아님 — open +15, stale +12, supersede 7건 미실행은 보고 가치 있음). supersede 재생성 금지 재확인: 기존 대정리 7건이 ready에 있는 동안 신규 cleanup 생성 절대 금지. **권장 행동: 신규 제안이 아니라 dispatcher 실행 경로 수동 점검(t_4fe0e249) 또는 대정리 태스크 중 1건 직접 실행이 우선.** 만약 이 패턴이 다음 주까지 지속되면 cron 자체를 일시 중지(pause)하는 옵션도 고려할 것.
 
 ## 실측 스냅샷 (2026-08-14) — 5일 연속 과포화, 신규 0건 판단 적용
 
