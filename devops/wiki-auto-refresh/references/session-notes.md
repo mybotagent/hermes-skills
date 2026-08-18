@@ -677,3 +677,26 @@
 - git status: clean, up-to-date with origin/main.
 - logs submodule: clean, index 일치 (May 31 wildcard 커버 확인).
 
+## 2026-08-17 (P19 15회 연속 재발 — committed+push 오염 복구, 첫 04:00 auto-sync 편승)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 58건을 "자동 추가 (2026-08-16)" 레이블로 대량 삽입 (subagents-library 5 + logs 53). 07-28~08-16에 이어 15일 연속 동일 패턴. 이번엔 **committed + pushed** — 08-17 04:00 auto-sync 커밋 `d36d3b3`이 footer 뒤 rogue 58건을 추가·push (HEAD + origin/main 모두 58건). 08-16 weekly cleanup `076bafb`가 전날 58줄 제거했지만 4시간 뒤 auto-sync가 재오염시킴 → **P19 오염이 매일 2회 실행(04:00/21:00) 중 어느 쪽에도 편승 가능하다는 첫 사례**.
+- P18 pipe 오염: 0건. logs submodule: clean. untracked: 없음 (raw W34 draft 미발생, W33은 076bafb에서 이미 등록).
+
+**적용:**
+- P19 복구 (committed 경로): `git show 076bafb:index.md` 청정(0건) 확인 + `d36d3b3` diff가 rogue 추가분뿐(비-rogue 추가 0건) 확인 → `git show 076bafb:index.md > index.md`로 parent 복원 (58건 제거, 59줄 삭제).
+- commit `4afdc74` (1 file, -59), push `d36d3b3..4afdc74`. origin/main '자동 추가' 0건 확인.
+- P20 주의: session-notes append 시 08-14 헤더~끝 전체를 유일 앵커로 사용.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 77 = 77 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 10 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅ (wiki + 스킬 references).
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+- logs submodule: clean, index 일치 (May 31 wildcard 커버 확인).
+- stale 30일+: 60개 (참고 — 명시적 날짜 기준, 자동 수정 안 함).
+

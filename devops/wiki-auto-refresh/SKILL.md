@@ -1,9 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.25.0
+version: 1.26.0
 changelog:
-  - "1.25.0 (2026-08-16): (a) P19 11회 연속 재발 — 08-15 오염분(58건: subagents-library 5 + logs 52 + raw W33 1) uncommitted로 발견, working-tree 전용; (b) 복구 경로 추가 — footer 기준 python truncate (진짜 수정분이 섞여 있으면 git restore 무용), rogue 블록 속 untracked raw draft는 같은 커밋에 포함 필수; (c) 브랜치 함정 — hermes-wiki 기본 브랜치 main (master push 실패), logs submodule master"
+  - "1.26.0 (2026-08-17): (a) P19 15회 연속 재발 — 첫 04:00 auto-sync 편승 committed+push 변형: 08-16 오염분 58건이 d36d3b3 (auto-sync 08-17 04:00)에 편승해 HEAD+origin/main 모두 오염 (전날 076bafb가 58줄 제거했는데 4시간 뒤 재삽입). P19는 주간 cleanup뿐 아니라 매일 2회 auto-sync 커밋에도 편승 가능 — git log 최근 커밋을 의심 대상에서 제외하지 말 것; (b) 복구는 parent 복원 경로 재사용 (git show 076bafb:index.md > index.md, commit 4afdc74, push d36d3b3..4afdc74); (c) untracked raw draft 없는 케이스 확인 (W34 미발생)"
   - "1.24.0 (2026-08-11): (a) 2c-ter logs index wildcard false-positive — logs/index.md의 glob 항목(예: `[2026-05-31-*](2026/)`)이 basename grep으로 매치되지 않아 05-31 배치 13건이 매회 MISSING 오탐, MISSING 판정 전 prefix+glob grep 필수; (b) P18 committed 변형 — `|- ` 오염이 커밋된 채 잔존 (git diff HEAD 미표시 = committed), `git log -S`로 도입 커밋 추적, 복구 시 commit+push 필요; (c) P20 탐지 보강 — 마지막 섹션 뒤 이전 섹션 '감사 결과' 블록 중복 복사 (08-10 뒤 08-07 74=74, 숫자 불일치로 탐지), EOF 중복 블록 제거"
   - "1.23.0 (2026-08-10): (a) P19 committed+clean-status 변형 — git status clean이어도 HEAD/origin/main이 오염된 케이스 (08-08 오염분 57건이 08-09 weekly cleanup 커밋 55a0768에 편승해 push, 10회 연속 재발); `git restore index.md`는 오염된 HEAD를 복원하므로 무용 → `git show <clean-parent>:index.md > index.md` 복원 경로 추가 (검증: 오염 커밋의 index.md diff가 rogue 추가분뿐 + parent '자동 추가' 0건); (b) P19 탐지 보강 — git status clean ≠ index.md clean, `git show HEAD:index.md` 직접 검사 필수, index-md-audit dead link가 logs/·subagents-library/ 경로에 집중되면 committed P19 의심"
   - "1.22.0 (2026-08-05): (a) P20 신규 — patch 도구 fuzzy-match mis-anchor: session-notes.md의 근미동일 섹션(매일 같은 감사결과 footer 반복)에서 old_string이 이전 섹션 footer에 잘못 앵커되어 섹션 본문 교체·중복·유실 발생 (실제 사례: 08-05 append 중 08-04 섹션 유실, 3회 patch로 복구). append 시 날짜-유일 판별자 앵커 필수, patch 후 grep 헤더 카운트 검증; (b) P19 빠른 복구 경로 — git diff HEAD가 rogue 추가분뿐이면 patch 대신 `git restore index.md` 원복 (P18/P20 위험 회피); (c) markdown-link-audit.py는 위치 인자([WIKI_ROOT]) 미지원 명시"
@@ -934,6 +934,8 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 - **⚠ untracked raw draft는 같은 커밋에 포함 필수 (신규 교훈)**: rogue 블록에 섞여 있던 `raw/2026-W33-weekly-recap-draft.md`는 진짜 신규 파일 — index에서 rogue만 지우고 draft 파일을 방치하면 `git status`가 계속 dirty. raw/ 섹션 PAT B로 재등록 + draft 파일까지 `git add` + 같은 커밋에 commit 해야 clean (`git add index.md raw/2026-W33-weekly-recap-draft.md logs`).
 - 커밋: hermes-wiki `076bafb` (main, 3 files +30/-2), logs submodule `bc50e2c` (master).
 - **⚠ 브랜치 함정 (2026-08-16 실패 사례)**: hermes-wiki에 `git push origin master` 시도 → `error: src refspec master does not match any` (기본 브랜치가 **main**). logs 서브모듈은 **master**. push 전 `git branch --show-current`로 확인.
+
+**실제 사례 (2026-08-17, 15회 연속 — 04:00 auto-sync 커밋에 편승한 committed+push 변형):** 08-16 오염분(58건: subagents-library 5 + logs 53)이 08-17 04:00 auto-sync 커밋 `d36d3b3`에 편승해 HEAD+origin/main 모두 push됨. `git status` clean이었으나 `git show HEAD:index.md` '자동 추가' 58건으로 탐지. 주목할 점: 08-16 weekly cleanup `076bafb`가 전날 58줄을 이미 제거·push했는데, **4시간 뒤 04:00 auto-sync가 같은 rogue 블록을 재삽입** — P19는 주간 cleanup뿐 아니라 매일 2회 실행(04:00/21:00) 중 **어느 auto-sync 커밋에도 편승 가능**하다는 첫 사례. 복구는 08-10과 동일한 parent 복원 경로: `git show 076bafb:index.md` 청정(0건) + `d36d3b3` diff가 rogue 추가분뿐(비-rogue 0건) 확인 후 `git show 076bafb:index.md > index.md` → commit `4afdc74` (1 file, -59), push `d36d3b3..4afdc74`. untracked 없음 (W34 draft 미발생, W33은 076bafb에서 이미 등록). **교훈: git log의 최근 커밋(04:00 auto-sync 포함)이 오염 편승 수단이므로, HEAD 검사는 '자동 추가' grep으로 매 실행 필수 — cleanup 커밋만 의심하지 말 것.**
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 
