@@ -60,3 +60,24 @@ done
 - `hermes config set` → stdout에 키 일부 노출될 수 있음 (CLI 자체 동작)
 - `.env`에서 키 관리 시: `hermes auth add`로 credential pool에 등록하면 gateway 재시작에도 유지
 - 토글 직후 `.heal_history.log`에서 `Skipped to prevent unintended spend` 패턴 모니터링
+
+## 🚫 deepseek-v4-pro 사용 금지 (2026-08-18 정책)
+
+**aiprofit 정책: deepseek-v4-pro는 절대 사용 금지. deepseek는 flash만 허용.**
+
+pro를 사용할 수 있는 경로를 전부 차단한 상태:
+
+| 경로 | 상태 |
+|------|------|
+| 전역 `model.default` | minimax / MiniMax-M2.7 |
+| `providers.deepseek.model` | deepseek-v4-flash |
+| `providers.deepseek.available_models_json` | flash만 (pro 제거됨) |
+| `~/.hermes/providers/deepseek.json` | flash만 (pro 제거됨) |
+| cron LLM 잡 (19개) | 전부 minimax/MiniMax-M2.7 pin |
+| fallback_providers | `["deepseek"]` — provider의 model(flash) 따름 |
+
+주의: `hermes -z ... -m deepseek-v4-pro` 같은 **CLI 직접 지정은 차단되지 않음** (Hermes에 모델 블록리스트 없음). 자동 선택 경로만 차단됨. pro를 명시적으로 부르는 명령/스크립트/세션은 즉시 금지.
+
+pro 사용 이력 (state.db 기준):
+- 2026-06-29 스모크 테스트 2회 (`hello in 3 words`, cost ~$0.03) — 감사 목적이었으나 이후 금지
+
