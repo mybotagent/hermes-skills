@@ -50,9 +50,9 @@ metadata:
 다음 정보를 읽어서 오늘의 컨텍스트 파악:
 
 #### 1a. 최근 Wiki 변경사항
-- `logs/index.md` (wiki 루트의 logs/index.md, `wiki/logs/index.md` 아님)
-- 또는 `logs/2026/YYYY-MM-*.md` 파일들을 읽어 최근 변경 파악
-- wiki 루트의 `README.md` 도 같이 확인 (현재 INDEX 역할)
+- **logs/index.md 실제 경로**: `~/hermes-wiki-super/wiki/hermes-logs/logs/index.md` (hermes-logs **submodule** 내부 — wiki 루트에 직접 logs/ 없음)
+- `logs/2026/YYYY-MM-*.md` 파일들 (hermes-logs submodule 내)
+- `~/hermes-wiki-super/wiki/hermes-wiki/README.md` (실제 catalog — index.md 아님)
 
 #### 1b. Kanban 현황
 - `hermes kanban list --json` → 현재 열린 태스크 확인
@@ -157,6 +157,7 @@ cron의 최종 응답으로 아래 형식을 그대로 출력:
 | kanban JSON `created_at`이 Unix epoch (int) | ISO-8601 문자열이 아님 — `datetime.fromisoformat` 파싱 시 실패/None | `(time.time() - created_at)/86400`으로 일수 계산 (created_at 없으면 started_at fallback) |
 | README.md가 INDEX.md 역할 | AGENTS.md는 index.md 요구하나 실제로는 README.md가 catalog | README.md 확인 후 index.md 생성 고려 |
 | 동일 제안이 매일 반복 생성되어 중복 백로그 누적 (예: 'Wiki lint 13건' todo 29개, 'Wiki logs/index.md 갱신' ready 7개) | cron이 매일 실행되며 같은 주제를 재제안 — idempotency-key는 부모만 방지, 자식은 무방비 | 제안 전 open 태스크 title 중복 스캔 → 중복 주제는 신규 생성 금지, 대신 백로그 정리 태스크를 P1로 제안 (섹션 2 참조) |
+| 주간 회고 W$N 제안 시 W${prev} 미처리 누적 (W33 제안 시 W28~32 초안 5건 미 publish) | 회고 초안이 raw/에 누적되나 publish 프로세스 누락 → 새 주提议과 함께既有 초안 상태 확인이 필요 | W$N 초안 태스크提议 시 이전 W$(($N-5))~W$(($N-1)) 초안 상태를_body에 명시, 기존 미해결 태스크가 있으면 함께 처리 연결 |
 | `python3 - <<'EOF'` heredoc (stdin 리다이렉트)은 cron 모드에서 허용됨 | 차단되는 것은 파이프-to-인터프리터(`\| jq` 등)뿐 — stdin heredoc은 Tirith 통과 (2026-08-05 확인) | 복잡한 JSON 분석은 임시 파일 저장 후 `python3 - <<'EOF'` heredoc으로 안전하게 실행 가능 |
 | kanban JSON에 parent 링크 필드 없음 — `parent_id`로 자식 조회 시 0건 (2026-08-10 실측) | `hermes kanban list --json` 출력에 parent 연관 정보가 전혀 노출되지 않음 | 자식 생성 검증은 title로 조회(`title.startswith(...)` 또는 키워드), 상태는 parent complete 후 `ready` 승격 확인 |
 | kanban create 본문에 URL 또는 em-dash(`—`) 포함 시 `tirith:non_ascii_path` MEDIUM 스캔에 차단 (pending_approval, exit -1, 2026-08-12 실측) | Tirith가 URL 경로의 non-ASCII 문자를 homoglyph 치환으로 의심 — cron 모드에서 create 명령 자체가 승인 대기로 블록 | body에서 URL 제거(참조는 `~/.hermes/...` 로컬 경로로 대체), em-dash `—` 대신 ASCII 하이픈 `-` 사용 후 동일 명령 재시도 → 성공. 제목/본문의 한글 자체는 문제없음 |

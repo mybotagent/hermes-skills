@@ -85,6 +85,9 @@ Fix: **keep ALL auth inside standalone scripts**; the cron prompt only calls scr
 - `scripts/review_and_discover.sh` — fork sync (ff-only) + candidate checklist a–f (read-only; generalized from `dev_harness_daily_review.sh`)
 - `scripts/open_fork_pr.sh` — PR open from fork branch, token from `.env`, body via stdin (generalized from `dev_harness_create_pr.sh`)
 
+## References
+- `references/gh-token-v2-pitfall.md` — **중요**: classic PAT (`ghp_...`)은 fork push 시 403 거부. fine-grained (`GH_TOKEN_V2`) 필요. 실측 2026-08-15.
+
 ## Related
 - `github-pr-review-pipeline` — LLM review-bot + auto-merge gate for repos the bot owns (complementary: it handles the *receiving* side once your PR is open)
 - `github-pr-workflow` — branch/commit/CI/merge lifecycle
