@@ -645,6 +645,14 @@ The mapping file (`~/.hermes/data/kanban_linear_mapping.json`) is the source of 
 ## 📎 추가 참고 파일
 
 - `references/post-task-tracking-sync.md` — 작업 완료 후 Linear + Kanban + GitHub + Wiki 4-way sync 워크플로 (사용자 정책 "코드랑 문서 업데이트해 리니어 칸반 github까지" 대응).
+- `references/bulk-ops.md` — Bulk Cancel/Python Heredoc 패턴, `totalCount` 없음 오류, rate limit 정리.
+
+## ⚠️ Pitfalls
+
+- **UUID 없이 identifier(SHO-XXX)만으로 issue 상태 변경 가능** — UUID 조회가 필요 없으면 바로 identifier 사용
+- **`totalCount`는 `IssueConnection`에 없음** — `nodes` 리스트의 `len()` 또는 별도 aggregate 쿼리 사용
+- **Python heredoc에서 `sys.argv` 사용**: heredoc 바깥 shell 변수(`$KEY`)를 직접 참조하면 401 오류 발생 — 반드시 `sys.argv[1]`로 전달
+- **batch mutation rate limit**: 0.25s 간격이면 안전 (5,000/hour limit 대비)
 
 ## ⚠️ Discord Bot Integration — Slash Command Trap
 
