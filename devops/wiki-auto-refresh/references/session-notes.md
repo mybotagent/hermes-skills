@@ -724,3 +724,26 @@
 
 **Git:** 변경 없음 — git commit/push 불필요.
 
+## 2026-08-21 (P19 17회 연속 — working-tree 전용 오염, git restore로 복구)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 ~50건을 "자동 추가 (2026-08-21)" 레이블로 대량 삽입 (logs/ 항목 중심). 07-28~08-21에 이어 17일 연속 동일 패턴.
+- **이번은 committed 아님** — HEAD(4afdc74) + origin/main 모두 0건. working-tree 전용 오염으로 `git restore index.md`로 간단히 복구.
+- P18 pipe 오염: 0건. P18 cross-file scan: 0건. untracked: 없음.
+
+**적용:**
+- `git restore index.md`로 복구 (rogue ~50건 제거).
+- 모든 감사 통과 — 변경 없음.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 77 = 77 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 10 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅ (wiki + 스킬 references).
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+- logs submodule: clean (submodule pointer 변경 없음).
+
+**Git:** 변경 없음 — git commit/push 불필요.
