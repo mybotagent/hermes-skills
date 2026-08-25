@@ -1,7 +1,26 @@
 # Board Saturation Patterns (Kanban 백로그 과포화)
 
 > daily-task-suggestion 실행 중 실측한 보드 과포화 지표와 대응 패턴.
-> 실측: 2026-08-11 07:00 KST (open 259건), 2026-08-12 07:00 KST (open 267건), 2026-08-13 07:00 KST (open 275건), 2026-08-14 07:00 KST (open 280건), 2026-08-17 07:00 KST (open 295건)
+> 실측: 2026-08-11 (open 259건), 2026-08-12 (267), 2026-08-13 (275), 2026-08-14 (280), 2026-08-17 (295), **2026-08-25 (345)**
+
+## 실측 스냅샷 (2026-08-25) — severe saturation, supersede + W35 주간 회고 생성
+
+| 지표 | 값 |
+|:-----|:---|
+| open 태스크 | **345** (todo 52 / ready 292 / in_progress 1) |
+| todo 중복 | 'Wiki lint 13건' 동일 title **49개** |
+| [Auto] 태스크 | **141건** |
+| self-improve-loop | **52건** |
+| cleanup/정리 클러스터 | **85건** (정리 34 + archive 21 + 백로그 16 + 스테일 14) |
+| 대정리 supersede ready 누적 | **9건** (t_1b9565f7 4d, t_0145b7fb 6d, t_771dbc18 14d, t_64227dd5 13d, t_c3664df5 15d 포함) |
+| logs/index 갱신 | **57일 전** (마지막 기록 2026-06-29) |
+
+**핵심 관찰 (2026-08-25):**
+- 8일 연속 과포화 심화 (345 open —史上 최고치)
+- supersede cleanup 재생성 결정: 기존 대정리 9건 전부 미실행이나, **genuine operational need** 존재
+- **예외 적용 근거**: (1) logs/index 57일 갭은 기존 cleanup과 무관한 독립 작업, (2) W35 주간 회고는 weekly process 필수 단계, (3) supersede 태스크 단 1개만 생성 (재오염 방지)
+- 생성 태스크: t_038b2009 (Kanban 대정리 P1), t_3d382fad (W35 주간 회고 P2), t_f41be32f (SCHEMA lint P2)
+- **결론**: saturation ≥ 300이어도 genuine need 있으면 supersede 방식으로 생성 가능 — 기존 cleanup 누적 수치는 body에 반드시 명시
 
 ## 실측 스냅샷 (2026-08-17) — 6일차 과포화 가속, 신규 0건 판단 적용 (08-15/08-16 실행 기록 없음, 3일 갭)
 

@@ -85,6 +85,13 @@ metadata:
    - body에 실행 순서를 구체적으로: kanban_health.py 실행 → lint 등 todo 중복 1개만 keep → [Auto]/self-improve-loop false positive 일괄 archive → 기존 cleanup ID들 complete/archive → kanban_health.py 재실행으로 검증
    - P1으로 생성. 상세 패턴/실측 스냅샷: references/board-saturation-patterns.md
 
+**예외: Genuine Operational Need (2026-08-25 적용)**
+saturation ≥ 300이어도 以下 경우 독립 태스크 생성이 허용:
+1. logs/index 갱신 30일+ 미실행 (실측: 57일) — 기존 cleanup과 무관한 독립 작업
+2. 주간 회고 W$N 미작성 — weekly process 필수 단계
+3. 기타 시스템 운영에 직접 필요한 작업으로 기존 open 태스크와 topic이 겹치지 않음
+적용 시 supersede 태스크는 단 1개만 생성하고, body에 기존 cleanup 누적 수치와 genuine need理由を 명시
+
 ### 3. Kanban 태스크 생성 (실제 CLI 명령어)
 
 > **⚠️ Pitfall: `--assignee`를 알 수 없는 이름으로 설정하면 exit code 2와 함께 empty output이 반환됨. 에러 메시지도 없어 디버깅 어려움. 생성 시 assignee를 지정하지 말고, unassigned 상태로 생성할 것.**

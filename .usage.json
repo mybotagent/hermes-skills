@@ -302,14 +302,14 @@
     "archived_at": null,
     "created_at": "2026-06-25T14:12:12.227658+00:00",
     "created_by": null,
-    "last_patched_at": "2026-08-19T22:05:53.700226+00:00",
-    "last_used_at": "2026-08-23T22:00:18.115990+00:00",
-    "last_viewed_at": "2026-08-20T14:06:30.378284+00:00",
-    "patch_count": 30,
+    "last_patched_at": "2026-08-24T22:05:10.872884+00:00",
+    "last_used_at": "2026-08-24T22:05:12.730923+00:00",
+    "last_viewed_at": "2026-08-24T22:05:12.726594+00:00",
+    "patch_count": 32,
     "pinned": false,
     "state": "active",
-    "use_count": 70,
-    "view_count": 23
+    "use_count": 76,
+    "view_count": 28
   },
   "data-analysis-pipeline": {
     "archived_at": null,
@@ -420,12 +420,12 @@
     "created_at": "2026-05-31T14:10:50.301452+00:00",
     "created_by": null,
     "last_patched_at": "2026-08-06T10:38:58.249356+00:00",
-    "last_used_at": "2026-08-24T00:10:22.785865+00:00",
+    "last_used_at": "2026-08-25T00:10:21.138198+00:00",
     "last_viewed_at": "2026-08-17T10:32:00.500129+00:00",
     "patch_count": 403,
     "pinned": false,
     "state": "active",
-    "use_count": 439,
+    "use_count": 441,
     "view_count": 301
   },
   "fork-pr-contribution": {
@@ -563,12 +563,12 @@
     "created_at": "2026-07-03T00:00:15.157970+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-08-24T00:30:23.056045+00:00",
+    "last_used_at": "2026-08-25T00:00:21.311808+00:00",
     "last_viewed_at": "2026-08-17T00:05:34.001672+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 69,
+    "use_count": 70,
     "view_count": 5
   },
   "heartmula": {
@@ -589,12 +589,12 @@
     "created_at": "2026-07-02T16:30:43.790761+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-08-24T01:00:25.767587+00:00",
+    "last_used_at": "2026-08-25T01:00:21.779099+00:00",
     "last_viewed_at": "2026-08-20T14:08:50.699143+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "stale",
-    "use_count": 4,
+    "use_count": 5,
     "view_count": 2
   },
   "hermes-agent-skill-authoring": {
@@ -1304,12 +1304,12 @@
     "created_at": "2026-06-12T22:23:12.405952+00:00",
     "created_by": null,
     "last_patched_at": "2026-08-05T10:37:34.770310+00:00",
-    "last_used_at": "2026-08-24T00:30:23.009123+00:00",
+    "last_used_at": "2026-08-25T00:10:21.080585+00:00",
     "last_viewed_at": "2026-08-15T23:12:08.172969+00:00",
     "patch_count": 107,
     "pinned": false,
     "state": "active",
-    "use_count": 610,
+    "use_count": 615,
     "view_count": 112
   },
   "self-improvement-loop": {
@@ -1564,12 +1564,12 @@
     "created_at": "2026-06-25T14:12:12.232049+00:00",
     "created_by": null,
     "last_patched_at": "2026-08-22T23:03:58.676263+00:00",
-    "last_used_at": "2026-08-22T23:03:22.449167+00:00",
+    "last_used_at": "2026-08-24T12:01:18.001555+00:00",
     "last_viewed_at": "2026-08-22T23:03:22.442454+00:00",
     "patch_count": 118,
     "pinned": false,
     "state": "active",
-    "use_count": 116,
+    "use_count": 117,
     "view_count": 69
   },
   "wiki-graphrag-search": {
