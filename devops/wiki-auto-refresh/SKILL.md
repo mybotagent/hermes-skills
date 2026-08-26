@@ -1,9 +1,10 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.26.0
+version: 1.27.0
 changelog:
-  - "1.27.0 (2026-08-23): weekly cleanup cron 실행 — memory tool이 비활성화된 환경에서도 동작 확인; Lint ②에서 hermes-trading-hub.md의 4개 외부 hub wikilink(harness-engineering-hub, macro-strategy, macro-indicators-hub, schedule-calendar-hub)가 broken으로 탐지 — P7 cross-domain으로 분류 가능하지만 해당 외부 레포 존재 여부 미확인; Lint ⑧에서 graphrag/neo4j 태그가 SCHEMA.md taxonomy에 없음 (사용 중); skill의 pre-flight + audit 스크립트가 weekly 변형에서도 동일하게 적용 가능 확인"
+  - "1.28.0 (2026-08-25): P18 self-inflicted 변형 추가 — patch 도구로 테이블 행 추가 시 new_string의 패턴 충돌로 `||` 중복 발생 가능 (logs/index.md August 섹션 사례). 'self_hermes.py만 원인'이라는 기존 전제 수정."
+  - "1.27.0 (2026-08-23):"
   - "1.24.0 (2026-08-11): (a) 2c-ter logs index wildcard false-positive — logs/index.md의 glob 항목(예: `[2026-05-31-*](2026/)`)이 basename grep으로 매치되지 않아 05-31 배치 13건이 매회 MISSING 오탐, MISSING 판정 전 prefix+glob grep 필수; (b) P18 committed 변형 — `|- ` 오염이 커밋된 채 잔존 (git diff HEAD 미표시 = committed), `git log -S`로 도입 커밋 추적, 복구 시 commit+push 필요; (c) P20 탐지 보강 — 마지막 섹션 뒤 이전 섹션 '감사 결과' 블록 중복 복사 (08-10 뒤 08-07 74=74, 숫자 불일치로 탐지), EOF 중복 블록 제거"
   - "1.23.0 (2026-08-10): (a) P19 committed+clean-status 변형 — git status clean이어도 HEAD/origin/main이 오염된 케이스 (08-08 오염분 57건이 08-09 weekly cleanup 커밋 55a0768에 편승해 push, 10회 연속 재발); `git restore index.md`는 오염된 HEAD를 복원하므로 무용 → `git show <clean-parent>:index.md > index.md` 복원 경로 추가 (검증: 오염 커밋의 index.md diff가 rogue 추가분뿐 + parent '자동 추가' 0건); (b) P19 탐지 보강 — git status clean ≠ index.md clean, `git show HEAD:index.md` 직접 검사 필수, index-md-audit dead link가 logs/·subagents-library/ 경로에 집중되면 committed P19 의심"
   - "1.22.0 (2026-08-05): (a) P20 신규 — patch 도구 fuzzy-match mis-anchor: session-notes.md의 근미동일 섹션(매일 같은 감사결과 footer 반복)에서 old_string이 이전 섹션 footer에 잘못 앵커되어 섹션 본문 교체·중복·유실 발생 (실제 사례: 08-05 append 중 08-04 섹션 유실, 3회 patch로 복구). append 시 날짜-유일 판별자 앵커 필수, patch 후 grep 헤더 카운트 검증; (b) P19 빠른 복구 경로 — git diff HEAD가 rogue 추가분뿐이면 patch 대신 `git restore index.md` 원복 (P18/P20 위험 회피); (c) markdown-link-audit.py는 위치 인자([WIKI_ROOT]) 미지원 명시"
@@ -829,6 +830,8 @@ for dir_name, files in candidates.items():
 5. **확실하지 않으면 `grep -n '패턴' file` 로 raw line content 확인 후 old_string 작성.**
 
 **P18의 범용성:** 이 pitfall은 index.md에 국한되지 않음. session-notes.md, references/, 또는 read_file 출력에서 복사한 old_string으로 patch하는 **모든 파일**에서 발생 가능. 항상 line number + `|` 구분자를 제거했을 것 확인할 것.
+
+**P18 self-inflicted 변형 (2026-08-25):** P18이 반드시 외부 프로세스(`self_hermes.py`)로부터만 오는 것은 아님. patch 도구로 테이블 형식 파일(예: logs/index.md)을 수정할 때 new_string의 테이블 행 패턴이 기존 행과 충돌하거나, patch fuzzy matcher가 의도치 않게 `|` 2개를 생성하는 _self-inflicted_ 케이스가 발생 가능. 실제 사례: logs/index.md August 섹션에 새 행 추가 patch 후 `|| 08-16` (선행 double pipe) 발생 — new_string의 `| 08-16` 패턴이 기존 `| 08-16` 행과 충돌하며 `||` 중복. 복구: 即 재-patch로 `||` → `|` 단일 파이프 수정. **외부 프로세스 오염이 아닌 자체 patch 조작이 원인**이라는 점에서 기존 P18과 구별 — 발견当时的의 처리 방향은 동일하나, "self_hermes.py만 원인"이라고 하는 기존 전제를 수정.
 
 **P18 committed 변형 (2026-08-11):** `|- ` 오염이 **커밋된 채** 잔존할 수 있음 — working tree에서 보여도 `git diff HEAD -- <file>`이 해당 줄 변경을 표시하지 않으면 HEAD에 이미 반영된 상태 (실제 사례: index.md 58-59행, 39f01b2에서 도입·미push). 판별: `git diff HEAD`에서 해당 줄이 안 보이면 committed. 도입 커밋 추적: `git log -S '|- [파일명]' --oneline -- index.md`. committed P18은 working-tree patch 후 반드시 commit + push (미push 상태면 다음 auto-sync 커밋에 편승해 함께 푸시됨 — push 전 `git show origin/main:<file> | grep -c '^|- '`로 원격 오염 여부도 확인).
 

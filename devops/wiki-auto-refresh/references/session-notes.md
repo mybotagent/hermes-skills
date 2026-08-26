@@ -724,7 +724,31 @@
 
 **Git:** 변경 없음 — git commit/push 불필요.
 
-## 2026-08-21 (P19 17회 연속 — working-tree 전용 오염, git restore로 복구)
+## 2026-08-23 (P19 18회 연속 재발 — 63줄 working-tree 오염, git restore + raw/W34 등록 + logs submodule 갱신)
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 63건을 "자동 추가 (2026-08-25)" 레이블로 대량 삽입. logs/ 41개 + subagents-library/ 5개 + raw/W34 1개.
+- **이번은 committed 아님** — HEAD는 청정 (08-17 cleanup 이후 유지). working-tree 전용 오염으로 `git restore index.md`로 간단히 복구.
+- P18: logs/index.md에서 1건 (`||` prefix) — patch 오류로 即 수정 완료.
+- subagents-library/ 5개도 rogue 항목에 포함 — 서브모듈이므로 전부 제거.
+
+**적용:**
+- `git restore index.md`로 63줄 복구.
+- `raw/2026-W34-weekly-recap-draft.md` 정식 등록 (PAT B, W33과 일관성 유지).
+- logs submodule: `2026/2026-08-23-0700-weekly-cleanup.md` 신규 + logs/index.md August 섹션 최상단 등록.
+- logs submodule commit `1c2bc1f` (master) → parent wiki commit `a93c1cc` (main, submodule pointer bump).
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 78 = 78 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 11 skipped (raw/ immutable) ✅.
+- P18 scan (logs/index.md): `||` prefix 1건 → 수정 완료 ✅.
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+
+**Git:** hermes-wiki `a93c1cc` (index.md + logs submodule pointer), hermes-logs `1c2bc1f` (logs/index.md + new log file).
 
 **발견:**
 - P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 ~50건을 "자동 추가 (2026-08-21)" 레이블로 대량 삽입 (logs/ 항목 중심). 07-28~08-21에 이어 17일 연속 동일 패턴.
