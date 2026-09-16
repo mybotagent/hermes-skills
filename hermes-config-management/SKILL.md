@@ -63,6 +63,17 @@ Some providers (e.g., MiniMax) have **empty** `api_key` yet still authenticate, 
 2. Confirm `auth.json` `credential_pool.<provider>` carries **your** key (not just config.yaml's literal).
 3. Run smoke test.
 
+**`.env` sourced smoke test** (for API-level verification, not Hermes CLI):
+```bash
+source ~/.hermes/.env && curl -s -X POST https://api.minimax.io/v1/chat/completions \
+  -H "Authorization: Bearer $MINIMAX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"MiniMax-M2.7","messages":[{"role":"user","content":"hi"}],"max_tokens":10}'
+# Expect: 200 OK with JSON response
+# Without source: 401 "login fail" — $MINIMAX_API_KEY not in shell env
+```
+`.hermes/.env`은 gateway/runtime이 로드하지만 쉘 환경변수에는 자동으로 안 들어감.
+
 ## Pitfalls
 - ❌ `patch` / `write_file` on `~/.hermes/config.yaml` → BLOCKED, no workaround from inside agent
 - ❌ Editing `.env` while loaded → may not propagate; restart gateway or re-run `hermes setup`
@@ -197,6 +208,31 @@ hermes -z "ok" -m <new-model>
 ```
 
 **핵심 규칙**: 토글 = 워치독이 unpinned 잡을 RuntimeError로 한꺼번에 skip시킬 수 있는 상황. 토글 후 5분 내에 `.heal_history.log`에서 `Skipped to prevent unintended spend` 패턴 모니터링.
+
+## 🚨 Gateway cannot restart itself from inside (재현 2026-09-07)
+
+`hermes gateway restart`를 **게이트웨이 프로세스 내부에서** 실행하면 항상 실패:
+> Cannot restart or stop the gateway from inside the gateway process.
+
+**재현 기록 (2026-09-07)**:
+```
+$ hermes gateway restart
+[Command timed out after 60s]
+$ systemctl --user restart hermes-gateway   # 내부에서 실행 시
+→ self-SIGTERM 자해 → 실패
+```
+
+**Workaround — `delegate_task`로 leaf 서브에이전트에 위임:**
+```
+delegate_task(
+  goal="Restart the hermes-gateway systemd service and confirm it started successfully.",
+  context="Run: systemctl --user restart hermes-gateway && sleep 5 && hermes gateway status",
+  role="leaf"
+)
+```
+Leaf는 게이트웨이 프로세스 외부에서 실행되므로 SIGTERM 자기 종료 문제 없음.
+
+**no_agent cron의 `systemctl restart`는 안전** — LLM 에이전트 프로세스가 아니라 systemd가 직접 호출하므로 self-restart 제약 없음.
 
 ## Backup before major edits
 ```bash

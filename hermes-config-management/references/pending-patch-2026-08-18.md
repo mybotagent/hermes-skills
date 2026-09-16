@@ -1,69 +1,42 @@
-# Pending Patch: hermes-config-management + model-switcher (2026-08-18)
+# Pending Patch Log — hermes-config-management + model-switcher
 
-These patches are BLOCKED in the review-session context. Main-session agent must apply.
+## ✅ Applied (2026-09-07)
 
-## Patch 1: hermes-config-management/SKILL.md
+### Patch 1: hermes-config-management — Gateway self-restart
+**Status**: ✅ APPLIED 2026-09-07
 
-**Add after the "⚠ Critical pitfall" block (after "Use `hermes config set` CLI. Never..."):**
+Added new section "🚨 Gateway cannot restart itself from inside (재현 2026-09-07)":
+- Full reproduction transcript: `hermes gateway restart` → 60s timeout
+- `systemctl --user restart hermes-gateway` from inside gateway → self-SIGTERM
+- Workaround: `delegate_task(..., role="leaf")` pattern
+- no_agent cron의 `systemctl restart`는 safe (LLM agent 프로세스 아님)
 
-```markdown
-## 🚨 Gateway cannot restart itself from inside (2026-08-18)
-Running `hermes gateway restart` or `systemctl --user restart hermes-gateway` from **inside the gateway process** always fails with:
-> Cannot restart or stop the gateway from inside the gateway process. Run `hermes gateway restart` from a separate shell outside the running gateway.
+### Patch 2a: model-switcher — default model updated to MiniMax-M2.5
+**Status**: ✅ APPLIED 2026-09-07
 
-**Workaround — use `delegate_task` to spawn a leaf subagent:**
-```
-delegate_task(
-  goal="Restart the hermes-gateway systemd service and confirm it started successfully.",
-  context="Run: systemctl --user restart hermes-gateway && sleep 3 && systemctl --user status hermes-gateway"
-)
-```
-The subagent runs in an isolated context outside the gateway process, so it can signal restart without SIGTERM self-termination.
-```
+- 모델 전환 옵션 1: default = MiniMax-M2.5 (was MiniMax-M2.7)
+- 모델 테이블: MiniMax-M2.5 row added, MiniMax-M2.7 deprioritized
+- DeepSeek flash 모델 수: "deepseek-v4-flash only" (pro removed)
 
-## Patch 2: model-switcher/SKILL.md
+### Patch 2b: model-switcher — pro-ban policy table updated
+**Status**: ✅ APPLIED 2026-09-07
 
-### 2a. Update "모델 전환 (메인 ↔ 보조)" section
-Replace current Option 1 with:
+- 전역 model.default: MiniMax-M2.5 (2026-08-18 변경 이력 반영)
+- cron LLM 잡: 전부 minimax/MiniMax-M2.5 pin
+- deepseek-v4-flash fallback_providers 유지
+
+---
+
+## 🔑 Additional finding this session (2026-09-07)
+
+**MiniMax API 스모크 테스트 시 .env source 필수**:
 ```bash
-# 1) MiniMax-M2.5 (cheapest) to main, DeepSeek flash as fallback
-hermes config set model.provider minimax
-hermes config set model.default MiniMax-M2.5
-hermes config set model.base_url https://api.minimax.io/v1
-hermes config set fallback_providers '["deepseek"]'
+# ❌ 바로 실행 — MINIMAX_API_KEY가 쉘 환경변수에 없음
+curl -X POST ... -H "Authorization: Bearer $MINIMAX_API_KEY"
+→ 401 Unauthorized
+
+# ✅ source 후 실행 — .env에서 로드됨
+source ~/.hermes/.env && curl -X POST ... -H "Authorization: Bearer $MINIMAX_API_KEY"
+→ 200 OK
 ```
-
-Replace current Option 2 with:
-```bash
-# 2) DeepSeek flash to main, MiniMax-M2.5 as fallback
-hermes config set model.provider deepseek
-hermes config set model.default deepseek-v4-flash
-hermes config set model.base_url https://api.deepseek.com/v1
-hermes config set fallback_providers '["minimax"]'
-```
-
-### 2b. Update "모델별 가이드" table
-Replace DeepSeek row with:
-| DeepSeek V4 Flash | deepseek | https://api.deepseek.com/v1 | deepseek-v4-flash only |
-
-### 2c. Update the pro-ban section
-Replace the "🚫 deepseek-v4-pro 사용 금지" section with:
-
-```markdown
-## 🚫 deepseek-v4-pro 사용 금지 (2026-08-18 정책)
-
-**aiprofit 정책: deepseek-v4-pro는 절대 사용 금지. deepseek는 flash만 허용.**
-
-Current enforced state (2026-08-18):
-- `providers.deepseek.model`: deepseek-v4-flash ✅
-- `providers.deepseek.available_models_json`: deepseek-v4-flash only ✅
-- `fallback_providers`: `[]` (no deepseek fallback) ✅ — updated today
-- Default model: MiniMax-M2.5 (cheapest MiniMax) ✅ — updated today
-
-Note: `hermes -z ... -m deepseek-v4-pro` CLI direct invocation is NOT blocked by Hermes.
-Only automatic selection paths are constrained. Scripts/commands that explicitly
-invoke pro are the user's responsibility.
-```
-
-### 2d. Update MiniMax row in "모델별 가이드"
-Replace "MiniMax-M2.7" row default with `MiniMax-M2.5`.
+`.env`은 gateway/runtime이 로드하지만, 쉘 세션의 `$MINIMAX_API_KEY`는 비어있음.

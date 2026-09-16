@@ -1,8 +1,10 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.27.0
+version: 1.30.0
 changelog:
+  - "1.30.0 (2026-09-02): P19 59줄 working-tree 오염 — self_hermes.py가 index.md 하단에 logs/(53) + subagents-library/(5) + raw/(1) 59개 항목을 '자동 추가 (2026-09-02)'로 삽입. git diff HEAD로 working-tree 전용 확인 후 `git restore index.md`로 복구. 모든 감사 통과."
+  - "1.29.0 (2026-08-31): P19 recovery 보강 — rogue 제거 중 정식 수정( W35 등록)이 이미 적용된 상태에서 `git show <parent>:index.md` 복원 시 정식 수정분 유실 방지. 오염 커밋 diff가 rogue 추가분뿐(+정식 수정 0)일 때만 parent 복원 경로 적용, 정식 수정분이 있으면 footer 기준 python truncate로 rogue만 선택적 삭제. 20일 연속 재발 사례 문서화."
   - "1.28.0 (2026-08-25): P18 self-inflicted 변형 추가 — patch 도구로 테이블 행 추가 시 new_string의 패턴 충돌로 `||` 중복 발생 가능 (logs/index.md August 섹션 사례). 'self_hermes.py만 원인'이라는 기존 전제 수정."
   - "1.27.0 (2026-08-23):"
   - "1.24.0 (2026-08-11): (a) 2c-ter logs index wildcard false-positive — logs/index.md의 glob 항목(예: `[2026-05-31-*](2026/)`)이 basename grep으로 매치되지 않아 05-31 배치 13건이 매회 MISSING 오탐, MISSING 판정 전 prefix+glob grep 필수; (b) P18 committed 변형 — `|- ` 오염이 커밋된 채 잔존 (git diff HEAD 미표시 = committed), `git log -S`로 도입 커밋 추적, 복구 시 commit+push 필요; (c) P20 탐지 보강 — 마지막 섹션 뒤 이전 섹션 '감사 결과' 블록 중복 복사 (08-10 뒤 08-07 74=74, 숫자 불일치로 탐지), EOF 중복 블록 제거"
@@ -871,7 +873,7 @@ grep -rn '^|- ' ~/.hermes/skills/devops/wiki-auto-refresh/references/
 # 1) 오염된 서브모듈 항목 전체 식별
 grep -n '자동 추가' ~/.hermes/wiki/index.md
 
-# 2) 서브모듈 경로 블록 제거 (logs/ + subagents-library/)
+#    2) 서브모듈 경로 블록 제거 (logs/ + subagents-library/)
 #    patch 도구로 "서브모듈 블록 시작"부터 "끝"까지 한 번에 제거
 #    (P18 주의: old_string에 line number 포함 금지)
 #    ⚠ 빠른 경로 (2026-08-04/05 검증): `git diff HEAD -- index.md`가 rogue 추가분
@@ -885,6 +887,17 @@ grep -n '자동 추가' ~/.hermes/wiki/index.md
 #       (2) `git show <parent>:index.md | grep -c '자동 추가'` = 0 으로 parent 청정 확인
 #       (3) `git show <parent>:index.md > index.md` 로 복원 (57줄 patch의 P18/P20 위험 회피)
 #    복원 후 rogue 블록에 섞여 있던 실제 파일(예: raw/*.md)은 해당 섹션에 PAT B로 정식 재등록.
+#    ⚠ **mixed-state edge case (2026-08-31)**: rogue 제거 전에 정식 수정(예: W35 draft
+#    등록)을 이미 patch 적용한 상태일 수 있음. 이때 오염 커밋 diff를 반드시 먼저 확인:
+#       - diff = rogue 추가분뿐 (+정식 수정 0) → parent 복원 경로 사용 (안전)
+#       - diff에 정식 수정분도 포함됨 → **footer 기준 python truncate**로 rogue만 선택적 삭제.
+#         parent 복원 사용 시 정식 수정까지 롤백되므로 사용 금지.
+#         ```python
+#         lines = open('index.md').readlines()
+#         footer_idx = next(i for i, l in enumerate(lines)
+#                           if l.strip().startswith('*Managed by Hermes Agent'))
+#         open('index.md', 'w').writelines(lines[:footer_idx+1])
+#         ```
 
 # 2.5) 복구 검증 — working-tree 전용 오염 vs committed 오염 구분
 #      patch 후 git diff HEAD가 빈 결과면 HEAD가 이미 깨끗했던 것.
@@ -939,6 +952,15 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 - **⚠ 브랜치 함정 (2026-08-16 실패 사례)**: hermes-wiki에 `git push origin master` 시도 → `error: src refspec master does not match any` (기본 브랜치가 **main**). logs 서브모듈은 **master**. push 전 `git branch --show-current`로 확인.
 
 **실제 사례 (2026-08-17, 15회 연속 — 04:00 auto-sync 커밋에 편승한 committed+push 변형):** 08-16 오염분(58건: subagents-library 5 + logs 53)이 08-17 04:00 auto-sync 커밋 `d36d3b3`에 편승해 HEAD+origin/main 모두 push됨. `git status` clean이었으나 `git show HEAD:index.md` '자동 추가' 58건으로 탐지. 주목할 점: 08-16 weekly cleanup `076bafb`가 전날 58줄을 이미 제거·push했는데, **4시간 뒤 04:00 auto-sync가 같은 rogue 블록을 재삽입** — P19는 주간 cleanup뿐 아니라 매일 2회 실행(04:00/21:00) 중 **어느 auto-sync 커밋에도 편승 가능**하다는 첫 사례. 복구는 08-10과 동일한 parent 복원 경로: `git show 076bafb:index.md` 청정(0건) + `d36d3b3` diff가 rogue 추가분뿐(비-rogue 0건) 확인 후 `git show 076bafb:index.md > index.md` → commit `4afdc74` (1 file, -59), push `d36d3b3..4afdc74`. untracked 없음 (W34 draft 미발생, W33은 076bafb에서 이미 등록). **교훈: git log의 최근 커밋(04:00 auto-sync 포함)이 오염 편승 수단이므로, HEAD 검사는 '자동 추가' grep으로 매 실행 필수 — cleanup 커밋만 의심하지 말 것.**
+
+**실제 사례 (2026-08-31, 20회 연속 — 60줄 committed 오염 + mixed state 복구):** 08-31 04:00 커밋(b534dab)이 index.md 하단에 60개 서브모듈 항목을 "자동 추가 (2026-08-30)" 레이블로 삽입. HEAD(b534dab) 60건, parent(a93c1cc) 0건. `git diff HEAD~1 -- index.md` = rogue 추가분 61줄. **주목할 edge case**: rogue 제거 전에 W35 weekly recap draft를 PAT B로 index.md에 등록하는 정식 수정 patch를 이미 적용한 상태. parent 복원(`git show HEAD~1:index.md > index.md`)을 사용하면 rogue 61줄은 제거되지만 W35 등록 patch도 롤백됨. **판단 기준**: 오염 커밋의 diff가 rogue 추가분**뿐**(+정식 수정 0건)일 때만 parent 복원 경로 적용. 정식 수정분이 섞여 있으면 **footer 기준 python truncate**로 rogue만 선택적 삭제:
+  ```python
+  # footer 이후 모든 줄 삭제 (rogue 블록은 항상 footer 위에 삽입됨)
+  lines = open('index.md').readlines()
+  footer_idx = next(i for i, l in enumerate(lines) if l.strip().startswith('*Managed by Hermes Agent'))
+  open('index.md', 'w').writelines(lines[:footer_idx+1])
+  ```
+  복구 후 git diff HEAD 확인 — 변경분이 rogue 제거뿐이면 commit 불필요, 정식 수정분도 롤백됐으면 정식 수정을 re-apply 후 commit. 실제 08-31은 parent diff에 rogue 61줄**뿐**(+정식 수정 0)임을 확인 후 parent 복원 사용. 이후 W35 등록 patch re-apply.
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 

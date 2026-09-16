@@ -771,3 +771,89 @@
 - logs submodule: clean (submodule pointer 변경 없음).
 
 **Git:** 변경 없음 — git commit/push 불필요.
+
+## 2026-09-07
+
+**사전 점검:**
+
+- wikilink-audit.py: 78 files, 0 broken, 4 cross-domain (P7), 0 P9/P10 ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 79 registered vs 80 actual — REAL MISSING: raw/2026-W36-weekly-recap-draft.md.
+
+**P19 발견 및 복구:**
+
+- HEAD(c852203) index.md에서 '자동 추가' 60건 발견 — c852203은 09-07 04:00 auto-sync 커밋.
+- e27573b(parent, P19 복구 직후 청정)에서는 '자동 추가' 0건.
+- c852203 diff = rogue 추가분 61줄 (정식 수정 0건) → `git show e27573b:index.md > index.md`로 parent 복원.
+- 복원 후 P18 오염 없음 — grep '^|- ' 0건.
+- git diff HEAD: rogue 60줄 제거 확인.
+
+**W36 등록 및 감사:**
+
+- raw/2026-W36-weekly-recap-draft.md — PAT B 형식으로 raw/ 섹션에 추가.
+- 모든 감사 재실행: wikilink 0, markdown-link 0, index-md 80=80 ✅.
+
+**감사 결과 (모두 통과):**
+
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 80 = 80 (1:1 일치), 0 dead link ✅.
+- P18 cross-file scan: 0 실제 오염 ✅ (wiki + 스킬 references).
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+
+**Git:**
+
+- hermes-wiki (main): `8020a0b wiki: P19 recovery — remove 60 rogue submodule entries, register raw/2026-W36-weekly-recap-draft` (1 file, +1/-61).
+- git status: clean, up-to-date with origin/main.
+
+**Git:** hermes-wiki `e27573b` (index.md, +1/-61).
+
+**발견:**
+- P19 재발 — 08-31 04:00 auto-sync 커밋(b534dab)이 index.md 하단에 60개 서브모듈 항목을 "자동 추가 (2026-08-30)" 레이블로 삽입. 07-28~08-31 20일 연속 동일 패턴.
+- **Committed 변형** — HEAD(b534dab) 60건, parent(a93c1cc) 0건. origin/main도 오염됨. git diff HEAD~1 = rogue 61줄.
+- P18 pipe 오염: 0건. P18 cross-file scan: 0건. untracked: 없음.
+- raw/2026-W35-weekly-recap-draft.md: tracked file이나 index.md에 미등록.
+
+**적용:**
+- `git show HEAD~1:index.md > index.md`로 parent 복원 (61줄 삭제).
+- PAT B로 W35 draft index.md에 등록.
+- git add → commit → pull --rebase → push 완료.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 79 = 79 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 8 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅ (wiki + 스킬 references).
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+- logs submodule: clean.
+
+**Git:** hermes-wiki `e27573b` (main, 1 file, +1/-61), push 완료.
+
+## 2026-09-02 (P19 59줄 working-tree 오염 복구 — `git restore`로 해결)
+
+**Git:** 변경 없음 (working-tree 복구만, 커밋 불필요).
+
+**발견:**
+- P19 재발 — `self_hermes.py`가 index.md 하단에 서브모듈 항목 59건을 "자동 추가 (2026-09-02)" 레이블로 대량 삽입 (logs/ 53 + subagents-library/ 5 + raw/ 1).
+- **Working-tree 전용 오염** — HEAD(e27573b) + origin/main 모두 0건. `git restore index.md`로 간단히 복구.
+- P18 pipe 오염: 0건. P18 cross-file scan: 0건. untracked: 없음.
+
+**적용:**
+- `git restore index.md`로 복구 (rogue 59건 제거).
+- 모든 감사 통과 — 변경 없음.
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 79 = 79 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 12 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅ (wiki + 스킬 references).
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+- logs submodule: clean (submodule pointer 변경 없음).
+
+**Git:** 변경 없음 — git commit/push 불필요.

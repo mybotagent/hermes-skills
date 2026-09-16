@@ -16,8 +16,8 @@ TITLE="${4:?usage: open_fork_pr.sh <repo-dir> <upstream-owner> <branch> <pr-titl
 ENV_FILE="$HOME/.hermes/.env"
 
 if [ -f "$ENV_FILE" ]; then set -a; source "$ENV_FILE"; set +a; fi
-TOKEN="${GITHUB_TOKEN:-}"
-[ -z "$TOKEN" ] && { echo "❌ GITHUB_TOKEN 없음"; exit 1; }
+TOKEN="${GH_TOKEN:-${GH_TOKEN_V2:-${GITHUB_TOKEN:-}}}"
+[ -z "$TOKEN" ] && { echo "❌ GH_TOKEN/GH_TOKEN_V2/GITHUB_TOKEN 없음"; exit 1; }
 
 # derive bot-user + repo name from origin URL (https://<user>:token@github.com/<user>/<repo>.git)
 ORIGIN_URL=$(git -C "$REPO_DIR" remote get-url origin)

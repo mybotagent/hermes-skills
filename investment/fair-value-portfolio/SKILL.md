@@ -841,6 +841,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - `references/watchlist-data-contract.md` — watchlist.json 구조와 종목 관리
 - **`references/fred-macro-strategy.md`** — FRED+yfinance 매크로 데이터 Phase 0.5 통합
 - **`references/cron-mode-data-verification.md`** — subagent 데이터 검증 + 정부 데이터(BLS/FRED/IMF) 직접 차단 시 Google News RSS press-release fallback 패턴 (2026-07-13 추가)
+- **`references/cnbc-xml-naver-polling-workflow.md`** — CNBC XML REST API + Naver Polling API 검증된 실행 명령어 + 6종목 코드 (2026-09-10)
 - `references/orbit-original-code.md` — Orbit 원본 코드
 - `references/trading-agents-architecture.md` — TradingAgents 기반 LLM Agent Layer (v3.2 최종)
 - `references/dynamic-analysis-depth.md` — 데이터 품질 기반 조건부 분기 설계

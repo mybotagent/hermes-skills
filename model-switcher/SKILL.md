@@ -9,15 +9,16 @@ category: devops
 DeepSeek ↔ MiniMax 간 손쉬운 모델 전환 + cron job 핀 관리.
 
 ## 모델 전환 (메인 ↔ 보조)
+## 모델 전환 (메인 ↔ 보조)
 
 ```bash
-# 1) MiniMax-M2.7을 메인으로, DeepSeek를 보조로
+# 1) MiniMax-M2.5을 메인으로, DeepSeek를 보조로 (현재 기본값)
 hermes config set model.provider minimax
-hermes config set model.default MiniMax-M2.7
+hermes config set model.default MiniMax-M2.5
 hermes config set model.base_url https://api.minimax.io/v1
 hermes config set fallback_providers '["deepseek"]'
 
-# 2) DeepSeek를 메인으로, MiniMax를 보조로
+# 2) DeepSeek flash를 메인으로, MiniMax를 보조로
 hermes config set model.provider deepseek
 hermes config set model.default deepseek-v4-flash
 hermes config set model.base_url https://api.deepseek.com/v1
@@ -52,8 +53,8 @@ done
 
 | 모델 | provider | base_url | available_models |
 |------|----------|----------|-----------------|
-| MiniMax-M2.7 | minimax | https://api.minimax.io/v1 | MiniMax-M3, MiniMax-M2.7, MiniMax-M2.5 |
-| DeepSeek V4 Flash | deepseek | https://api.deepseek.com/v1 | deepseek-v4-flash, deepseek-v4-pro |
+| MiniMax-M2.5 | minimax | https://api.minimax.io/v1 | MiniMax-M2.5, MiniMax-M2.7, MiniMax-M3 |
+| DeepSeek V4 Flash | deepseek | https://api.deepseek.com/v1 | deepseek-v4-flash only |
 
 ## ⚠️ 주의사항
 
@@ -69,12 +70,11 @@ pro를 사용할 수 있는 경로를 전부 차단한 상태:
 
 | 경로 | 상태 |
 |------|------|
-| 전역 `model.default` | minimax / MiniMax-M2.7 |
+| 전역 `model.default` | MiniMax-M2.5 (2026-08-18 변경) |
 | `providers.deepseek.model` | deepseek-v4-flash |
 | `providers.deepseek.available_models_json` | flash만 (pro 제거됨) |
-| `~/.hermes/providers/deepseek.json` | flash만 (pro 제거됨) |
-| cron LLM 잡 (19개) | 전부 minimax/MiniMax-M2.7 pin |
-| fallback_providers | `["deepseek"]` — provider의 model(flash) 따름 |
+| cron LLM 잡 | 전부 minimax/MiniMax-M2.5 pin |
+| fallback_providers | `["deepseek"]` |
 
 주의: `hermes -z ... -m deepseek-v4-pro` 같은 **CLI 직접 지정은 차단되지 않음** (Hermes에 모델 블록리스트 없음). 자동 선택 경로만 차단됨. pro를 명시적으로 부르는 명령/스크립트/세션은 즉시 금지.
 

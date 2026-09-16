@@ -60,3 +60,56 @@
 - `df -h`, `free -m`, `uptime`으로 리소스 수집
 - `hermes cron list` stdout 파싱으로 크론 상태 확인 (--json 미지원)
 - 문제 없으면 `exit 0`, 문제 있으면 `exit 1` (no_agent script의 exit code)
+
+## ⚠️ Exit Code Logic (v2 — 2026-09-09)
+
+**이전 (버그)**: WARN이 하나라도 있으면 exit 1 → 모든 서비스 정상인데 "일부 경고"만으로 false positive 실패
+
+**수정 후 (v2)**:
+- `FAIL` 항목 존재 → `exit 1` (진짜 서비스 장애)
+- `WARN`만 존재 → `exit 0` (경고는 정상 범위,通报만 함)
+- 전체 정상 → `exit 0`
+
+```python
+has_fail = False
+has_warn = False
+for item in items:
+    if item.startswith(FAIL): has_fail = True
+    elif item.startswith(WARN): has_warn = True
+
+if has_fail:
+    print(f"{FAIL} 일부 서비스 비정상 — 조치 필요!"); sys.exit(1)
+elif has_warn:
+    print(f"{WARN} 일부 경고 존재 (정상 범위)"); sys.exit(0)
+else:
+    print(f"{PASS} 모든 시스템 정상"); sys.exit(0)
+```
+
+**검증**: `python3 scripts/health_check.py; echo "exit:$?"` → ⚠️ Disk 경고만 있을 때 exit:0
+
+## ⚠️ GitHub Token Cascade (2026-09-09)
+
+`.env`에 3개 GitHub 토큰 존재:
+| Key | 상태 | 원인 |
+|:----|:-----|:-----|
+| `GITHUB_TOKEN` | ❌ 만료 (`ghp_IHHQ...`) | Bad credentials |
+| `GH_TOKEN` | ❌ 만료 (`ghp_Bj1l...`) | Bad credentials |
+| `GH_TOKEN_V2` | ✅ 유효 (`github_pat_...`) | HTTP 200 |
+
+`daily_repo_orchestrator.py`가 `get_env_var("GITHUB_TOKEN")`만 사용 → 만료 토큰 → 401
+
+**Fix**: 토큰 우선순위 cascade
+```python
+GITHUB_TOKEN = (
+    get_env_var("GH_TOKEN_V2")
+    or get_env_var("GH_TOKEN")
+    or get_env_var("GITHUB_TOKEN")
+)
+```
+
+**토큰 유효성 검증**:
+```bash
+TOKEN="github_pat_..."; curl -s -X GET https://api.github.com/user \
+  -H "Authorization: token $TOKEN" -w "\nHTTP:%{http_code}" | tail -1
+# HTTP:200 이면 유효
+```

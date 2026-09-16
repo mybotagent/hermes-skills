@@ -1,9 +1,38 @@
 # Board Saturation Patterns (Kanban 백로그 과포화)
 
 > daily-task-suggestion 실행 중 실측한 보드 과포화 지표와 대응 패턴.
-> 실측: 2026-08-11 (open 259건), 2026-08-12 (267), 2026-08-13 (275), 2026-08-14 (280), 2026-08-17 (295), **2026-08-25 (345)**
+> 실측: 2026-08-11 (open 259), 2026-08-12 (267), 2026-08-13 (275), 2026-08-14 (280), 2026-08-17 (295), 2026-08-25 (345), **2026-09-02 (394)**
 
 ## 실측 스냅샷 (2026-08-25) — severe saturation, supersede + W35 주간 회고 생성
+
+## 실측 스냅샷 (2026-09-02) — saturation 394, genuine need 3건 생성
+
+| 지표 | 값 |
+|:-----|:---|
+| open 태스크 | **394** (todo 66 / ready 327 / in_progress 1 / backlog 1) |
+| todo 중복 | 'Wiki lint 13건' 동일 title **56개** |
+| ready 스테일 (>=7d) | **299건** |
+| [Auto] 태스크 | **159건** |
+| self-improve-loop | **62건** |
+| cleanup/정리 클러스터 | **42건** (정리 42 — cleanup 태스크 자체가 오염원) |
+| lint 관련 | **91건** |
+| README 관련 | **70건** |
+| archive | **27건** |
+| 백로그 | **21건** |
+| 스테일 | **14건** |
+| logs/index | **21건** |
+| cron-jobs 검증 관련 ready | **4건** (모두 미실행 상태) |
+
+**핵심 관찰 (2026-09-02):**
+- saturation 394 —史最高치更新 (2026-08-25 345 → +49)
+- 42개 cleanup/정리 ready 태스크 누적 — '정리 제안' 자체가 오염원 확인 (2026-08-11의 34건에서 지속 누적)
+- 모든 주요 키워드 클러스터가 전년도最高치를更新
+- **예외 적용 3건 생성:**
+  1. Kanban 대정리 실행 2026-09-02 — 42개 cleanup ready 누적 supersede (P1)
+  2. 주간 회고 초안 8건 publish — W28~W35 미발행분 일괄 처리 (P2, W35 draft 이미 존재하여 별도 작성 태스크 불필요)
+  3. infra/cron-jobs.md 검증 — 07-09 이후 신규 cron 7건 이상 반영 확인 + 기존 4개 ready 태스크 supersede (P2)
+- **중요 발견**: W35 draft 파일은 이미 `raw/2026-W35-weekly-recap-draft.md`로 존재 → W35 작성 태스크 미생성, publish 태스크만 생성
+- **cron-jobs genuine need**: infra/cron-jobs.md 갱신 관련 태스크가 이미 4개 ready에 누적된 채 미실행 → supersede 방식으로 단일 검증 태스크 통합
 
 | 지표 | 값 |
 |:-----|:---|

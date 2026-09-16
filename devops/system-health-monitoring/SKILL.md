@@ -48,8 +48,9 @@ hermes cron create \
 핵심 포인트:
 - `no_agent=True` — LLM 통과 없이 스크립트 stdout이 Discord로 직접 전송
 - `script` 파라미터로 실행 (상대 경로 → `~/.hermes/scripts/` 기준)
-- 정상 시 모두 ✅ → 잠잠하게 넘어감
-- FAIL 항목 있을 때만 exit 1 (Discord로 전송)
+- ✅ only → silent (잠잠하게 넘어감)
+- ⚠️ WARN 포함 → exit 0 (정상 범위, Discord 전송 안 함)
+- ❌ FAIL 존재 → exit 1 (Discord로 전송)
 
 ## Health Check Script 패턴
 
@@ -278,9 +279,51 @@ GitHub에서 `isArchived=true`여도 로컬에서 clone 받아 사용 중일 수
 ### 7. `.hermes/state.db`는 Hermes 자체 관리
 사용자 청크나 메모리 캐시. **사용자가 명시적으로 요청하지 않는 한 삭제 금지**.
 
+### 8. health_check.py exit code: WARN ≠ FAIL (2026-09-09)
+**문제**: 모든 서비스 정상인데 ⚠️ 전송 실패 감지만으로 exit 1 → watchdog가 "스크립트 실패"로 오진 → 무한 재시도 루프. **실제 사례**: 모든 ✅ 통과, 크론 상태에 ⚠️ "일부 크론 전송 실패 있음"만 존재 → exit 1 → watchdog가 health_check를 "실패한 스크립트"로 분류.
+
+**Fix (2026-09-09 적용)**:
+```python
+has_fail = False
+has_warn = False
+for item in items:
+    if item.startswith(FAIL): has_fail = True
+    elif item.startswith(WARN): has_warn = True
+
+if has_fail:
+    print(f"❌ ..."); sys.exit(1)
+elif has_warn:
+    print(f"⚠️  ..."); sys.exit(0)   # ← WARN은 exit 0
+else:
+    print(f"✅ ..."); sys.exit(0)
+```
+**원칙**: ⚠️는 "주의 필요"이지 "장애"가 아님. 진짜 FAIL만 exit 1.
+
+### 9. Disk threshold는 90% 기준 (2026-09-09)
+Disk FAIL threshold를 85%에서 **90%**로 상향. 40GB small root filesystem에서 85%는 정상 변동 범위이며, 88-89%에서 journal vacuum으로 자동 해소 가능하다. 스크립트 threshold 수정:
+```python
+# health_check.py line ~71
+icon = PASS if used_pct < 80 else (WARN if used_pct < 90 else FAIL)
+```
+80% 미만=PASS, 80-89%=WARN, 90% 이상=FAIL. 실제 장애 수준(>95%)과 경고 수준(>90%)을 분리.
+
+### 10. journal vacuum으로 disk 89% → 78% 해소 (2026-09-09)
+`/var/log/journal`이 3.7GB까지 증설 → 89% 포화. `journalctl --vacuum-size=500M --vacuum-time=7d`로 3.3GB 확보하고 500MB 상한 설정. 영구 적용:
+```bash
+sudo tee /etc/systemd/journald.conf.d/size-limit.conf <<'EOF'
+[Journal]
+SystemMaxUse=500M
+SystemMaxFileSize=50M
+MaxRetentionSec=7day
+EOF
+sudo systemctl restart systemd-journald
+```
+
 ## 참고 파일
 - `scripts/health_check.py` — 실제 헬스체크 스크립트 (`~/.hermes/scripts/`)
 - `references/dashboard-recovery.md` — Dashboard 502 복구 절차 상세
 - `references/discord-gateway-recovery.md` — Discord gateway 응답 실패 복구 (pycache stale / dead HOME_CHANNEL)
 - `references/disk-cleanup-checklist.md` — 디스크 정리 안전도 분류표
-- `references/dawn-heartbeat-pattern.md` — **새벽 KST 0-5시 15분 cadence silent-on-healthy heartbeat (cron `19703b962de7`)** + busy-list 기반 cron 비대중 가드 패턴. 일 1회 heavy health check의 새벽 silent complement.
+- `references/journal-disk-full-fix.md` — journal 3.7GB 포화 해소 + 영구 상한 설정
+- `references/dawn-heartbeat-pattern.md` — 새벽 KST 0-5시 15분 cadence silent-on-healthy heartbeat + busy-list 기반 cron 비대중 가드
+- `references/daily-repo-orchestrator-401-fix.md` — daily-repo-orchestrator GitHub PAT 401 에러 Fix 절차

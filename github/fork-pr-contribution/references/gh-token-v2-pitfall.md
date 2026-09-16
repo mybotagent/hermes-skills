@@ -1,52 +1,47 @@
-# Fork Push용 토큰: Classic PAT vs Fine-Grained (GH_TOKEN_V2)
+# Fork Push + PR용 토큰: Classic PAT vs Fine-Grained (GH_TOKEN_V2)
 
-> 실측 2026-08-15: classic PAT (`ghp_...`)으로 fork push 시 403 거부.
-> 原因: upstream의 `.github/workflows/*` 수정 커밋을 merge한 뒤 push하면,
-> classic PAT은 **workflows scope 없음** → rejection.
+> **实测 2026-09-09 핵심 발견:**
+> - `GH_TOKEN` (classic PAT, ghp_Bj...) → sh-ai-x에 PR 생성 **성공** (PR #835)
+> - `GH_TOKEN_V2` (fine-grained PAT) → fork push만, sh-ai-x PR 생성 403
+> - `GITHUB_TOKEN` (classic PAT, ghp_IH...) → 만료되어 401
 
 ## 증상
 
 ```bash
-git push origin main
-# → 403 Forbidden 또는
-# → remote: fatal: refusing to push due to checkout race condition
+# fine-grained PAT — fork push OK, upstream PR 생성 403
+curl -X POST ... https://api.github.com/repos/sh-ai-x/dev-harness-kit/pulls
+# → 403 "Resource not accessible by personal access token"
+
+# 만료 classic PAT — sh-ai-x API 401
+curl -H "Authorization: Bearer $GH_PAT" https://api.github.com/repos/sh-ai-x/...
+# → 401 "Bad credentials"
 ```
 
-## 토큰 비교
+## 토큰 비교 (实测 2026-09-09)
 
-| 토큰 유형 | workflows 쓰기 | fork push | PR 생성 API |
-|-----------|:--------------:|:---------:|:-----------:|
-| Classic PAT (`ghp_...`) | ❌ | ❌ | ✅ |
-| Fine-Grained (`github_...`) | ✅ | ✅ | ✅ |
+| 토큰 | fork push | sh-ai-x PR 생성 | 비고 |
+|------|:---------:|:---------------:|------|
+| `GH_TOKEN` (classic, ghp_Bj...) | ✅ | **✅** | broadly applicable — 이것 사용 |
+| `GH_TOKEN_V2` (fine-grained, github_pat_...) | ✅ | ❌ 403 | sh-ai-x 권한 없음 |
+| `GITHUB_TOKEN` (classic, ghp_IH...) | ✅ | ❌ 401 | 만료됨 |
 
-## 해결책
-
-### 1. Fine-Grained 토큰 발급 (GH_TOKEN_V2)
-
-GitHub → Settings → Developer settings → Fine-grained tokens:
-- **Resource owner**: `mybotagent`
-- **Repository access**: fork repo만 선택
-- **Permissions**: Contents: Read/Write, Workflows: Read/Write
-
-### 2. `.env`에 2종 토큰 저장
+## 토큰 우선순위
 
 ```bash
-# ~/.hermes/.env
-GITHUB_TOKEN=ghp_classic_PAT   # API용 (PR 생성)
-GH_TOKEN_V2=github_fine_grained  # fork push 전용
+TOKEN="${GH_TOKEN:-${GH_TOKEN_V2:-${GITHUB_TOKEN:-}}}"
 ```
 
-### 3. origin remote에 fine-grained URL 사용
+**핵심**: classic PAT(`GH_TOKEN`)는 broadly applicable — sh-ai-x에 별도 레포 설정 없이 PR 생성 가능.
+fine-grained PAT(`GH_TOKEN_V2`)는 sh-ai-x에 **Pull requests: read/write** 권한 명시 필요.
 
-```bash
-# fork push 전
-git remote set-url origin "https://${GH_TOKEN_V2}@github.com/mybotagent/repo.git"
-git push origin main
+## fine-grained PAT에 sh-ai-x 레포 권한 추가 (1회 설정)
 
-# push 후 classic PAT URL로 복원 (API용 유지)
-git remote set-url origin "https://github.com/mybotagent/repo.git"
-```
+GitHub → Settings → Developer settings → Fine-grained tokens →
+`11BWOAV5A...` 선택 → **Repository access**: `sh-ai-x/dev-harness-kit` 추가 →
+**Permissions**: Pull requests: Read and Write → Save.
 
 ## 요약
 
-**fork push가 403/거부될 때**: classic PAT 대신 fine-grained (`GH_TOKEN_V2`) 사용.
+- **fork push**: `GH_TOKEN_V2` (fine-grained) — 항상 이것
+- **sh-ai-x PR 생성**: `GH_TOKEN` (classic PAT) — broadly applicable ★
+- **대안**: fine-grained PAT 사용 시 GitHub에서 sh-ai-x 권한 추가

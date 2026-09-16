@@ -455,7 +455,8 @@ himalaya envelope list -o json 'from github'
 - `pr-merge-gate` — fix 단계의 merge gate + token permission probe
 - `references/linear-kanban-idempotency.md` — 🆕 Linear/Kanban dedupe 코드 패턴 + 함정
 - `references/stage-flags-and-modes.md` — 🆕 STAGE별 dry flag + mode preset 매트릭스
-- `references/github-notification-policy.md` — 본인→본인 PR/issue 메일 발사 정책
+- `references/github-notification-policy.md`
+- `references/github-token-401-fix.md` — GitHub PAT 401 Unauthorized 재발급 절차 — 본인→본인 PR/issue 메일 발사 정책
 - `references/config-sync-mode.md` — 🆕 v1.4 단방향 push sync 패턴 + mirror bare clone + 4 sub-step 책임 분리 + DRY-first 신규 cron 절차
 - wiki `infra/daily-repo-orchestrator.md`
 - https://github.com/mybotagent/skills (mirror repo)

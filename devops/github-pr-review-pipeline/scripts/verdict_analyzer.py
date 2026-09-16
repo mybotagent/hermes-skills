@@ -34,7 +34,7 @@ def get_env_var(name: str) -> str:
     return ""
 
 
-GITHUB_TOKEN = get_env_var("GITHUB_TOKEN")
+GITHUB_TOKEN = get_env_var("GH_TOKEN") or get_env_var("GITHUB_TOKEN")
 HEADERS_GH = {
     "Authorization": f"token {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
