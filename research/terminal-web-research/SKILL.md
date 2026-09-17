@@ -357,7 +357,7 @@ terminal(f'curl -sL -H "User-Agent: Mozilla/5.0" "{rss_url2}" -o /tmp/QUERY2.xml
 
 - `references/korean-stock-news-extraction.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
 - `references/rss-news-extraction.md` — Ready-to-use Google News RSS extraction script template.
-- `references/korean-stock-news-batch-2026.md` — Proven 6-ticker batch script with verified KRX codes (에이피알=052220, HD현대일렉트릭=267260), dual-query per ticker (name+date, name+code), de-dup, and markdown output. Tested 2026-09-10.
+- `references/korean-stock-news-batch-2026.md` — Proven 6-ticker batch script. ⚠️ **Tickers in this file were WRONG (2026-09-16 session corrected them):** 에이피알=**352820** (not 052220), HD현대일렉=**054050** (not 267260). Always verify against the user's actual codes — do not assume pre-verified codes are still correct.
 
 #### 7.7 Korean Stock News Collection — Parallel Per-Ticker (added 2026-07-13)
 
@@ -503,6 +503,8 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 13. **Wasting budget on re-reads**: When you extract data and only hold it in your context window, you'll re-read the same HTML to "remember" facts — burning 3-5 calls per source. **Cache extracted data as JSON files in /tmp/** so write_file can ingest them in one call.
 14. **Iteration cap is real**: At ~50 tool calls, you cannot do "fetch → extract → write → polish → fetch more → rewrite" loops for a 30-50KB deliverable. Front-load fetches, write once, ship once.
 15. **Google News Korean RSS coverage gaps**: Certain mid-cap tickers (삼성전기=009150, HD현대일렉트릭=267260) may have **zero same-day results** even with date-qualified queries, while large-caps (현대차=005380, 에이피알=052220) return full coverage. Workaround: report the gap explicitly, substitute the most recent prior-day article with relevant context, and do NOT invent headlines. (Observed 2026-09-14.)
+16. **Naver finance pages are Next.js SPA — do not scrape for news**: `finance.naver.com/item/news.naver?code=XXXXX` and `finance.naver.com/item/news_read.naver?code=XXXXX` now return Next.js server-rendered HTML (as of ~2026). Curl downloads ~100KB of JS-chunk HTML but **zero news items** — the table is empty, no `<td class="title">` exists. **Always use Google News RSS as primary** for Korean stock news; Naver is not a reliable curl target for this class of data. (Confirmed 2026-09-16.)
+17. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session.
 
 ## Verification
 
