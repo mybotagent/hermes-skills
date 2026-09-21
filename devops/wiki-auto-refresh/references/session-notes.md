@@ -857,3 +857,28 @@
 - logs submodule: clean (submodule pointer 변경 없음).
 
 **Git:** 변경 없음 — git commit/push 불필요.
+
+## 2026-09-21 21:00 KST
+
+**발견:**
+- P19 검사: HEAD(origin/main) '자동 추가' 0건 ✅, working-tree clean ✅.
+- git status: ahead 1 (ffe2c20 P19 recovery — 1 local commit not pushed).
+- index-md-audit.py: raw/2026-W38-weekly-recap-draft.md REAL MISSING (1건 — W37까지 등록 후 W38 누락).
+- wikilink/markdown/tag 모든 감사 통과.
+
+**적용:**
+- index.md raw/ 섹션에 PAT B 형식으로 W38 draft 등록.
+- commit `eff3140` ("register raw/2026-W38-weekly-recap-draft in index.md", 1 file, +1).
+- git push origin main 성공 (`ce55fcb..eff3140`).
+
+**감사 결과 (모두 통과):**
+- wikilink-audit.py: 0 broken, 0 bare-name, 0 .md-ext, 4 cross-domain (P7) ✅.
+- markdown-link-audit.py: 0 broken, 0 P11 ✅.
+- index-md-audit.py: 82 = 82 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 15 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅.
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+
+**Git:** 1 commit, push 완료.
