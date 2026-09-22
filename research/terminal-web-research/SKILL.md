@@ -375,11 +375,17 @@ curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
 import xml.etree.ElementTree as ET, json, urllib.request, urllib.parse, os, re
 from html import unescape
 
-# (ticker_code, display_name) — pick 2-3 query variants per ticker for breadth
+# ⚠️ Ticker codes — ALWAYS verify against user's current portfolio codes before use.
+# KRX codes change; re-listings happen. As of 2026-09-21 verified:
+#   삼성전자 005930, SK하이닉스 000660, 삼성전기 009150,
+#   현대차 005380, 에이피알 352820, HD현대일렉 054050
 TARGETS = [
     ("005930", "삼성전자"),
     ("000660", "SK하이닉스"),
-    ("267260", "HD현대일렉트릭"),  # NOT HD건설기계(267270) — double-check codes
+    ("009150", "삼성전기"),
+    ("005380", "현대차"),
+    ("352820", "에이피알"),
+    ("054050", "HD현대일렉"),
 ]
 
 def fetch_rss(query, hl="ko", gl="KR", ceid="KR:ko"):
@@ -502,7 +508,7 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 12. **Blog URL slugs change after rebrands**: After a company rebrands (e.g. Windsurf → Devin Desktop), old blog URLs at `codeium.com/windsurf/changelog` may 404. Always check the new corporate parent domain (`devin.ai/blog/`) for rebrand-era content.
 13. **Wasting budget on re-reads**: When you extract data and only hold it in your context window, you'll re-read the same HTML to "remember" facts — burning 3-5 calls per source. **Cache extracted data as JSON files in /tmp/** so write_file can ingest them in one call.
 14. **Iteration cap is real**: At ~50 tool calls, you cannot do "fetch → extract → write → polish → fetch more → rewrite" loops for a 30-50KB deliverable. Front-load fetches, write once, ship once.
-15. **Google News Korean RSS coverage gaps**: Certain mid-cap tickers (삼성전기=009150, HD현대일렉트릭=267260) may have **zero same-day results** even with date-qualified queries, while large-caps (현대차=005380, 에이피알=052220) return full coverage. Workaround: report the gap explicitly, substitute the most recent prior-day article with relevant context, and do NOT invent headlines. (Observed 2026-09-14.)
+15. **Google News Korean RSS coverage gaps**: Certain mid-cap tickers may have **zero same-day results** even with date-qualified queries, while large-caps return full coverage. Workaround: report the gap explicitly, substitute the most recent prior-day article with relevant context, and do NOT invent headlines. As of 2026-09-21 the user's portfolio tickers are: 삼성전자 005930, SK하이닉스 000660, 삼성전기 009150, 현대차 005380, 에이피알 352820, HD현대일렉 054050. (Observed 2026-09-14, confirmed 2026-09-21.)
 16. **Naver finance pages are Next.js SPA — do not scrape for news**: `finance.naver.com/item/news.naver?code=XXXXX` and `finance.naver.com/item/news_read.naver?code=XXXXX` now return Next.js server-rendered HTML (as of ~2026). Curl downloads ~100KB of JS-chunk HTML but **zero news items** — the table is empty, no `<td class="title">` exists. **Always use Google News RSS as primary** for Korean stock news; Naver is not a reliable curl target for this class of data. (Confirmed 2026-09-16.)
 17. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session.
 

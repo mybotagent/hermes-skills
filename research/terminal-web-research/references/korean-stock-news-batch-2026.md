@@ -1,18 +1,19 @@
 # Korean Stock News Batch Collector — Proven Pattern
-# Tested: 2026-09-10, 6 tickers, Google News RSS hl=ko/gl=KR/ceid=KR:ko
+# Tested: 2026-09-21, 6 tickers, Google News RSS hl=ko/gl=KR/ceid=KR:ko
 #
 # Usage:
 #   python3 /tmp/kr_news_final.py  # outputs to stdout; save: > /tmp/kr_news.json
 #
 # Cron-safe: writes script file first, invokes via terminal() — no pipe-to-interpreter.
 #
-# Ticker codes (VERIFIED — do not change without re-checking KRX):
-#   삼성전자       005930.KS  (KOSPI)
-#   SK하이닉스     000660.KS  (KOSPI)
-#   삼성전기       009150.KS  (KOSPI)
-#   현대차         005380.KS  (KOSPI)
-#   에이피알       052220.KQ  (KOSDAQ) ← DO NOT use 278280
-#   HD현대일렉트릭  267260.KS  (KOSPI) ← NOT 267270 (HD건설기계)
+# ⚠️ Ticker codes — VERIFIED 2026-09-21 against user's actual portfolio codes:
+#   삼성전자       005930  (KOSPI)
+#   SK하이닉스     000660  (KOSPI)
+#   삼성전기       009150  (KOSPI)
+#   현대차         005380  (KOSPI)
+#   에이피알       352820  (KOSDAQ) ← was 052220 in older batch files — ALWAYS re-verify
+#   HD현대일렉     054050  (KOSPI)  ← was 267260 in older batch files — ALWAYS re-verify
+# KRX codes change; company re-listings happen. Never assume a pre-verified code is still valid.
 
 import xml.etree.ElementTree as ET
 import urllib.request
@@ -27,8 +28,8 @@ TARGETS = [
     ("000660", "SK하이닉스"),
     ("009150", "삼성전기"),
     ("005380", "현대차"),
-    ("052220", "에이피알"),
-    ("267260", "HD현대일렉트릭"),
+    ("352820", "에이피알"),
+    ("054050", "HD현대일렉"),
 ]
 # ==================================
 
@@ -73,7 +74,7 @@ results = {}
 for code, name in TARGETS:
     seen = set()
     items = []
-    queries = [f"{name}+2026년+9월+10일", f"{name}+{code}"]
+    queries = [f"{name}+2026년+9월+21일", f"{name}+{code}"]
 
     for q in queries:
         try:
@@ -110,11 +111,11 @@ for code, name in TARGETS:
     results[name] = {"code": code, "items": deduped[:5]}
 
 # Save JSON
-with open('/tmp/kr_stock_news_20260910.json', 'w', encoding='utf-8') as f:
+with open('/tmp/kr_stock_news_latest.json', 'w', encoding='utf-8') as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
 
 # Print markdown
-print("# 한국 증시 뉴스 | 2026년 9월 10일 (목)\n")
+print("# 한국 증시 뉴스 | 2026년 9월 21일 (월)\n")
 for name, data in results.items():
     print(f"\n## {name} ({data['code']})\n")
     for i, item in enumerate(data["items"], 1):
@@ -123,4 +124,4 @@ for name, data in results.items():
         if item["url"]:
             print(f"- URL: {item['url']}")
         print()
-print("---\n*출처: Google 뉴스 RSS (hl=ko, gl=KR) | 2026년 9월 10일 수집*")
+print("---\n*출처: Google 뉴스 RSS (hl=ko, gl=KR) | 2026년 9월 21일 수집*")
