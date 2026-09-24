@@ -481,7 +481,7 @@ When the user asks "why did KOSPI drop?", the workflow is:
 
 When a ticker has no same-day article (e.g. 소형주, 신규 종목), report this explicitly and substitute the most recent prior-day article that includes relevant context (earnings, contract wins, sector trends). Never invent a headline for a missing ticker.
 
-#### 8. Yahoo Finance — S&P 500, 10Y Treasury, ETFs via Chart API (added 2026-09-22)
+#### 8. Yahoo Finance — S&P 500, 10Y Treasury, ETFs via Chart API (added 2026-09-22, updated 2026-09-23)
 
 Yahoo Finance `/v7/finance/quote` and `/v8/finance/chart` endpoints rate-limit requests without a browser-like User-Agent. The chart API with `interval=5m&range=1d` and a custom User-Agent header works reliably.
 
@@ -489,24 +489,30 @@ Yahoo Finance `/v7/finance/quote` and `/v8/finance/chart` endpoints rate-limit r
 
 ```bash
 # Step 1: save to file (no pipe, no interpreter execution)
-curl -s "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=5m&range=1d" \
+# ⚠️ query2 works when query1 fails — always try query2
+curl -s "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=5m&range=1d" \
   --header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
   -o /tmp/gspc.json
 
 # Step 2: read with read_file tool, extract with python3 on the saved file
 ```
 
-**Verified working symbols (2026-09-22):**
+**Verified working symbols (2026-09-23):**
 | Symbol | Data | Key Field |
 |--------|------|-----------|
 | `^GSPC` | S&P 500 index | `meta.regularMarketPrice` |
 | `^TNX` | 10Y Treasury yield (%) | `meta.regularMarketPrice` |
+| `^KS11` | KOSPI (Korean) | `meta.regularMarketPrice` |
+| `^KQ11` | KOSDAQ (Korean) | `meta.regularMarketPrice` |
+| `^VIX` | VIX fear index | `meta.regularMarketPrice` |
 | `SPY` | SPY ETF | `meta.regularMarketPrice` |
 
 **Failed patterns:**
+- `query1.finance.yahoo.com` may return 404 while `query2` works — always fallback to `query2`
 - `/v7/finance/quote?symbols=%5EGSPC` → 429 Too Many Requests
 - `/v8/finance/chart/%5EGSPC?interval=1d&range=1d` (without custom UA) → rate-limited
 - `curl ... | python3 -c "..."` → security scanner blocks pipe-to-interpreter
+- **`^DXY`** (Dollar Index chart API) → returns `result: null, Not Found`. **Workaround**: use `UUP` (Invesco DB Dollar Index ETF) as proxy (~28.48), or calculate via exchangerate-api.com cross-rates.
 
 See `references/yahoo-finance-market-data.md` for full field reference and data freshness notes.
 
@@ -529,7 +535,8 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
    - For multi-ticker batch: parallel `terminal()` calls saving each to `/tmp/ticker.xml`, then one Python call reads all files.
    - If you must pipe: pre-write the script to `/tmp/script.py` first with `write_file`, then `python3 /tmp/script.py` — no pipe needed.
    - **Yahoo Finance special case (2026-09-22)**: Use the chart API with custom User-Agent header and two-step fetch. See §8 for verified working endpoints.
-5. **HTML entity encoding**: Site content often uses `&#x27;`, `&amp;`, `&quot;`, `&lt;`, `&gt;` — always decode these in post-processing.
+5. **`&` in foreground terminal() is blocked**: Using `curl ... &` (background) inside a foreground `terminal()` call fails with `"Foreground command uses '&' backgrounding. Use terminal(background=true)..."`. **Always use sequential `&&` or separate terminal() calls** when fetching multiple files in parallel.
+6. **HTML entity encoding**: Site content often uses `&#x27;`, `&amp;`, `&quot;`, `&lt;`, `&gt;` — always decode these in post-processing.
 6. **Nested HTML**: Regex is not a parser — deeply nested HTML, script tags, and inline styles can confuse simple regex patterns. For complex pages, consider writing a more robust extraction using Python's `html.parser` or `BeautifulSoup` if available.
 7. **execute_code blocked in cron jobs**: `execute_code` is denied in cron mode because there's no user to approve "pipe to interpreter" security prompts. Workaround: (a) write a reusable Python script to `/tmp/` via `write_file`, (b) download data with `curl` via `terminal()`, (c) invoke the script via `terminal()` with arguments. See §7.5 Cron-Safe RSS Workflow.
 8. **S&P 500 / generic RSS queries return noise**: High-level queries like "S&P 500 stock market" often return unrelated news (politics, obituaries, sports) because Google News keyword matching is broad. Fix: use more specific queries like "S&P 500 tech rally", or add date constraints like "June 2026" to narrow results.
