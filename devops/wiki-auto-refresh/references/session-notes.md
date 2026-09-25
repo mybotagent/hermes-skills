@@ -882,3 +882,27 @@
 - git status: clean, up-to-date with origin/main.
 
 **Git:** 1 commit, push 완료.
+
+## 2026-09-24 (P19 — 60줄 오염 복구, 모든 감사 통과)
+
+**발견:**
+- P19: index.md 하단에 `자동 추가 (2026-09-24)` 레이블과 함께 서브모듈 항목 60개 삽입 (subagents-library 5개 + logs/ 55개).
+- P18 pipe 오염: 0건 ✅.
+- git diff HEAD = rogue 추가분뿐 (정식 수정 0건) → `git restore index.md`로 복구.
+
+**처리:**
+- `git restore index.md` 복구 완료.
+- git diff HEAD -- index.md: 0 변경 ✅.
+- git status: clean, up-to-date with origin/main ✅.
+
+**감사 결과:**
+- wikilink-audit.py: Cross-domain 4 (P7), 0 broken ✅.
+- markdown-link-audit.py: 0 P11, 0 broken ✅.
+- index-md-audit.py: 82 = 82 (1:1 일치), 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 15 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅.
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+
+**Git:** 0 commit (변경 없음 — 복구로 clean 유지).
