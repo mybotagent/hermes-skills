@@ -356,6 +356,7 @@ terminal(f'curl -sL -H "User-Agent: Mozilla/5.0" "{rss_url2}" -o /tmp/QUERY2.xml
 - **Very niche queries**: Google News may return 0 results. Fall back to site-specific curl scraping (section 1-6 above) or try broader search terms.
 
 - `references/korean-stock-news-batch-2026.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
+- `references/korean-stock-news-rss-2026-09.md` — Korean stock news via Google News RSS: verified working Python script, `link` field not being a real URL, source extraction from `description` HTML, `urllib.parse.quote()` requirement, Naver search page JS-rendering (added 2026-09-25)
 - `references/yahoo-finance-market-data.md` — Yahoo Finance S&P 500 / 10Y Treasury / ETF fetch via chart API + exchange rate APIs (added 2026-09-22)
 - `references/rss-news-extraction.md` — Ready-to-use Google News RSS extraction script template.
 - `references/korean-stock-news-extraction.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
@@ -548,7 +549,19 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 14. **Iteration cap is real**: At ~50 tool calls, you cannot do "fetch → extract → write → polish → fetch more → rewrite" loops for a 30-50KB deliverable. Front-load fetches, write once, ship once.
 15. **Google News Korean RSS coverage gaps**: Certain mid-cap tickers may have **zero same-day results** even with date-qualified queries, while large-caps return full coverage. Workaround: report the gap explicitly, substitute the most recent prior-day article with relevant context, and do NOT invent headlines. As of 2026-09-21 the user's portfolio tickers are: 삼성전자 005930, SK하이닉스 000660, 삼성전기 009150, 현대차 005380, 에이피알 352820, HD현대일렉 054050. (Observed 2026-09-14, confirmed 2026-09-21.)
 16. **Naver finance pages are Next.js SPA — do not scrape for news**: `finance.naver.com/item/news.naver?code=XXXXX` and `finance.naver.com/item/news_read.naver?code=XXXXX` now return Next.js server-rendered HTML (as of ~2026). Curl downloads ~100KB of JS-chunk HTML but **zero news items** — the table is empty, no `<td class="title">` exists. **Always use Google News RSS as primary** for Korean stock news; Naver is not a reliable curl target for this class of data. (Confirmed 2026-09-16.)
-17. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session.
+
+17. **Google News RSS `link` field does NOT redirect to real article URLs**: When you `curl` the `link` URL from a Google News RSS item, it returns the **same Google News wrapper URL** with `?oc=5&hl=en-US&gl=US&ceid=US:en` params appended — the redirect never resolves. This means the `link` field is only useful as a Google News deep-link, not as a real source URL. **To get the actual source, extract it from the `description` HTML**: look for `<font color="#6f6f6f">source_name</font>` inside the description field. The title in the description `<a href="...">headline text</a>` also links to the Google News wrapper, not the original. (Confirmed 2026-09-25.)
+
+18. **`urllib.request.urlopen()` requires pre-encoded URLs — spaces must be quoted**: Unlike `curl` which handles spaces in query strings transparently, `urllib.request.urlopen()` raises `InvalidURL: URL can't contain control characters` on unencoded spaces. **Always use `urllib.parse.quote(query)` to encode the search term before building the URL.** Example:
+    ```python
+    from urllib.parse import quote
+    encoded = quote(query)  # "삼성전자 005930" → "%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90+005930"
+    url = f"https://news.google.com/rss/search?q={encoded}&hl=ko&gl=KR&ceid=KR:ko"
+    ```
+
+19. **Naver News search page (`search.naver.com`) is JS-rendered too**: Even `search.naver.com?where=news&query=...` returns static HTML with no news items in curl — the `<a class="news_tit">` anchors exist in the page but the article list is populated by JavaScript. Do not waste iterations trying to parse it. Google News RSS remains the reliable tool. (Confirmed 2026-09-25.)
+
+20. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session.
 
 ## Verification
 
