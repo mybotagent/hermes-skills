@@ -95,13 +95,13 @@
     "created_at": "2026-07-07T09:38:30.638998+00:00",
     "created_by": "agent",
     "last_patched_at": "2026-08-08T23:12:42.892882+00:00",
-    "last_used_at": "2026-08-15T23:12:19.617607+00:00",
-    "last_viewed_at": "2026-08-15T23:12:19.613412+00:00",
+    "last_used_at": "2026-09-26T23:06:46.233927+00:00",
+    "last_viewed_at": "2026-09-26T23:06:46.229740+00:00",
     "patch_count": 49,
     "pinned": false,
     "state": "stale",
-    "use_count": 39,
-    "view_count": 39
+    "use_count": 40,
+    "view_count": 40
   },
   "baoyu-infographic": {
     "archived_at": null,
@@ -1576,14 +1576,14 @@
     "archived_at": null,
     "created_at": "2026-06-25T14:12:12.232049+00:00",
     "created_by": null,
-    "last_patched_at": "2026-09-02T12:03:43.652231+00:00",
-    "last_used_at": "2026-09-25T12:20:28.885943+00:00",
-    "last_viewed_at": "2026-09-07T12:04:16.563146+00:00",
-    "patch_count": 124,
+    "last_patched_at": "2026-09-26T23:07:56.579004+00:00",
+    "last_used_at": "2026-09-26T23:07:59.571318+00:00",
+    "last_viewed_at": "2026-09-26T23:07:59.567055+00:00",
+    "patch_count": 126,
     "pinned": false,
     "state": "active",
-    "use_count": 165,
-    "view_count": 77
+    "use_count": 168,
+    "view_count": 80
   },
   "wiki-graphrag-search": {
     "archived_at": null,

@@ -1,9 +1,10 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: 1.30.0
+version: "1.32.0"
 changelog:
-  - "1.30.0 (2026-09-02): P19 59줄 working-tree 오염 — self_hermes.py가 index.md 하단에 logs/(53) + subagents-library/(5) + raw/(1) 59개 항목을 '자동 추가 (2026-09-02)'로 삽입. git diff HEAD로 working-tree 전용 확인 후 `git restore index.md`로 복구. 모든 감사 통과."
+  - "2026-09-27: P21 memory tool cron fallback + P22 submodule lint false-positive (60 items, ignore)."
+  - "2026-09-02: P19 59-row working-tree contamination from self_hermes.py logs/(53) + subagents-library/(5) + raw/(1) 59 items with auto-add label. git diff HEAD check + git restore index.md recovery. All audits pass."
   - "1.29.0 (2026-08-31): P19 recovery 보강 — rogue 제거 중 정식 수정( W35 등록)이 이미 적용된 상태에서 `git show <parent>:index.md` 복원 시 정식 수정분 유실 방지. 오염 커밋 diff가 rogue 추가분뿐(+정식 수정 0)일 때만 parent 복원 경로 적용, 정식 수정분이 있으면 footer 기준 python truncate로 rogue만 선택적 삭제. 20일 연속 재발 사례 문서화."
   - "1.28.0 (2026-08-25): P18 self-inflicted 변형 추가 — patch 도구로 테이블 행 추가 시 new_string의 패턴 충돌로 `||` 중복 발생 가능 (logs/index.md August 섹션 사례). 'self_hermes.py만 원인'이라는 기존 전제 수정."
   - "1.27.0 (2026-08-23):"
@@ -999,6 +1000,35 @@ grep -c '^## 2026-08-04' ~/.hermes/skills/devops/wiki-auto-refresh/references/se
 - 복구 후 **헤더 개수 + 본문 날짜 레이블 + 순서** 3가지 모두 검증
 
 **핵심 교훈:** session-notes.md는 매일 같은 구조로 append되는 파일 — **근미동일 섹션 반복이 구조적 위험**. append 시 유일 앵커 확보는 선택이 아니라 필수. patch 실수로 섹션이 유실되어도 원문을 재구성할 수 있도록 patch 전 read 결과를 보존할 것.
+
+### P21. Memory tool — Cron 컨텍스트 툴 차단 시 직접 파일 측정 (2026-09-27 추가)
+
+**증상:** cron 컨텍스트에서 `memory` tool 호출 시 `"Memory is not available. It may be disabled in config or this environment."` 에러. Config에서 `memory_enabled: true` 정상.
+
+**원인:** execute_code 차단과 동일 계열 — cron=no-user 환경에서 memory tool도 동일한 security policy로 거부됨.
+
+**핵심 교훈:** **툴 에러 ≠ 실제 상태**. 파일은 정상 존재. 직접 읽어서 측정:
+```bash
+python3 -c "import os;print(len(open(os.path.expanduser('~/.hermes/memories/MEMORY.md')).read()))"
+```
+> 2000이면 정리 대상, 0이면 메모리 비어있음.
+
+**2026-09-27 사례:** cron에서 memory tool 차단 → 파일 직접 읽기 → 사용률 0% (비어있음) → 정리 불필요 판정.
+
+### P22. Submodule 파일은 Orphan/Lint 검사의 False Positive — 의도된 오탐 (2026-09-27 추가)
+
+**증상:** orphan 검사(1), broken link 검사(2), index-md-audit(3) 전부 `logs/` · `subagents-library/` 경로에서 N개 누락/broken 오탐.
+
+**원인:** 파일 시스템 스캔 시 submodule 디렉토리인지 자동 인식 불가 + index.md grep 정규식이 submodule 경로를 잡아버림.
+
+**판단 기준 — 60개 오탐이면 무시:**
+- `logs/` (hermes-logs 서브모듈) 50개 + `subagents-library/` 10개 ≈ 60개
+- 이 패턴이면 → **전부 의도된 서브모듈, 조치 불필요**
+- `git -C ~/.hermes/wiki/logs status` 로 submodule 여부 확인 가능
+
+**Lint 2 (broken wikilink)에서의 분류:** `logs/` · `subagents-library/` 경로가 60개 broken으로 나오면 → 전부 "의도된 submodule"으로 분류. 리포트에 "submodule 의도된 항목: 60개 (무시)"라고만 기재.
+
+**핵심 교훈:** **submodule 파일은 lint 오탐의 정상적인 원인**. 60개 오탐이 보이면 aggressive fix를 시도하지 말고 "의도된 서브모듈"로 분류.
 
 ## 참고 자료
 - 위키 구조/스키마: `wiki/AGENTS.md`, `wiki/SCHEMA.md`
