@@ -906,3 +906,32 @@
 - git status: clean, up-to-date with origin/main.
 
 **Git:** 0 commit (변경 없음 — 복구로 clean 유지).
+
+## 2026-09-27 (P19 — 60줄 rogue submodule entries 재삽입 복구, weekly cleanup logs 갱신)
+
+**발견:**
+- P19: `hermes-wiki` HEAD(index.md) + origin/main 양쪽에 `자동 추가 (2026-09-25)` 레이블 60개 삽입 (subagents-library 5개 + logs/ 55개).
+- 동일 패턴이 09-24 21:00 cleanup에서 이미 복구되었으나, 이후 09-25 04:00 auto-sync에 재삽입된 것으로 4회 연속 재발.
+- diff 확인: `ffe2c20` (09-26 W38 등록 커밋) 이후 HEAD diff = rogue 추가분 60개 (정식 수정 0건) → parent 복원 경로 적용.
+- P18 pipe 오염: 0건 ✅.
+
+**처리:**
+- footer 기준 python truncate: `index.md`에서 `## Submodules` 헤더부터 rogue block 끝까지 제거 (−69줄).
+- logs submodule: September 섹션 신설 + `2026/2026-09-27-0700-weekly-cleanup.md` 등록.
+- hermes-wiki: logs submodule pointer bump commit.
+- 모든 감사 재실행: wikilink (0 broken) / markdown-link (0 P11) / index-md (83=83) / tag (0 unknown) / auto-fill (0 filled, 11 skip) 전부 ✅.
+
+**감사 결과:**
+- wikilink-audit.py: Cross-domain 4 (P7, intentional), 0 broken ✅.
+- markdown-link-audit.py: 0 P11, 0 broken ✅.
+- index-md-audit.py: 83 registered = 83 actual, 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 11 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅.
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+
+**Git:**
+- hermes-wiki: `43aab48` (1 file, −69줄), push `120e8b9..43aab48` ✅.
+- logs submodule: `f7a43c8` (2 files, +60줄), push `5b729c5..f7a43c8` (HEAD→master) ✅.
+- hermes-wiki submodule bump: `b41295c` (1 file), push `43aab48..b41295c` ✅.

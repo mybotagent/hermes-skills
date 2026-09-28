@@ -99,7 +99,7 @@
     "last_viewed_at": "2026-09-26T23:06:46.229740+00:00",
     "patch_count": 49,
     "pinned": false,
-    "state": "stale",
+    "state": "active",
     "use_count": 40,
     "view_count": 40
   },
@@ -433,12 +433,12 @@
     "created_at": "2026-05-31T14:10:50.301452+00:00",
     "created_by": null,
     "last_patched_at": "2026-09-24T10:39:50.656894+00:00",
-    "last_used_at": "2026-09-25T10:00:18.475184+00:00",
+    "last_used_at": "2026-09-28T00:11:00.601623+00:00",
     "last_viewed_at": "2026-09-24T10:40:01.026042+00:00",
     "patch_count": 408,
     "pinned": false,
     "state": "active",
-    "use_count": 527,
+    "use_count": 528,
     "view_count": 311
   },
   "fork-pr-contribution": {
@@ -576,12 +576,12 @@
     "created_at": "2026-07-03T00:00:15.157970+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-09-15T00:00:36.193839+00:00",
+    "last_used_at": "2026-09-28T00:30:00.439420+00:00",
     "last_viewed_at": "2026-09-14T00:10:31.055097+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 113,
+    "use_count": 114,
     "view_count": 6
   },
   "heartmula": {
@@ -602,12 +602,12 @@
     "created_at": "2026-07-02T16:30:43.790761+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-09-25T01:00:14.141893+00:00",
+    "last_used_at": "2026-09-28T01:00:00.880703+00:00",
     "last_viewed_at": "2026-09-07T03:15:46.949090+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "stale",
-    "use_count": 48,
+    "use_count": 49,
     "view_count": 4
   },
   "hermes-agent-skill-authoring": {
@@ -962,7 +962,7 @@
     "view_count": 2
   },
   "neo4j-graphrag-ops": {
-    "archived_at": null,
+    "archived_at": "2026-09-27T07:15:02.265987+00:00",
     "created_at": "2026-06-29T06:57:54.203530+00:00",
     "created_by": "agent",
     "last_patched_at": "2026-06-29T06:58:04.037870+00:00",
@@ -970,7 +970,7 @@
     "last_viewed_at": null,
     "patch_count": 1,
     "pinned": false,
-    "state": "stale",
+    "state": "archived",
     "use_count": 0,
     "view_count": 0
   },
@@ -1139,7 +1139,7 @@
     "last_viewed_at": "2026-09-22T10:34:56.593141+00:00",
     "patch_count": 71,
     "pinned": false,
-    "state": "stale",
+    "state": "active",
     "use_count": 64,
     "view_count": 64
   },
@@ -1317,12 +1317,12 @@
     "created_at": "2026-06-12T22:23:12.405952+00:00",
     "created_by": null,
     "last_patched_at": "2026-09-15T23:43:20.082135+00:00",
-    "last_used_at": "2026-09-25T10:30:18.710608+00:00",
+    "last_used_at": "2026-09-28T00:30:00.378640+00:00",
     "last_viewed_at": "2026-09-15T23:43:00.370344+00:00",
     "patch_count": 133,
     "pinned": false,
     "state": "active",
-    "use_count": 823,
+    "use_count": 825,
     "view_count": 138
   },
   "self-improvement-loop": {
@@ -1577,12 +1577,12 @@
     "created_at": "2026-06-25T14:12:12.232049+00:00",
     "created_by": null,
     "last_patched_at": "2026-09-26T23:07:56.579004+00:00",
-    "last_used_at": "2026-09-26T23:07:59.571318+00:00",
+    "last_used_at": "2026-09-27T22:01:01.442985+00:00",
     "last_viewed_at": "2026-09-26T23:07:59.567055+00:00",
     "patch_count": 126,
     "pinned": false,
     "state": "active",
-    "use_count": 168,
+    "use_count": 169,
     "view_count": 80
   },
   "wiki-graphrag-search": {
