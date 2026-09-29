@@ -433,13 +433,13 @@
     "created_at": "2026-05-31T14:10:50.301452+00:00",
     "created_by": null,
     "last_patched_at": "2026-09-24T10:39:50.656894+00:00",
-    "last_used_at": "2026-09-28T00:11:00.601623+00:00",
-    "last_viewed_at": "2026-09-24T10:40:01.026042+00:00",
+    "last_used_at": "2026-09-29T00:10:59.267250+00:00",
+    "last_viewed_at": "2026-09-28T10:34:59.521844+00:00",
     "patch_count": 408,
     "pinned": false,
     "state": "active",
-    "use_count": 528,
-    "view_count": 311
+    "use_count": 531,
+    "view_count": 312
   },
   "fork-pr-contribution": {
     "archived_at": null,
@@ -602,12 +602,12 @@
     "created_at": "2026-07-02T16:30:43.790761+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-09-28T01:00:00.880703+00:00",
+    "last_used_at": "2026-09-29T01:11:01.359183+00:00",
     "last_viewed_at": "2026-09-07T03:15:46.949090+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "stale",
-    "use_count": 49,
+    "use_count": 51,
     "view_count": 4
   },
   "hermes-agent-skill-authoring": {
@@ -1317,12 +1317,12 @@
     "created_at": "2026-06-12T22:23:12.405952+00:00",
     "created_by": null,
     "last_patched_at": "2026-09-15T23:43:20.082135+00:00",
-    "last_used_at": "2026-09-28T00:30:00.378640+00:00",
+    "last_used_at": "2026-09-29T00:10:59.199264+00:00",
     "last_viewed_at": "2026-09-15T23:43:00.370344+00:00",
     "patch_count": 133,
     "pinned": false,
     "state": "active",
-    "use_count": 825,
+    "use_count": 828,
     "view_count": 138
   },
   "self-improvement-loop": {
@@ -1512,13 +1512,13 @@
     "created_at": "2026-05-31T02:54:45.815337+00:00",
     "created_by": "agent",
     "last_patched_at": "2026-09-25T10:37:52.657051+00:00",
-    "last_used_at": "2026-09-25T10:36:58.238535+00:00",
-    "last_viewed_at": "2026-09-25T10:36:58.227514+00:00",
+    "last_used_at": "2026-09-28T10:30:28.242556+00:00",
+    "last_viewed_at": "2026-09-28T10:30:28.238445+00:00",
     "patch_count": 51,
     "pinned": false,
     "state": "active",
-    "use_count": 67,
-    "view_count": 67
+    "use_count": 68,
+    "view_count": 68
   },
   "test-driven-development": {
     "archived_at": null,
@@ -1577,12 +1577,12 @@
     "created_at": "2026-06-25T14:12:12.232049+00:00",
     "created_by": null,
     "last_patched_at": "2026-09-26T23:07:56.579004+00:00",
-    "last_used_at": "2026-09-27T22:01:01.442985+00:00",
+    "last_used_at": "2026-09-28T12:00:09.256503+00:00",
     "last_viewed_at": "2026-09-26T23:07:59.567055+00:00",
     "patch_count": 126,
     "pinned": false,
     "state": "active",
-    "use_count": 169,
+    "use_count": 170,
     "view_count": 80
   },
   "wiki-graphrag-search": {
