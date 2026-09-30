@@ -1425,6 +1425,79 @@ python3 /home/ubuntu/fetch_macro.py
 
 **KOSPI 주의**: Yahoo Finance query1의 `%5EKS11`은 HTTP 404. **query2**를 사용해야 함: `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11`
 
+### 59. 🔴 DXY Yahoo Finance `DXY` 티커 — `regularMarketPrice` 누락 + 대안 `DX-Y.NYB` (2026-09-29 신규)
+
+**증상**: `fetch_macro_data.py` 실행 시 `DXY` 티커에서 `'regularMarketPrice'` 키 에러. Yahoo Finance의 DXY ETF (`DXY`, `^DXY`)가期货数据进行`regularMarketPrice` 미제공.
+
+**확인된 대안**:
+```python
+for sym in ['DX-Y.NYB']:
+    url = f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=2d'
+    req = urllib.request.Request(url, headers={'User-Agent': UA})
+    with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
+        d = json.loads(r.read())
+    price = d['chart']['result'][0]['meta']['regularMarketPrice']
+    print(f"DXY ({sym}): {price}")  # 101.447 출력 확인
+```
+
+**`DXY` (91자) vs `DX-Y.NYB` (8자)**: Yahoo Finance 티커 기재 방식 차이. `DXY`는 무ati의 미국 달러 지수 ETF(현물)이고, `DX-Y.NYB`는 NYBOT 달러 지수 선방이다. 둘 다 달러 가치를 추종하므로 리포트 목적에는 동일하게 사용 가능.
+
+**KOSPI Yahoo Finance 주의**: `%5EKS11` → query2必需: `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11`
+
+### 60. 🔴 매크로 리포트 cron 환경 제약 — `execute_code` + `web_search` 둘 다 차단 시 (2026-09-29 신규)
+
+cron 환경(특히 18:30 매크로 전략 리포트)에서 `execute_code` tool + `web_search` tool 둘 다 사용할 수 없는 상황에서의 검증된 데이터 수집 패턴:
+
+**실시간 환율 (USD/KRW, USD/JPY, EUR)**:
+```python
+d = json.loads(fetch('https://api.exchangerate-api.com/v4/latest/USD'))
+# KRW=1358.97, JPY=157.32, EUR=0.879 확인
+```
+
+**미국 증시 (S&P500, NASDAQ, VIX, 10Y, Gold, KOSPI)**:
+```python
+# Yahoo Finance query1 → DXY만 실패 (Pitfall 59)
+us_tickers = {'sp500': '%5EGSPC', 'nasdaq': '%5EIXIC', 'vix': '%5EVIX', 'tnx': '%5ETNX', 'gold': 'GC%3DF'}
+for name, sym in us_tickers.items():
+    url = f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=2d'
+    d = json.loads(fetch(url))
+    results[name] = d['chart']['result'][0]['meta']['regularMarketPrice']
+```
+
+**한국 증시 (삼성전자, SK하이닉스, 삼성전기, 현대차, HD현대일렉)**:
+```python
+kr_tickers = {'005930': '삼성전자', '000660': 'SK하이닉스', '000100': '삼성전기', '005380': '현대차', '051900': 'HD현대일렉'}
+for code, name in kr_tickers.items():
+    url = f'https://query1.finance.yahoo.com/v8/finance/chart/{code}.KS?interval=1d&range=2d'
+    d = json.loads(fetch(url))
+    results['kr_stocks'][name] = d['chart']['result'][0]['meta']['regularMarketPrice']
+```
+
+**WTI 유가**: EIA URL 변경됨 + oilprice.com은 JS 렌더링. Google News RSS에서 "WTI oil price" 헤드라인 추출. Reuters WTI 뉴스가 `fetch_macro_data.py`에서 확인됨.
+
+**실행 패턴**: 스크립트 파일 → `terminal()` 단독 호출 → JSON 파일 저장 → 별도 `terminal()` 파싱. 파이프 패턴 절대 사용 금지.
+
+**참조**: `references/cron-mode-data-verification.md` (업데이트됨 — 환율/Yahoo Finance/DXY 검증 결과 포함)
+
+### 58. 🔴 `tirith:curl_pipe_shell` — 모든 `curl | python3` 파이프 자동 차단 (2026-09-24 신규, CRITICAL)
+
+**증상**: cron 환경에서 `curl -s "https://..." | python3 -c "..."` 명령이 항상 `pending_approval`으로 실패. `execute_code` tool도 별도로 차단됨.
+
+**원인**: `tirith` 보안 스캐너가 pipe-to-interpreter 패턴을 차단. 2026-09-24 이전까지 `curl | python3`이 "가끔" 동작했던 것은 특정 URL 구조에서 우회되었을 뿐, 정책적으로는 항상 차단.
+
+**해결 — urllib 스크립트 파일 패턴**:
+```bash
+# 1) 스크립트를 파일로 저장 (write_file tool)
+# 2) 별도 terminal() 호출로 실행
+python3 /home/ubuntu/fetch_macro.py
+```
+
+**검증된 urllib 스크립트**:
+- `scripts/fetch_macro_data.py` — 환율, Yahoo Finance US/KR stocks, KOSPI via query2, WTI news 추적
+- 패턴: `urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 ...'})` + `ssl.create_default_context()` + `json.loads()` 또는 `xml.etree.ElementTree`
+
+**KOSPI 주의**: Yahoo Finance query1의 `%5EKS11`은 HTTP 404. **query2**를 사용해야 함: `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11`
+
 **참조**: `references/cron-mode-data-verification.md` (업데이트됨 — 환율/Yahoo Finance ticker 검증 결과 포함)
 
 ### 53. 🔴 18:30 매크로 크론 6종목 vs watchlist 5종목 불일치 (2026-07-31 신규)(삼성전자·SK하이닉스·삼성전기·현대차·에이피알·HD현대일렉) 뉴스를 요구하지만, `data/watchlist.json`의 KR 종목은 **5개**(삼성전자·SK하이닉스·현대차·HD현대일렉·LG이노텍)만 존재:

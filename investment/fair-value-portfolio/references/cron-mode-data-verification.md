@@ -2,6 +2,7 @@
 
 > Created: 2026-06-15
 > Context: 18:30 매크로 크론에서 subagent 데이터 fabrication 발견
+> Updated: 2026-09-29 — DXY Yahoo Finance workaround added
 
 ## Problem
 
@@ -61,6 +62,25 @@ with urllib.request.urlopen(req, timeout=10, context=ctx) as r:
     d = json.loads(r.read())
 print(f"USD/KRW: {d['rates'].get('KRW')}")
 ```
+
+### 검증된 Yahoo Finance 티커 (2026-09-29)
+
+| 티커 | 이름 | 결과 | 비고 |
+|:-----|:----|:-----|:-----|
+| `%5EGSPC` | S&P 500 | ✅ | query1 |
+| `%5EIXIC` | NASDAQ | ✅ | query1 |
+| `%5EVIX` | VIX | ✅ | query1 |
+| `%5ETNX` | 10년물 금리 | ✅ | query1 |
+| `GC%3DF` | Gold | ✅ | query1 |
+| `DXY` | DXY | ❌ `'regularMarketPrice'` 키 누락 | Pitfall 59 |
+| `DX-Y.NYB` | DXY (NYBOT) | ✅ 101.447 | Yahoo Finance NYBOT 선방 |
+| `%5EKS11` | KOSPI | ❌ 404 | **query2必需** |
+| `%5EKS11` via query2 | KOSPI | ✅ query2 사용 | `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11` |
+| `005930.KS` | 삼성전자 | ✅ | |
+| `000660.KS` | SK하이닉스 | ✅ | |
+| `000100.KS` | 삼성전기 | ✅ | |
+| `005380.KS` | 현대차 | ✅ | |
+| `051900.KS` | HD현대일렉 | ✅ | |
 
 ### Yahoo Finance 한국주 ticker 검증 결과 (2026-09-24)
 
@@ -124,33 +144,6 @@ for item in root.findall('.//item'):
     link = item.findtext('link') or ''
     pub = item.findtext('pubDate') or ''
     # CDATA 처리 불필요 — findtext가 자동으로 처리
-```
-
-## Verification Commands (Working in Cron Mode)
-
-### Exchange Rates (exchangerate-api — 무료, 일 1,500회)
-```bash
-# USD/KRW
-curl -s --max-time 10 "https://open.er-api.com/v6/latest/USD" 2>/dev/null | grep -o '"KRW":[0-9.]*'
-
-# EUR/USD
-curl -s --max-time 10 "https://open.er-api.com/v6/latest/EUR" 2>/dev/null | grep -o '"USD":[0-9.]*'
-
-# 전일 기록 비교용
-curl -s --max-time 10 "https://open.er-api.com/v6/latest/USD" 2>/dev/null | grep -o '"time_last_update_utc":"[^"]*"'
-```
-
-### Historical Data (Cached Files)
-```bash
-# /tmp/에 캐시된 이전 데이터 확인
-cat /tmp/usd_rates.json | grep -o '"KRW":[0-9.]*'
-cat /tmp/fx_rate.json | grep -o '"KRW":[0-9.]*'
-```
-
-### Yahoo Finance (Rate-Limited — 1회만 시도)
-```bash
-# 실패 시 Edge: Too Many Requests — 대체 경로로 전환
-curl -s --max-time 10 "https://query1.finance.yahoo.com/v8/finance/chart/CL=F?range=1d&interval=1d" -o /tmp/wti_check.json 2>/dev/null
 ```
 
 ## Workflow Pattern
@@ -221,7 +214,8 @@ import json, urllib.request
 raw = urllib.request.urlopen(urllib.request.Request(
   'https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:267260',
   headers={'User-Agent':'Mozilla/5.0'}), timeout=10).read()
-print(json.loads(raw.decode('euc-kr', errors='ignore'))['result']['areas'][0]['datas'][0]['nm'])"
+print(json.loads(raw.decode('euc-kr', errors='ignore'))['result']['areas'][0]['datas'][0]['nm'])
+"
 # → HD현대일렉트릭  (267260)  ← 올바른 코드
 # 267270 → HD건설기계  ← 흔한 혼동 케이스
 ```

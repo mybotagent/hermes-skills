@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.32.0"
+version: "1.33.0"
 changelog:
+  - "2026-09-29: P18 logs/index.md September section triple-pipe (|||) 변형 추가 — 전체 rewrite로 복구. P19 21일 연속 재발 (62 rogue entries, git restore index.md)."
   - "2026-09-27: P21 memory tool cron fallback + P22 submodule lint false-positive (60 items, ignore)."
   - "2026-09-02: P19 59-row working-tree contamination from self_hermes.py logs/(53) + subagents-library/(5) + raw/(1) 59 items with auto-add label. git diff HEAD check + git restore index.md recovery. All audits pass."
   - "1.29.0 (2026-08-31): P19 recovery 보강 — rogue 제거 중 정식 수정( W35 등록)이 이미 적용된 상태에서 `git show <parent>:index.md` 복원 시 정식 수정분 유실 방지. 오염 커밋 diff가 rogue 추가분뿐(+정식 수정 0)일 때만 parent 복원 경로 적용, 정식 수정분이 있으면 footer 기준 python truncate로 rogue만 선택적 삭제. 20일 연속 재발 사례 문서화."
@@ -838,6 +839,17 @@ for dir_name, files in candidates.items():
 
 **P18 committed 변형 (2026-08-11):** `|- ` 오염이 **커밋된 채** 잔존할 수 있음 — working tree에서 보여도 `git diff HEAD -- <file>`이 해당 줄 변경을 표시하지 않으면 HEAD에 이미 반영된 상태 (실제 사례: index.md 58-59행, 39f01b2에서 도입·미push). 판별: `git diff HEAD`에서 해당 줄이 안 보이면 committed. 도입 커밋 추적: `git log -S '|- [파일명]' --oneline -- index.md`. committed P18은 working-tree patch 후 반드시 commit + push (미push 상태면 다음 auto-sync 커밋에 편승해 함께 푸시됨 — push 전 `git show origin/main:<file> | grep -c '^|- '`로 원격 오염 여부도 확인).
 
+**P18 logs/index.md triple-pipe 변형 (2026-09-29):** September 섹션 생성 시 테이블 헤더/separator/데이터행이 모두 `|||` (triple pipe)로 오기된 사례. August 섹션은 `||` (double pipe) 정상. September 섹션만 triple-pipe 오염. 파일 크기가 작은(80줄 수준) logs/index.md에서는 전체 rewrite가 3회 실패한 patch 시도보다 빠르고 안전.
+
+**P18 탐지 기준 (logs/index.md triple-pipe 변형):**
+```bash
+# September 섹션의 선행 파이프 개수 검사
+sed -n '/^### September$/,/^### [A-Za-z]/p' logs/index.md | grep -c '^|||'
+# 0 = 정상 (double pipe), N>0 = triple pipe 오염
+```
+
+**처리:** 파일 크기가 100줄 이하이면 `write_file`로 전체 재작성. 100줄 초과 시 patch로 `|||` → `||` 치환 (replace_all=true).
+
 **P18 cross-file 동시 발생 (2026-07-28):** 이번 실행에서 P18 pipe 오염이 **동시에 2개 파일**(`index.md` + `infra/cron-jobs.md`)에서 발견됨. 둘 다 같은 외부 프로세스(`self_hermes.py`)에 의해 같은 실행에서 오염된 것으로 추정. P18 발견 시 **모든 .md 파일**(서브디렉토리 포함)을 grep으로 스캔할 것:
 
 ```bash
@@ -1029,6 +1041,8 @@ python3 -c "import os;print(len(open(os.path.expanduser('~/.hermes/memories/MEMO
 **Lint 2 (broken wikilink)에서의 분류:** `logs/` · `subagents-library/` 경로가 60개 broken으로 나오면 → 전부 "의도된 submodule"으로 분류. 리포트에 "submodule 의도된 항목: 60개 (무시)"라고만 기재.
 
 **핵심 교훈:** **submodule 파일은 lint 오탐의 정상적인 원인**. 60개 오탐이 보이면 aggressive fix를 시도하지 말고 "의도된 서브모듈"로 분류.
+
+**2026-09-29 교훈:** logs/index.md September triple-pipe 오염을 patch 3회로도 실패 후 write_file 전체 재작성(82줄)으로 성공. 파일 크기 100줄 이하에서 patch 반복 실패 시 전체 rewrite가 더 빠르고 안전.
 
 ## 참고 자료
 - 위키 구조/스키마: `wiki/AGENTS.md`, `wiki/SCHEMA.md`
