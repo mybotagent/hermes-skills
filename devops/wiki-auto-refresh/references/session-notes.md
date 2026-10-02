@@ -935,3 +935,27 @@
 - hermes-wiki: `43aab48` (1 file, −69줄), push `120e8b9..43aab48` ✅.
 - logs submodule: `f7a43c8` (2 files, +60줄), push `5b729c5..f7a43c8` (HEAD→master) ✅.
 - hermes-wiki submodule bump: `b41295c` (1 file), push `43aab48..b41295c` ✅.
+
+## 2026-10-01 (P19 — 62줄 rogue submodule entries 복구, 모든 감사 통과)
+
+**발견:**
+- P19: index.md working-tree에 `자동 추가 (2026-10-01)` 레이블 62개 서브모듈 항목 삽입 (logs/ 57개 + subagents-library/ 5개).
+- HEAD(origin/main)는 청정 상태 — working-tree 전용 오염.
+- git diff HEAD = rogue 추가분뿐 (정식 수정 0건) → `git restore index.md`로 복구.
+
+**처리:**
+- `git restore index.md` 복구 완료.
+- git diff HEAD -- index.md: 0 변경 ✅.
+- git status: clean, up-to-date with origin/main ✅.
+
+**감사 결과:**
+- wikilink-audit.py: Cross-domain 4 (P7, intentional), 0 broken ✅.
+- markdown-link-audit.py: 0 P11, 0 broken ✅.
+- index-md-audit.py: 83 registered = 83 actual, 0 dead link ✅.
+- tag-audit.py: 137/137 registered, 0 unknown ✅ (taxonomy 149).
+- auto-fill-dates.py: 0 filled, 15 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 실제 오염 ✅.
+- P19 scan: index.md '자동 추가' 0건 ✅ (HEAD + origin/main).
+- git status: clean, up-to-date with origin/main.
+
+**Git:** 0 commit (변경 없음 — git restore로 clean 유지).

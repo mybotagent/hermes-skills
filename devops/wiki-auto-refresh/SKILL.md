@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.33.0"
+version: "1.34.0"
 changelog:
+  - "2026-10-01: P23 신규 — session-notes.md patch 성공 후 git commit 실패 (skills 디렉토리는 git repo 아님). git persistence 전략 3가지 문서화."
   - "2026-09-29: P18 logs/index.md September section triple-pipe (|||) 변형 추가 — 전체 rewrite로 복구. P19 21일 연속 재발 (62 rogue entries, git restore index.md)."
   - "2026-09-27: P21 memory tool cron fallback + P22 submodule lint false-positive (60 items, ignore)."
   - "2026-09-02: P19 59-row working-tree contamination from self_hermes.py logs/(53) + subagents-library/(5) + raw/(1) 59 items with auto-add label. git diff HEAD check + git restore index.md recovery. All audits pass."
@@ -1012,6 +1013,25 @@ grep -c '^## 2026-08-04' ~/.hermes/skills/devops/wiki-auto-refresh/references/se
 - 복구 후 **헤더 개수 + 본문 날짜 레이블 + 순서** 3가지 모두 검증
 
 **핵심 교훈:** session-notes.md는 매일 같은 구조로 append되는 파일 — **근미동일 섹션 반복이 구조적 위험**. append 시 유일 앵커 확보는 선택이 아니라 필수. patch 실수로 섹션이 유실되어도 원문을 재구성할 수 있도록 patch 전 read 결과를 보존할 것.
+
+### P23. session-notes.md git persistence — skills 디렉토리는 git repo가 아님 (2026-10-01 추가)
+
+**증상:** session-notes.md에 patch로 새 섹션을 append한 후, skill 디렉토리 내에서 `git add/commit` 하려 했으나 "fatal: not a git repository" 오류. patch는 적용되었으나 git에 커밋되지 않아 재실행 시 이전 세션 기록이 없음.
+
+**원인:** `~/.hermes/skills/devops/wiki-auto-refresh/`는 hermes skill 설치 디렉토리일 뿐, git repo가 아니다. wiki-auto-refresh의 cron 실행은 `~/.hermes/wiki`에서 작업하므로 상대경로 `skills/devops/wiki-auto-refresh/references/session-notes.md`로의 `git add`는 wiki repo의 unstaged change로 잡히지 않고 그냥 실패.
+
+**체크:**
+```bash
+cd ~/.hermes/skills/devops/wiki-auto-refresh && git rev-parse --is-inside-work-tree 2>/dev/null
+# 출력: fatal: not a git repository → skills 디렉토리는 git 아님
+```
+
+**session-notes 지속策略:**
+1. **권장: wiki repo 내 별도 파일에 기록** — `~/.hermes/wiki/_session-notes.md`를 wiki repo에 포함시키고 다른 파일들과 함께 `git add -A`로 커밋.优点: 세션 기록이 wiki와 함께 version controlled. 단점: wiki repo 오염 (의도치 않은 세션 로그가 wiki에 포함).
+2. **파일 시스템 수준 보존** — patch 적용만으로 충분. session-notes.md는 skill 디렉토리에 파일로 존재하므로 재실행 시 `tail -100`으로 직전 세션을 읽을 수 있음. 다만 에이전트 재시작 시 memory에서 모든 툴 호출 context가 초기화되므로, 완전한 세션 추적이 필요하면 wiki repo 내 파일 사용.
+3. **현재 구조 유지** — cron 실행 간 session-notes.md는 skill 디렉토리 내 파일로 존재하며, 각 cron 실행이 시작할 때 `tail -100`으로 직전 세션을 읽음. git persistence는 필요 없음 (이미 hermes transcript DB에 세션 기록이 있음).
+
+**핵심 교훈:** skill의 `references/` 디렉토리는 설치 시copy-only이며, git-tracked workflow가 필요하면 wiki repo 내부의 파일을 사용해야 함.
 
 ### P21. Memory tool — Cron 컨텍스트 툴 차단 시 직접 파일 측정 (2026-09-27 추가)
 
