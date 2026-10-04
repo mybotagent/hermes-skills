@@ -1,9 +1,10 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.34.0"
+version: "1.35.0"
 changelog:
-  - "2026-10-01: P23 신규 — session-notes.md patch 성공 후 git commit 실패 (skills 디렉토리는 git repo 아님). git persistence 전략 3가지 문서화."
+  - "2026-10-04: P24 — submodule wikilink 오탐 + 3건 수정 (hermes-trading-hub, neo4j-local, subagents-library-hub). commit c6107cb."
+  - "2026-10-01: P23 — session-notes.md git commit 실패 (skills 디렉토리는 git repo 아님)."
   - "2026-09-29: P18 logs/index.md September section triple-pipe (|||) 변형 추가 — 전체 rewrite로 복구. P19 21일 연속 재발 (62 rogue entries, git restore index.md)."
   - "2026-09-27: P21 memory tool cron fallback + P22 submodule lint false-positive (60 items, ignore)."
   - "2026-09-02: P19 59-row working-tree contamination from self_hermes.py logs/(53) + subagents-library/(5) + raw/(1) 59 items with auto-add label. git diff HEAD check + git restore index.md recovery. All audits pass."
@@ -1046,6 +1047,21 @@ python3 -c "import os;print(len(open(os.path.expanduser('~/.hermes/memories/MEMO
 > 2000이면 정리 대상, 0이면 메모리 비어있음.
 
 **2026-09-27 사례:** cron에서 memory tool 차단 → 파일 직접 읽기 → 사용률 0% (비어있음) → 정리 불필요 판정.
+
+### P24. Submodule 내 Wikilink — 부모 위키 루트 기준 resolution의 한계 (2026-10-04 추가)
+
+**증상:** Python wikilink resolver가 전체 위키 트리를 스캔할 때 `subagents-library/multi-agent-systems.md`의 `[[agents-companion-overview]]`를 "broken"으로报了. 파일은 실제로 `subagents-library/` 서브모듈 루트에 존재한다.
+
+**원인:** 부모 위키 루트(`~/.hermes/wiki/`)에서 wikilink resolution을 수행하면, `subagents-library/` 내적 링크는 submodule root 기준이지 부모 wiki root 기준이 아니다. 예: `[[agents-companion-overview]]`는 `subagents-library/agents-companion-overview.md`로 존재하지만, 부모 루트에서는 `agents-companion-overview.md`를 찾으므로 실패.
+
+**판단 기준:**
+- broken link가 `subagents-library/` 또는 `logs/` 디렉토리 내 파일에서 발견됨
+- 해당 디렉토리가 git submodule (mode 160000)인지 확인: `git ls-files --stage`에서 확인
+- submodule이면 → **의도된 submodule 내부 링크**, 조치 불필요
+
+**핵심 교훈:** Submodule 내적 wikilink는 submodule root 기준 resolution. 부모 wiki에서 전체 트리 스캔 시 submodule 내부는 "foreign territory". Audit 스크립트가 submodule 단위로 분할 실행되면 이 문제가 자동으로 해결됨.
+
+**스크립트 실행 규칙:** `wikilink-audit.py` 등은 submodule이 아닌 main wiki 범위에서 실행. Submodule 내부 파일은 lint에서 제외.
 
 ### P22. Submodule 파일은 Orphan/Lint 검사의 False Positive — 의도된 오탐 (2026-09-27 추가)
 

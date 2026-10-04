@@ -1,4 +1,5 @@
 ---
+archived: true
 name: analyze-trust
 description: |
   End-to-end data analysis pipeline with Trust evaluation. 6-stage analysis
