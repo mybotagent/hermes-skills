@@ -959,3 +959,25 @@
 - git status: clean, up-to-date with origin/main.
 
 **Git:** 0 commit (변경 없음 — git restore로 clean 유지).
+
+## 2026-10-05 (21:00 KST)
+
+**발견:**
+- P19: HEAD(origin/main)에 `자동 추가 (2026-10-03)` 레이블 62개 서브모듈 항목 커밋 (logs/ 57개 + subagents-library/ 5개 + raw/2026-W40 1개).
+- committed 변형 — git diff HEAD는 empty였으나 `git show HEAD:index.md | grep '자동 추가'` = 62개.
+- Parent(c6107cb) diff 확인: rogue 추가분뿐 (+정식 수정 0건) → `git show c6107cb:index.md > index.md`로 parent 복원.
+- P18 cross-file scan: 0 오염 ✅.
+
+**처리:**
+- Parent 복원: `git show c6107cb:index.md > index.md` 완료.
+- `raw/2026-W40-weekly-recap-draft.md` 인덱스 등록 (P15 — rogue 블록에서脱离한 진짜 신규 파일, PAT B 형식).
+- index-md-audit: 84 registered = 84 actual, 0 dead link ✅.
+- wikilink-audit: 0 broken ✅.
+- markdown-link-audit: 0 P11 ✅.
+- tag-audit: 137/137 registered ✅.
+- auto-fill-dates: 0 filled, 17 skipped (raw/ immutable) ✅.
+- EOF 빈줄 수정 완료.
+
+**Git:**
+- commit `3d0f759 fix: P19 62개 서브모듈 항목 자동 추가rogue 복구 + raw/2026-W40 등록 (2026-10-05)` (1 file, +1/-63).
+- push: GitHub 인증 실패 (.netrc/gh config 없음) — **로컬에만 커밋**, 다음 실행에서 push 재시도.
