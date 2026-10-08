@@ -3,6 +3,7 @@
 > Created: 2026-06-15
 > Context: 18:30 매크로 크론에서 subagent 데이터 fabrication 발견
 > Updated: 2026-09-29 — DXY Yahoo Finance workaround added
+> Updated: 2026-10-07 — KOSPI/KOSDAQ ^KS11/^KQ11 confirmed, CL=F WTI confirmed, Korea stocks Yahoo confirmed, Nasdaq/Gold confirmed, ExchangeRate API confirmed
 
 ## Problem
 
@@ -23,9 +24,9 @@
 | 도구 | 크론 모드 상태 | 비고 |
 |:----|:-------------|:----|
 | `execute_code` | ❌ BLOCKED | 보안 정책 |
-| `curl \| python3 -c "..."` | ❌ BLOCKED | `tirith:curl_pipe_shell` 보안 스캔이 모든 pipe-to-interpreter 패턴 차단 |
+| `curl | python3 -c "..."` | ❌ BLOCKED | `tirith:curl_pipe_shell` 보안 스캔이 모든 pipe-to-interpreter 패턴 차단 |
 | `browser_navigate` (금융사이트) | ❌ 타임아웃 | Chromium 미설치 시 120초 |
-| `curl \| grep -o` | ✅ 허용됨 | 단순 파싱 |
+| `curl | grep -o` | ✅ 허용됨 | 단순 파싱 |
 | `curl -o /tmp/file.json` | ✅ 허용됨 | 파일 저장 후 별도 처리 |
 | `write_file` | ✅ 허용됨 | 파일 기록 |
 | `delegate_task` | ✅ 허용됨 | leaf role, 뉴스/정성만 위임 |
@@ -63,7 +64,46 @@ with urllib.request.urlopen(req, timeout=10, context=ctx) as r:
 print(f"USD/KRW: {d['rates'].get('KRW')}")
 ```
 
-### 검증된 Yahoo Finance 티커 (2026-09-29)
+## Verified Data Sources (2026-10-07)
+
+### 환율 — Exchange Rate API ✅
+```
+USD/KRW: 1338.92 (2026-10-07 18:31 KST)
+USD/JPY: 158.15
+EUR/USD: 1.1249
+```
+Source: `https://api.exchangerate-api.com/v4/latest/USD`
+
+### WTI 유가 — Yahoo Finance CL=F ✅
+```
+WTI: $90.01/bbl (2026-10-07 CL=F close)
+```
+Source: `https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?interval=1d&range=1d`
+Note: EIA URL (`eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RWTC&f=D`) → **timeout** (2026-09-24 실측). CL=F 사용.
+
+### US 증시 — Yahoo Finance ✅
+| 티커 | 이름 | 결과 | 비고 |
+|:-----|:----|:-----|:-----|
+| `%5EGSPC` | S&P 500 | ✅ 7,818.93 | query1 |
+| `%5EIXIC` | NASDAQ | ✅ 27,599.89 (사상최고치) | query1 |
+| `%5EVIX` | VIX | ✅ 15.56 | query1 |
+| `%5ETNX` | 10년물 금리 | ✅ 5.269% | query1 |
+| `GC%3DF` | Gold | ✅ $4,141.1/oz | query1 |
+| `UUP` | DXY proxy | ✅ 28.9 | DXY ≈ UUP × 3.6 = ~104 |
+
+### 한국 증시 — Yahoo Finance ✅
+| 티커 | 이름 | 결과 | 비고 |
+|:-----|:----|:-----|:-----|
+| `%5EKS11` (query2) | KOSPI | ✅ 6,803.9 | **query2必需** — query1은 404 |
+| `%5EKQ11` (query2) | KOSDAQ | ✅ 898.43 | **query2必需** — query1은 404 |
+| `005930.KS` | 삼성전자 | ✅ 268,500 | |
+| `000660.KS` | SK하이닉스 | ✅ 1,723,000 | |
+| `009150.KS` | 삼성전기 | ✅ 1,604,000 | |
+| `005380.KS` | 현대차 | ✅ 336,000 | |
+| `352820.KS` | 에이피알 | ✅ 167,000 | |
+| `267250.KS` | HD현대일렉 | ✅ 189,500 | |
+
+### 검증된 Yahoo Finance 티커 (2026-09-29, 2026-10-07 업데이트)
 
 | 티커 | 이름 | 결과 | 비고 |
 |:-----|:----|:-----|:-----|
@@ -72,62 +112,25 @@ print(f"USD/KRW: {d['rates'].get('KRW')}")
 | `%5EVIX` | VIX | ✅ | query1 |
 | `%5ETNX` | 10년물 금리 | ✅ | query1 |
 | `GC%3DF` | Gold | ✅ | query1 |
+| `CL%3DF` | WTI 유가 | ✅ $90.01 (2026-10-07) | query1 |
 | `DXY` | DXY | ❌ `'regularMarketPrice'` 키 누락 | Pitfall 59 |
 | `DX-Y.NYB` | DXY (NYBOT) | ✅ 101.447 | Yahoo Finance NYBOT 선방 |
 | `%5EKS11` | KOSPI | ❌ 404 | **query2必需** |
-| `%5EKS11` via query2 | KOSPI | ✅ query2 사용 | `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11` |
-| `005930.KS` | 삼성전자 | ✅ | |
-| `000660.KS` | SK하이닉스 | ✅ | |
-| `000100.KS` | 삼성전기 | ✅ | |
-| `005380.KS` | 현대차 | ✅ | |
-| `051900.KS` | HD현대일렉 | ✅ | |
+| `%5EKS11` via query2 | KOSPI | ✅ 6,803.9 | `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11` |
+| `%5EKQ11` via query2 | KOSDAQ | ✅ 898.43 | `https://query2.finance.yahoo.com/v8/finance/chart/%5EKQ11` |
 
-### Yahoo Finance 한국주 ticker 검증 결과 (2026-09-24)
-
-| Ticker | 회사명 | 결과 | 가격 |
-|:-------|:-------|:-----|:-----|
-| 005930.KS | 삼성전자 | ✅ | 285,500 |
-| 000660.KS | SK하이닉스 | ✅ | 1,862,000 |
-| 000100.KS | 삼성전기 | ✅ | 74,100 |
-| 005380.KS | 현대차 | ✅ | 353,500 |
-| 051900.KS | HD현대일렉 | ✅ | 292,500 |
-| 006380.KS | APR (다른 회사?) | ✅ pero 회사명 다름 | 43.0 (Korean会社 — 에이피알化妆품 ODM과 다름) |
-| 95290.KS | APR | ❌ 404 | — |
-| 05380.KS | HD현대일렉 | ❌ 404 | — |
-| 05580.KS | HD현대일렉 | ❌ 404 | — |
-| 35290.KS | APR | ❌ 404 | — |
-| 009790.KS | APR | ❌ 404 | — |
-| 05270.KS | APR | ❌ 404 | — |
-
-**핵심 교훈**: Yahoo Finance 한국주는 일부만 동작. HD현대일렉은 `051900.KS`만 가능. APR(에이피알) 정답 ticker 미확인 — `006380.KS`는 43원짜리 다른 회사(ATON?). 실제 확인 필요.
-
-**APR(에이피알) 다음 시도**:
-- `278470.KS` (네이버 Pollingで確認済み = 에이피알化妆품 ODM)
-- `278280.KS` → `nm='천보'` (2차전지 부품, 에이피알 아님) — 2026-07-14 정정 사례参照
-
-### 환율 수집 검증 결과 (2026-09-24)
+### 환율 수집 검증 결과 (2026-09-24, 2026-10-07 업데이트)
 
 **동작함** — `exchangerate-api.com` (무료, 일 1,500회):
 ```
-USD/KRW: 1364.77
-USD/JPY: 158.13
-EUR/USD: 1.1403
+USD/KRW: 1338.92 (2026-10-07)
+USD/JPY: 158.15
+EUR/USD: 1.1249
 ```
-
-**동작함** — Yahoo Finance 미국 증시:
-```
-S&P500: 7706.03
-NASDAQ: 26936.04
-Gold: 4282.1
-```
-
-**동작 안 함** — Yahoo Finance KOSPI (query1(query2 둘 다):
-- `%5EKS11` → HTTP 404
-- KOSPI는 Yahoo Finance 대신 **query2** 사용: `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11`
 
 **동작 안 함** — EIA WTI 직접 수집:
 - `https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RWTC&f=D` → Read timeout
-- WTI 수치는 Reuters Fortune 등 Google News RSS로 추적
+- WTI 수치는 Yahoo Finance `CL=F` 사용 (2026-10-07 확인: $90.01)
 
 ### Google News RSS 파싱 패턴 (urllib + xml.etree)
 
@@ -149,7 +152,7 @@ for item in root.findall('.//item'):
 ## Workflow Pattern
 
 1. **Subagent에 뉴스/정성 데이터 위임** (fabrication 위험 낮음)
-2. **직접 검증**으로 핵심 수치 확인 (curl + grep)
+2. **직접 검증**으로 핵심 수치 확인 (urllib 스크립트 파일)
 3. **검증값 기준으로 subagent 데이터 보정**
 4. **파일 저장** (macro_context.json)
 
