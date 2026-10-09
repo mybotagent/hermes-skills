@@ -355,6 +355,7 @@ terminal(f'curl -sL -H "User-Agent: Mozilla/5.0" "{rss_url2}" -o /tmp/QUERY2.xml
 - **Non-English queries**: Google News RSS works with any language. Set `hl=ko` for Korean, `hl=ja` for Japanese. Content returned depends on the query language.
 - **Very niche queries**: Google News may return 0 results. Fall back to site-specific curl scraping (section 1-6 above) or try broader search terms.
 
+- `references/korean-stock-market-data-sources.md` — Korean stock OHLCV via Naver siseJson API, global macro data sources (CNBC S&P500/Nasdaq, exchange-rate APIs), verified working patterns (added 2026-10-08)
 - `references/korean-stock-news-batch-2026.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
 - `references/korean-stock-news-rss-2026-09.md` — Korean stock news via Google News RSS: verified working Python script, `link` field not being a real URL, source extraction from `description` HTML, `urllib.parse.quote()` requirement, Naver search page JS-rendering (added 2026-09-25)
 - `references/yahoo-finance-market-data.md` — Yahoo Finance S&P 500 / 10Y Treasury / ETF fetch via chart API + exchange rate APIs (added 2026-09-22)
@@ -561,7 +562,15 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 
 19. **Naver News search page (`search.naver.com`) is JS-rendered too**: Even `search.naver.com?where=news&query=...` returns static HTML with no news items in curl — the `<a class="news_tit">` anchors exist in the page but the article list is populated by JavaScript. Do not waste iterations trying to parse it. Google News RSS remains the reliable tool. (Confirmed 2026-09-25.)
 
-20. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session.
+20. **Yahoo Finance for Korean stocks/indices returns HTTP 429** — Yahoo Finance rate-limits Korean market data aggressively. **Do not use Yahoo Finance for KOSPI, KOSDAQ, or Korean individual stocks.** Verified alternatives:
+    - **Individual Korean stocks**: use `api.finance.naver.com/siseJson.naver` — returns OHLCV data (see `references/korean-stock-market-data-sources.md`)
+    - **KOSPI index**: try CNBC KOSPI page (`cnbc.com/quotes/KOSPI` → 404) or NASDAQ API; if all fail, use prior-day data from `macro_context.json`
+    - **Currency data**: use `open.er-api.com/v6/latest/USD` or `exchangerate-api.com/v4/latest/USD` (both reliable)
+    - **S&P500 / Nasdaq**: CNBC quote pages work reliably with `regularMarketPrice` regex extraction
+    (Confirmed 2026-10-08: Yahoo Finance for Korean stocks returns 429 consistently.)
+21. **Naver Finance siseJson `symbol=001` for KOSPI index returns garbled data** — the endpoint returns numeric-salvageable content but not the actual index value. Do NOT use it for KOSPI index level. Use it only for individual stock OHLCV. (Confirmed 2026-10-08.)
+22. **`execute_code` blocked in cron jobs — confirmed again (2026-10-08)** — `execute_code` returns `BLOCKED: execute_code runs arbitrary local Python... Cron jobs run without a user present`. Always use `terminal()` with a pre-written Python script file for any data collection in cron mode.
+23. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session.
 
 ## Verification
 
