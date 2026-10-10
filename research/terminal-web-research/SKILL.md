@@ -359,6 +359,7 @@ terminal(f'curl -sL -H "User-Agent: Mozilla/5.0" "{rss_url2}" -o /tmp/QUERY2.xml
 - `references/korean-stock-news-batch-2026.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
 - `references/korean-stock-news-rss-2026-09.md` — Korean stock news via Google News RSS: verified working Python script, `link` field not being a real URL, source extraction from `description` HTML, `urllib.parse.quote()` requirement, Naver search page JS-rendering (added 2026-09-25)
 - `references/yahoo-finance-market-data.md` — Yahoo Finance S&P 500 / 10Y Treasury / ETF fetch via chart API + exchange rate APIs (added 2026-09-22)
+- `references/macro-data-collection-scripts.md` — Verified-working Python scripts for global macro data: exchange rates (exchangerate-api.com), S&P500, 10Y Treasury, WTI crude, DXY proxy via Yahoo Finance chart API. FRED CSV timeouts workaround. Cron-safe, stdlib-only (added 2026-10-09)
 - `references/rss-news-extraction.md` — Ready-to-use Google News RSS extraction script template.
 - `references/korean-stock-news-extraction.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
 
@@ -499,22 +500,26 @@ curl -s "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=5m&r
 # Step 2: read with read_file tool, extract with python3 on the saved file
 ```
 
-**Verified working symbols (2026-09-23):**
-| Symbol | Data | Key Field |
-|--------|------|-----------|
-| `^GSPC` | S&P 500 index | `meta.regularMarketPrice` |
-| `^TNX` | 10Y Treasury yield (%) | `meta.regularMarketPrice` |
-| `^KS11` | KOSPI (Korean) | `meta.regularMarketPrice` |
-| `^KQ11` | KOSDAQ (Korean) | `meta.regularMarketPrice` |
-| `^VIX` | VIX fear index | `meta.regularMarketPrice` |
-| `SPY` | SPY ETF | `meta.regularMarketPrice` |
+**Verified working symbols (2026-10-09):**
+| Symbol | Data | Key Field | Status |
+|--------|------|-----------|--------|
+| `^GSPC` | S&P 500 index | `meta.regularMarketPrice` | ✅ confirmed |
+| `^TNX` | 10Y Treasury yield (%) | `meta.regularMarketPrice` | ✅ confirmed |
+| `CL=F` | WTI Crude Oil (front-month futures) | `meta.regularMarketPrice` | ✅ confirmed 2026-10-09 |
+| `UUP` | Invesco DB Dollar Index ETF (DXY proxy) | `meta.regularMarketPrice` | ✅ confirmed ~28.98 |
+| `^KS11` | KOSPI (Korean) | `meta.regularMarketPrice` | ✅ |
+| `^KQ11` | KOSDAQ (Korean) | `meta.regularMarketPrice` | ✅ |
+| `^VIX` | VIX fear index | `meta.regularMarketPrice` | ✅ |
+| `SPY` | SPY ETF | `meta.regularMarketPrice` | ✅ |
 
 **Failed patterns:**
 - `query1.finance.yahoo.com` may return 404 while `query2` works — always fallback to `query2`
 - `/v7/finance/quote?symbols=%5EGSPC` → 429 Too Many Requests
 - `/v8/finance/chart/%5EGSPC?interval=1d&range=1d` (without custom UA) → rate-limited
 - `curl ... | python3 -c "..."` → security scanner blocks pipe-to-interpreter
-- **`^DXY`** (Dollar Index chart API) → returns `result: null, Not Found`. **Workaround**: use `UUP` (Invesco DB Dollar Index ETF) as proxy (~28.48), or calculate via exchangerate-api.com cross-rates.
+- **`^DXY`** (Dollar Index chart API) → returns `result: null, Not Found`. **Use `UUP` as proxy** (Invesco DB Dollar Index ETF, ~28.98 on 2026-10-09).
+
+**FRED timeouts in cron environment (2026-10-09):** FRED CSV endpoints (`fred.stlouisfed.org/graph/fredgraph.csv?id=...`) consistently **timeout after 30s** in this cron environment. Yahoo Finance `query2` chart API is the reliable alternative for US market data. Use exchangerate-api.com for currency data.
 
 See `references/yahoo-finance-market-data.md` for full field reference and data freshness notes.
 
@@ -570,7 +575,7 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
     (Confirmed 2026-10-08: Yahoo Finance for Korean stocks returns 429 consistently.)
 21. **Naver Finance siseJson `symbol=001` for KOSPI index returns garbled data** — the endpoint returns numeric-salvageable content but not the actual index value. Do NOT use it for KOSPI index level. Use it only for individual stock OHLCV. (Confirmed 2026-10-08.)
 22. **`execute_code` blocked in cron jobs — confirmed again (2026-10-08)** — `execute_code` returns `BLOCKED: execute_code runs arbitrary local Python... Cron jobs run without a user present`. Always use `terminal()` with a pre-written Python script file for any data collection in cron mode.
-23. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session.
+23. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session. (Last verified codes as of 2026-10-09: 현대차=005380, 에이피알=352820, HD현대일렉=054050.)
 
 ## Verification
 
