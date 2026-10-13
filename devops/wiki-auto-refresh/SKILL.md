@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.35.0"
+version: "1.36.0"
 changelog:
+  - "2026-10-12: P19 — 62개 rogue committed 재감염 (hermes-config-sync 04:00+05:30 재삽입). commit c121efb."
   - "2026-10-04: P24 — submodule wikilink 오탐 + 3건 수정 (hermes-trading-hub, neo4j-local, subagents-library-hub). commit c6107cb."
   - "2026-10-01: P23 — session-notes.md git commit 실패 (skills 디렉토리는 git repo 아님)."
   - "2026-09-29: P18 logs/index.md September section triple-pipe (|||) 변형 추가 — 전체 rewrite로 복구. P19 21일 연속 재발 (62 rogue entries, git restore index.md)."
@@ -965,6 +966,8 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 - **⚠ untracked raw draft는 같은 커밋에 포함 필수 (신규 교훈)**: rogue 블록에 섞여 있던 `raw/2026-W33-weekly-recap-draft.md`는 진짜 신규 파일 — index에서 rogue만 지우고 draft 파일을 방치하면 `git status`가 계속 dirty. raw/ 섹션 PAT B로 재등록 + draft 파일까지 `git add` + 같은 커밋에 commit 해야 clean (`git add index.md raw/2026-W33-weekly-recap-draft.md logs`).
 - 커밋: hermes-wiki `076bafb` (main, 3 files +30/-2), logs submodule `bc50e2c` (master).
 - **⚠ 브랜치 함정 (2026-08-16 실패 사례)**: hermes-wiki에 `git push origin master` 시도 → `error: src refspec master does not match any` (기본 브랜치가 **main**). logs 서브모듈은 **master**. push 전 `git branch --show-current`로 확인.
+
+**실제 사례 (2026-10-12, 25회 연속 — hermes-config-sync 재감염):** 10-05 P19 복구(f7eb27d)로 62개 rogue 제거 후 7일 뒤, 10-10 새 오염 62개가 다시 HEAD에 커밋됨. 커밋 로그에서 오염 삽입 커밋: `a341105 hermes-config-sync: 2026-10-10T05:30:53Z (wiki)`, `65cb2d8 hermes-config-sync: 2026-10-11T05:30:20Z (wiki)`. 즉 04:00 + 05:30 daily auto-sync 크론이 rogue를 재삽입하는 사이클. 이것은 weekly cleanup만이 아니라 **매일 2회(04:00 + 05:30) auto-sync도 P19 오염 수단**이 될 수 있음을 입증. Parent(f7eb27d) diff = rogue 추가분뿐(+정식 수정 0) → `git show f7eb27d:index.md > index.md` parent 복원. + `raw/2026-W41` PAT B 등록.
 
 **실제 사례 (2026-08-17, 15회 연속 — 04:00 auto-sync 커밋에 편승한 committed+push 변형):** 08-16 오염분(58건: subagents-library 5 + logs 53)이 08-17 04:00 auto-sync 커밋 `d36d3b3`에 편승해 HEAD+origin/main 모두 push됨. `git status` clean이었으나 `git show HEAD:index.md` '자동 추가' 58건으로 탐지. 주목할 점: 08-16 weekly cleanup `076bafb`가 전날 58줄을 이미 제거·push했는데, **4시간 뒤 04:00 auto-sync가 같은 rogue 블록을 재삽입** — P19는 주간 cleanup뿐 아니라 매일 2회 실행(04:00/21:00) 중 **어느 auto-sync 커밋에도 편승 가능**하다는 첫 사례. 복구는 08-10과 동일한 parent 복원 경로: `git show 076bafb:index.md` 청정(0건) + `d36d3b3` diff가 rogue 추가분뿐(비-rogue 0건) 확인 후 `git show 076bafb:index.md > index.md` → commit `4afdc74` (1 file, -59), push `d36d3b3..4afdc74`. untracked 없음 (W34 draft 미발생, W33은 076bafb에서 이미 등록). **교훈: git log의 최근 커밋(04:00 auto-sync 포함)이 오염 편승 수단이므로, HEAD 검사는 '자동 추가' grep으로 매 실행 필수 — cleanup 커밋만 의심하지 말 것.**
 

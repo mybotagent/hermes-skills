@@ -1446,6 +1446,26 @@ for sym in ['DX-Y.NYB']:
 
 ### 60. 🔴 매크로 리포트 cron 환경 제약 — `execute_code` + `web_search` 둘 다 차단 시 (2026-09-29 신규)
 
+### 61. 🔴 WTI CL=F `regularMarketTime` 미래 시각 artifact — market closed 시 (2026-10-12 신규, CRITICAL)
+
+**증상**: 2026-10-12 (US 시장 휴장일) 오전 10:33 KST에 `CL=F` 조회 결과:
+```
+WTI: $92.67 (ts=1791800522 → 2026-10-12 10:22:02 UTC = 미래 시각!)
+```
+`ts=1791800522`은 현재 UTC(10:33)보다 11분 미래. US 장이 닫힌 토요일/공휴일에 Yahoo Finance futures 데이터가 비정삭적인 future-dated timestamp를 산출하는 것으로 추정.
+
+**원인**: WTI 선물(CL=F)은 NYSEHoliday에도 거래되며, Yahoo Finance가 장 종료 후 다음 거래일 가격을 선반영. timestamp는 **가격 결정 시점(장중 10:22 UTC)** 을 가리키지만, 이는 오늘(토요일)이 아니라 다음 거래일(월요일) 종가에 해당. 현재 KST 시각이 주말이면 이 수치는 **다음 월요일 가격**이며 오늘과 무관.
+
+**대응**:
+1. `fetch_macro_data.py` 실행 시 **KST 기준 market open/close 상태 먼저 확인** (Pitfall 48 market_calendar.py 활용)
+2. US 장이 닫힌 상태의 WTI 가격은 "다음 거래일 예상"으로만 사용
+3. `regularMarketTime`을 가격 신뢰도 판단에 사용 금지
+4. 실제 Reuters/Bloomberg 기반 WTI spot price가 필요하면 Google News RSS 헤드라인으로 대체
+
+**WTI가 US 장 закрыто 시цена**:
+- `fetch_macro_data.py`에서 `ts`와 KST now를 비교하여 `ts > now + 1시간`이면 "next session"으로 라벨링
+- macro_report_summary에서 "WTI $92.67 (휴장 중, 다음 거래일 예상)"으로 표기
+
 cron 환경(특히 18:30 매크로 전략 리포트)에서 `execute_code` tool + `web_search` tool 둘 다 사용할 수 없는 상황에서의 검증된 데이터 수집 패턴:
 
 **실시간 환율 (USD/KRW, USD/JPY, EUR)**:

@@ -981,3 +981,24 @@
 **Git:**
 - commit `3d0f759 fix: P19 62개 서브모듈 항목 자동 추가rogue 복구 + raw/2026-W40 등록 (2026-10-05)` (1 file, +1/-63).
 - push: GitHub 인증 실패 (.netrc/gh config 없음) — **로컬에만 커밋**, 다음 실행에서 push 재시도.
+
+## 2026-10-12 (21:00 KST)
+
+**발견:**
+- P19: HEAD(origin/main)에 `자동 추가 (2026-10-10)` 레이블 62개 서브모듈 항목 커밋 (logs/ 57개 + subagents-library/ 5개 + raw/2026-W41 1개).
+- committed 변형 — git diff HEAD는 empty였으나 `git show HEAD:index.md | grep '자동 추가'` = 62개.
+- Parent(f7eb27d) diff 확인: rogue 추가분뿐 (+정식 수정 0건) → `git show f7eb27d:index.md > index.md`로 parent 복원.
+- P18 cross-file scan: 0 오염 ✅.
+
+**처리:**
+- Parent 복원: `git show f7eb27d:index.md > index.md` 완료.
+- `raw/2026-W41-weekly-recap-draft.md` 인덱스 등록 (P15 — rogue 블록에서脱离한 진짜 신규 파일, PAT B 형식).
+- index-md-audit: 85 registered = 85 actual, 0 dead link ✅.
+- wikilink-audit: 0 broken ✅.
+- markdown-link-audit: 0 P11 ✅.
+- tag-audit: 137/137 registered ✅.
+- auto-fill-dates: 0 filled, 17 skipped (raw/ immutable) ✅.
+
+**Git:**
+- commit `c121efb fix: P19 recovery — remove 62 rogue submodule entries + register raw/2026-W41` (1 file, +1/-63).
+- push: 성공 `19cf21a..c121efb main -> main`.
