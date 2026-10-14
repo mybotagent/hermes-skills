@@ -274,19 +274,44 @@ For comprehensive research (macro report, sector scan), run multiple RSS queries
 
 Each call returns ~10-20 relevant headlines with sources and dates. Cross-reference duplicates, then do targeted follow-ups for articles that merit deeper reading.
 
-#### 7.4 Common Extraction Patterns (Python XML)
+##### 7.4 `pubDate` Parsing — Strip `%Z` / GMT Before `strptime`
+
+Google News RSS (and most RFC 2822 feeds) return `pubDate` like:
+```
+'Tue, 13 Oct 2026 06:59:38 GMT'
+```
+
+**The bug**: `datetime.strptime(pub_str, '%a, %d %b %Y %H:%M:%S %Z')` silently fails on `%Z` — Python's `strptime` %Z only handles a fixed set of timezone abbreviations, and "GMT" is not consistently in that set across platforms. The parse raises `ValueError`, gets silently caught, and the item is dropped from results.
+
+**The fix**: always strip the timezone before parsing:
+```python
+from datetime import datetime
+
+pub_str = 'Tue, 13 Oct 2026 06:59:38 GMT'
+# WRONG — %Z silently fails on GMT
+# dt = datetime.strptime(pub_str, '%a, %d %b %Y %H:%M:%S %Z')
+
+# RIGHT — strip GMT, parse the rest
+dt = datetime.strptime(pub_str[:-4].strip(), '%a, %d %b %Y %H:%M:%S')
+# → datetime(2026, 10, 13, 6, 59, 38)
+```
+
+This is a **silent failure** (no exception at the callsite if caught), so always verify your date filter actually matches items — print a count before and after, or log the first/last parsed dates as a sanity check.
+
+### 7.5 Common Extraction Patterns (Python XML)
 
 **Extract all items with date filtering:**
 ```python
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 tree = ET.parse('/tmp/news.xml')
 items = tree.findall('.//item')
 recent = []
 for item in items:
     pub_str = item.find('pubDate').text
-    pub_date = datetime.strptime(pub_str.split(',')[1].strip(), '%d %b %Y')
+    # Strip GMT (see §7.4) before parsing
+    pub_date = datetime.strptime(pub_str[:-4].strip(), '%a, %d %b %Y %H:%M:%S')
     if pub_date >= datetime.now() - timedelta(days=2):
         recent.append(item)
 ```
@@ -557,6 +582,8 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 16. **Naver finance pages are Next.js SPA — do not scrape for news**: `finance.naver.com/item/news.naver?code=XXXXX` and `finance.naver.com/item/news_read.naver?code=XXXXX` now return Next.js server-rendered HTML (as of ~2026). Curl downloads ~100KB of JS-chunk HTML but **zero news items** — the table is empty, no `<td class="title">` exists. **Always use Google News RSS as primary** for Korean stock news; Naver is not a reliable curl target for this class of data. (Confirmed 2026-09-16.)
 
 17. **Google News RSS `link` field does NOT redirect to real article URLs**: When you `curl` the `link` URL from a Google News RSS item, it returns the **same Google News wrapper URL** with `?oc=5&hl=en-US&gl=US&ceid=US:en` params appended — the redirect never resolves. This means the `link` field is only useful as a Google News deep-link, not as a real source URL. **To get the actual source, extract it from the `description` HTML**: look for `<font color="#6f6f6f">source_name</font>` inside the description field. The title in the description `<a href="...">headline text</a>` also links to the Google News wrapper, not the original. (Confirmed 2026-09-25.)
+
+17. **Google News RSS Korean `description` field has NO article body**: For Korean Google News (hl=ko), the `<description>` element contains only the headline text (identical to `<title>`) followed by `&nbsp;&nbsp;` and the source publication name — e.g. `"삼성전기, 사내 첫 AI 해커톤 개최…장덕현 “1인 1에이전트 시작”&nbsp;&nbsp;서울경제"`. It does NOT contain lede paragraphs, article summaries, or quotes. **Workarounds**: (a) extract Naver News article URLs from description HTML and fetch article body via §7.8–7.9; (b) use title alone as summary since Korean news headlines are self-descriptive; (c) do NOT try to parse a meaningful lede from this field. (Confirmed 2026-10-13.)
 
 18. **`urllib.request.urlopen()` requires pre-encoded URLs — spaces must be quoted**: Unlike `curl` which handles spaces in query strings transparently, `urllib.request.urlopen()` raises `InvalidURL: URL can't contain control characters` on unencoded spaces. **Always use `urllib.parse.quote(query)` to encode the search term before building the URL.** Example:
     ```python

@@ -1,20 +1,23 @@
-# Verified Macro Data Collection Scripts (2026-10-09)
+# Verified Macro Data Collection Scripts (updated 2026-10-13)
 
 Cron-safe, stdlib-only Python scripts for global macro data collection. All use `write_file` + `terminal()` pattern — no `execute_code`, no pipe-to-interpreter.
 
-## Source Priority (this cron environment)
+## Source Priority (this cron environment, verified 2026-10-13)
 
 | Data | Primary Source | Fallback | Notes |
 |:-----|:--------------|:---------|:------|
-| Exchange rates (USD/KRW, JPY, EUR) | exchangerate-api.com | — | Reliable, no auth |
-| S&P 500 | Yahoo Finance `query2` chart API | macro_context.json prior value | |
-| 10Y Treasury yield | Yahoo Finance `query2` chart API (`^TNX`) | macro_context.json prior value | |
-| WTI Crude | Yahoo Finance `query2` chart API (`CL=F`) | macro_context.json prior value | |
-| DXY | Yahoo Finance `query2` chart API (`UUP`) | macro_context.json prior value | Direct `^DXY` fails |
-| Fed Funds Rate | FRED CSV | macro_context.json prior value | FRED times out in cron |
-| KOSPI | Yahoo Finance `query2` (`^KS11`) | macro_context.json prior value | |
+| Exchange rates (USD/KRW, JPY, EUR) | exchangerate-api.com `v4/latest/USD` | — | Reliable, no auth ✅ |
+| S&P 500 | Yahoo Finance `query2` chart API (`^GSPC`) | macro_context.json prior | ✅ |
+| KOSPI | Yahoo Finance `query2` chart API (`^KS11`) | macro_context.json prior | ✅ confirmed 6035.35 on 2026-10-13 |
+| Nasdaq | Yahoo Finance `query2` chart API (`^IXIC`) | macro_context.json prior | ✅ confirmed 27245.90 on 2026-10-13 |
+| 10Y Treasury yield | Yahoo Finance `query2` chart API (`^TNX`) | macro_context.json prior | ⚠️ works but stale sometimes |
+| **WTI Crude** | **EIA API `v2/petroleum/pri/spt/`** | Yahoo Finance `CL=F` | **EIA primary — Yahoo `CL=F` returned stale ~$77.6 vs EIA $96.24 (2026-10-13)** |
+| DXY | exchangerate-derived estimate | macro_context.json prior | Yahoo `UUP` ETF ≠ DXY; formula gives ~17000 (nonsense). Use "추정" label. |
+| Fed Funds Rate | macro_context.json prior | — | FRED times out in cron (30s). Never use FRED as primary. |
 
-> **FRED consistently times out** in this cron environment after 30s. Do NOT use FRED CSV endpoints as primary. Use Yahoo Finance chart API as primary.
+> **WTI: EIA primary (2026-10-13 critical fix)** — Yahoo Finance `CL=F` returned stale ~$77.6 while EIA returned fresh $96.24 for 2026-10-06. Always prefer EIA as primary for WTI.
+> **DXY**: Yahoo Finance `UUP` ETF price (~28.xx) is NOT the DXY index. The exchangerate-formula `(EUR^-0.576)*(JPY^-0.119)*(GBP^-0.481)*10000` produces ~17000 (nonsense). Label as "추정" and use prior value from macro_context.json.
+> **FRED CSV always times out** in this cron environment (30s timeout). Never use as primary or fallback.
 
 ## Script 1: Core Macro Data (exchange rates + Yahoo Finance)
 
@@ -71,25 +74,38 @@ try:
 except Exception as e:
     results['yield_error'] = str(e)
 
-# 4. DXY proxy via Yahoo Finance (UUP ETF)
+# 4. KOSPI via Yahoo Finance chart API
 try:
     req = urllib.request.Request(
-        'https://query2.finance.yahoo.com/v8/finance/chart/UUP?interval=5m&range=1d',
+        'https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11?interval=5m&range=1d',
         headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     )
     with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
         data = json.loads(r.read())
     meta = data['chart']['result'][0]['meta']
-    results['dxy_proxy'] = str(meta.get('regularMarketPrice', 'N/A'))
+    results['kospi'] = str(meta.get('regularMarketPrice', 'N/A'))
 except Exception as e:
-    results['dxy_error'] = str(e)
+    results['kospi_error'] = str(e)
+
+# 5. Nasdaq via Yahoo Finance chart API
+try:
+    req = urllib.request.Request(
+        'https://query2.finance.yahoo.com/v8/finance/chart/%5EIXIC?interval=5m&range=1d',
+        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    )
+    with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
+        data = json.loads(r.read())
+    meta = data['chart']['result'][0]['meta']
+    results['nasdaq'] = str(meta.get('regularMarketPrice', 'N/A'))
+except Exception as e:
+    results['nasdaq_error'] = str(e)
 
 print(json.dumps(results, indent=2))
 ```
 
-## Script 2: WTI Crude Oil
+## Script 2: WTI Crude Oil (EIA Primary)
 
-File: `/tmp/wti_yf.py`
+File: `/tmp/wti_eia.py`
 
 ```python
 import urllib.request
@@ -102,7 +118,29 @@ ctx.verify_mode = ssl.CERT_NONE
 
 results = {}
 
-# WTI via Yahoo Finance crude oil futures (CL=F)
+# WTI via EIA API (primary — verified 2026-10-13: Yahoo returned stale ~$77.6, EIA returned $96.24)
+try:
+    url = ('https://api.eia.gov/v2/petroleum/pri/spt/data/'
+           '?api_key=DEMO_KEY&frequency=daily&data[0]=value'
+           '&facets[product][]=EPCWTI'
+           '&sort[0][column]=period&sort[0][direction]=desc&length=2')
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
+        d = json.loads(r.read())
+    for item in d.get('response', {}).get('data', []):
+        results['wti'] = f"${item['value']}"
+        results['wti_date'] = item['period']
+        break
+except Exception as e:
+    results['wti_error'] = str(e)
+
+print(json.dumps(results, indent=2))
+```
+
+**Fallback: Yahoo Finance `CL=F`** (only if EIA fails):
+
+```python
+# WTI via Yahoo Finance crude oil futures (CL=F) — FALLBACK ONLY
 try:
     req = urllib.request.Request(
         'https://query2.finance.yahoo.com/v8/finance/chart/CL=F?interval=5m&range=1d',
@@ -112,10 +150,9 @@ try:
         data = json.loads(r.read())
     meta = data['chart']['result'][0]['meta']
     results['wti'] = f"${meta.get('regularMarketPrice', 'N/A')}"
+    results['wti_source'] = 'yahoo_fallback'
 except Exception as e:
     results['wti_error'] = str(e)
-
-print(json.dumps(results, indent=2))
 ```
 
 ## Script 3: Korean Stock News Batch
@@ -178,17 +215,18 @@ print(json.dumps(results, ensure_ascii=False, indent=2))
 ## Invocation Pattern (cron-safe)
 
 ```bash
-# Collect macro data (exchange rates + US markets + DXY)
+# Collect exchange rates + US markets + KOSPI + Nasdaq
 python3 /tmp/macro_yf.py
 
-# Collect WTI
-python3 /tmp/wti_yf.py
+# Collect WTI (EIA primary)
+python3 /tmp/wti_eia.py
 
-# Collect Korean stock news (all 6 tickers in parallel via subagent)
+# Collect Korean stock news (all 6 tickers)
 # Use delegate_task with tasks=[] for parallel news collection
+# or write kr_news_collect.py to /tmp/ and run via terminal()
 ```
 
-## Known Ticker Codes (as of 2026-10-09)
+## Known Ticker Codes (verified 2026-10-13)
 
 | Name | Code | Notes |
 |:-----|:-----|:------|
@@ -196,7 +234,7 @@ python3 /tmp/wti_yf.py
 | SK하이닉스 | 000660 | |
 | 삼성전기 | 009150 | |
 | 현대차 | 005380 | |
-| 에이피알 | 352820 | Was 052220 before re-listing |
+| 에이피알 | 352820 | |
 | HD현대일렉 | 054050 | Was 267250 before re-listing |
 
 > Always verify ticker codes against user input — KRX codes change, companies re-list.

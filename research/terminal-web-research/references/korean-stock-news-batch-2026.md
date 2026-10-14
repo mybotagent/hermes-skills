@@ -6,13 +6,13 @@
 #
 # Cron-safe: writes script file first, invokes via terminal() — no pipe-to-interpreter.
 #
-# ⚠️ Ticker codes — VERIFIED 2026-09-21 against user's actual portfolio codes:
+# ⚠️ Ticker codes — VERIFIED against user's actual portfolio codes (2026-10-13):
 #   삼성전자       005930  (KOSPI)
 #   SK하이닉스     000660  (KOSPI)
 #   삼성전기       009150  (KOSPI)
 #   현대차         005380  (KOSPI)
 #   에이피알       352820  (KOSDAQ) ← was 052220 in older batch files — ALWAYS re-verify
-#   HD현대일렉     054050  (KOSPI)  ← was 267260 in older batch files — ALWAYS re-verify
+#   HD현대일렉     267250  (KOSPI)  ← was 267260/054050 in older batch files — ALWAYS re-verify
 # KRX codes change; company re-listings happen. Never assume a pre-verified code is still valid.
 
 import xml.etree.ElementTree as ET
@@ -29,7 +29,7 @@ TARGETS = [
     ("009150", "삼성전기"),
     ("005380", "현대차"),
     ("352820", "에이피알"),
-    ("054050", "HD현대일렉"),
+    ("267250", "HD현대일렉"),
 ]
 # ==================================
 

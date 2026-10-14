@@ -1002,3 +1002,22 @@
 **Git:**
 - commit `c121efb fix: P19 recovery — remove 62 rogue submodule entries + register raw/2026-W41` (1 file, +1/-63).
 - push: 성공 `19cf21a..c121efb main -> main`.
+
+## 2026-10-13 (21:00 KST)
+
+**발견:**
+- P19: Working-tree 한정 — `git show HEAD:index.md | grep '자동 추가'` = 0 (HEAD 깨끗), Working Tree `grep '자동 추가'` = 61개.
+- 서브모듈(subagents-library) 내부 modified content 있지만 parent wiki 처리 범위 밖.
+- P18 cross-file scan: 0 오염 ✅.
+
+**처리:**
+- `git restore index.md`로 working-tree P19 복구 (HEAD가 깨끗하므로 빠른 경로).
+- index-md-audit: 85 registered = 85 actual, 0 dead link ✅.
+- wikilink-audit: 0 broken ✅ (Cross-domain 0, Bare-name 0, MDEXT 0).
+- markdown-link-audit: 0 P11 ✅.
+- tag-audit: 137/137 registered ✅.
+- auto-fill-dates: 0 filled, 18 skipped (raw/ immutable) ✅.
+
+**Git:**
+- 변경 없음 — git restore로 clean 유지.
+- subagents-library 서브모듈 내부 변경은 별도 처리.
