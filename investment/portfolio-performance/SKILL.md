@@ -436,6 +436,7 @@ LLM이 5개 항목 개별 점수 + 종합 점수 + grade를 출력. 등급 표�
 - `references/performance-metrics-formula.md` — 지표 산식 상세
 - `references/dashboard-design.md` — 디자인 토큰, 레이아웃, 차트 설정
 - `references/macro-regime-dashboard.md` — Macro Regime 분석 + 차트 + beforeDraw Plugin + 지표 차트 6종 + Fear & Greed
+- `references/market-data-apis-cron-safe.md` — ⭐ **Cron-safe market data APIs** (Yahoo Finance JSON chart API + exchangerate-api.com — `execute_code`와 `browser_navigate`가 차단되는 cron 환경에서의 검증된 대체 수단)
 
 ## ⚠️ 함정 추가 (2026-07-17)
 
