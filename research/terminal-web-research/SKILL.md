@@ -414,7 +414,7 @@ TARGETS = [
     ("009150", "삼성전기"),
     ("005380", "현대차"),
     ("352820", "에이피알"),
-    ("054050", "HD현대일렉"),
+    ("267250", "HD현대일렉"),
 ]
 
 def fetch_rss(query, hl="ko", gl="KR", ceid="KR:ko"):
@@ -509,7 +509,9 @@ When the user asks "why did KOSPI drop?", the workflow is:
 
 When a ticker has no same-day article (e.g. 소형주, 신규 종목), report this explicitly and substitute the most recent prior-day article that includes relevant context (earnings, contract wins, sector trends). Never invent a headline for a missing ticker.
 
-#### 8. Yahoo Finance — S&P 500, 10Y Treasury, ETFs via Chart API (added 2026-09-22, updated 2026-09-23)
+#### 8. Yahoo Finance — S&P 500, 10Y Treasury, ETFs via Chart API (added 2026-09-22, updated 2026-09-23, updated 2026-10-16)
+
+> **Source priority table and WTI/DXY/KOSDAQ status have moved to `references/macro-data-collection-scripts.md`** — that file is the authoritative single source for data source status. Key updates as of 2026-10-16: WTI now uses Yahoo `CL=F` as primary (EIA API returns 404); DXY and KOSDAQ are unavailable via Yahoo chart API (use prior-day values); DJI and VIX confirmed working via `^DJI` and `^VIX`.
 
 Yahoo Finance `/v7/finance/quote` and `/v8/finance/chart` endpoints rate-limit requests without a browser-like User-Agent. The chart API with `interval=5m&range=1d` and a custom User-Agent header works reliably.
 
@@ -525,24 +527,26 @@ curl -s "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=5m&r
 # Step 2: read with read_file tool, extract with python3 on the saved file
 ```
 
-**Verified working symbols (2026-10-09):**
+**Verified working symbols (2026-10-16):**
 | Symbol | Data | Key Field | Status |
 |--------|------|-----------|--------|
-| `^GSPC` | S&P 500 index | `meta.regularMarketPrice` | ✅ confirmed |
-| `^TNX` | 10Y Treasury yield (%) | `meta.regularMarketPrice` | ✅ confirmed |
-| `CL=F` | WTI Crude Oil (front-month futures) | `meta.regularMarketPrice` | ✅ confirmed 2026-10-09 |
-| `UUP` | Invesco DB Dollar Index ETF (DXY proxy) | `meta.regularMarketPrice` | ✅ confirmed ~28.98 |
-| `^KS11` | KOSPI (Korean) | `meta.regularMarketPrice` | ✅ |
-| `^KQ11` | KOSDAQ (Korean) | `meta.regularMarketPrice` | ✅ |
-| `^VIX` | VIX fear index | `meta.regularMarketPrice` | ✅ |
+| `^GSPC` | S&P 500 index | `meta.regularMarketPrice` | ✅ confirmed 7744.06 |
+| `^TNX` | 10Y Treasury yield (%) | `meta.regularMarketPrice` | ✅ confirmed 5.089% |
+| `^DJI` | Dow Jones Industrial Average | `meta.regularMarketPrice` | ✅ confirmed 52177.69 (NEW) |
+| `^VIX` | VIX fear index | `meta.regularMarketPrice` | ✅ confirmed 16.15 (NEW) |
+| `CL=F` | WTI Crude Oil (front-month futures) | `meta.regularMarketPrice` | ✅ confirmed $95.5 (now primary) |
+| `^KS11` | KOSPI (Korean) | `meta.regularMarketPrice` | ✅ confirmed 5668.05 |
+| `^IXIC` | Nasdaq Composite | `meta.regularMarketPrice` | ✅ confirmed 26713.03 (NEW) |
 | `SPY` | SPY ETF | `meta.regularMarketPrice` | ✅ |
 
-**Failed patterns:**
+**Failed / unavailable patterns:**
+- **`^DXY`** — returns `result: null, Not Found`. No available urllib-compatible DXY source. Use prior-day value from `macro_context.json`.
+- **`^KOSDAQ`** — returns HTTP 404. No known urllib-compatible source as of 2026-10-16.
+- **`UUP`** — Invesco DB Dollar ETF is NOT the DXY index. Do not use as proxy.
 - `query1.finance.yahoo.com` may return 404 while `query2` works — always fallback to `query2`
 - `/v7/finance/quote?symbols=%5EGSPC` → 429 Too Many Requests
 - `/v8/finance/chart/%5EGSPC?interval=1d&range=1d` (without custom UA) → rate-limited
 - `curl ... | python3 -c "..."` → security scanner blocks pipe-to-interpreter
-- **`^DXY`** (Dollar Index chart API) → returns `result: null, Not Found`. **Use `UUP` as proxy** (Invesco DB Dollar Index ETF, ~28.98 on 2026-10-09).
 
 **FRED timeouts in cron environment (2026-10-09):** FRED CSV endpoints (`fred.stlouisfed.org/graph/fredgraph.csv?id=...`) consistently **timeout after 30s** in this cron environment. Yahoo Finance `query2` chart API is the reliable alternative for US market data. Use exchangerate-api.com for currency data.
 
