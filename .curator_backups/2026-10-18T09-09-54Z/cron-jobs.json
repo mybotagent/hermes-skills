@@ -1,53 +1,6 @@
 {
   "jobs": [
     {
-      "id": "2f553ea20e27",
-      "name": "\ub9e4\uc77c \uc544\uce68 \uc77c\uc815 \uc694\uc57d",
-      "prompt": "\uc624\ub298\uc758 \uad6c\uae00 \uce98\ub9b0\ub354 \uc77c\uc815\uc744 \ud655\uc778\ud574\uc11c \uc0ac\uc6a9\uc790(aiprofit)\uc5d0\uac8c \ud55c\uad6d\uc5b4\ub85c \uc694\uc57d\ud574\uc918. \uc624\ub298 \ub0a0\uc9dc \uae30\uc900\uc73c\ub85c \uc77c\uc815\uc744 \uc870\ud68c\ud558\uace0, \uc77c\uc815\uc774 \uc788\uc73c\uba74 \uc2dc\uac04\uc21c\uc73c\ub85c \uc815\ub9ac\ud574\uc11c \ubcf4\uc5ec\uc918. \uc77c\uc815\uc774 \uc5c6\uc73c\uba74 \"\uc624\ub298\uc740 \ub4f1\ub85d\ub41c \uc77c\uc815\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uc88b\uc740 \ud558\ub8e8 \ubcf4\ub0b4\uc138\uc694!\"\ub77c\uace0 \uc54c\ub824\uc918. \uc77c\uc815 \uc694\uc57d\uc5d0\ub294 \uc2dc\uac04, \uc81c\ubaa9, \uc7a5\uc18c(\uc788\uc744 \uacbd\uc6b0)\ub97c \ud3ec\ud568\ud574\uc918. \ubc18\ub4dc\uc2dc \uc774 \uc2a4\ub808\ub4dc(\uc77c\uc815\uad00\ub9ac \uc2a4\ub808\ub4dc)\ub85c\ub9cc \uc804\ub2ec\ud574\uc918.",
-      "skills": [
-        "self-healing-cron",
-        "google-workspace"
-      ],
-      "skill": "self-healing-cron",
-      "model": "MiniMax-M2.7",
-      "provider": "minimax",
-      "base_url": "https://api.minimax.io/v1",
-      "script": null,
-      "no_agent": false,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 8 * * 1-5",
-        "display": "0 8 * * 1-5"
-      },
-      "schedule_display": "0 8 * * 1-5",
-      "repeat": {
-        "times": null,
-        "completed": 90
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-05-31T10:49:42.151683+08:00",
-      "next_run_at": "2026-09-14T08:00:00+08:00",
-      "last_run_at": "2026-09-11T08:20:27.757309+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
-      "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1510404235915694170",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1510416479932121220",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / Hermes \uc77c\uc815\uad00\ub9ac",
-        "thread_id": "1510416479932121220"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "profile": null,
-      "fire_claim": null
-    },
-    {
       "id": "47f701ea2755",
       "name": "\uc8fc\uac04 \uacc4\ud68d \uc54c\ub9bc",
       "prompt": "aiprofit\ub2d8\uc758 \uc774\ubc88 \uc8fc(\uc6d4\uc694\uc77c~\uc77c\uc694\uc77c) \uad6c\uae00 \uce98\ub9b0\ub354 \uc804\uccb4 \uc77c\uc815\uc744 \ud655\uc778\ud574\uc11c \ud55c\uad6d\uc5b4\ub85c \uc8fc\uac04 \uacc4\ud68d\uc744 \uc694\uc57d\ud574\uc918. \uc77c\uc815\uc744 \ub0a0\uc9dc\ubcc4, \uc2dc\uac04\uc21c\uc73c\ub85c \uc815\ub9ac\ud574\uc11c \ubcf4\uc5ec\uc8fc\uace0, \uc774\ubc88 \uc8fc \ucd1d \uc77c\uc815 \uac1c\uc218\ub3c4 \uc54c\ub824\uc918. \uc77c\uc815\uc774 \ud558\ub098\ub3c4 \uc5c6\uc73c\uba74 \"\uc774\ubc88 \uc8fc\ub294 \ub4f1\ub85d\ub41c \uc77c\uc815\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uc5ec\uc720\ub85c\uc6b4 \ud55c \uc8fc \ub418\uc138\uc694!\"\ub77c\uace0 \uc54c\ub824\uc918. \ubc18\ub4dc\uc2dc \uc774 \uc2a4\ub808\ub4dc(\uc77c\uc815\uad00\ub9ac \uc2a4\ub808\ub4dc)\ub85c\ub9cc \uc804\ub2ec\ud574\uc918.",
@@ -70,15 +23,15 @@
       "schedule_display": "30 8 * * 1",
       "repeat": {
         "times": null,
-        "completed": 15
+        "completed": 19
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T10:49:43.158073+08:00",
-      "next_run_at": "2026-09-14T08:30:00+08:00",
-      "last_run_at": "2026-09-07T08:31:44.219284+08:00",
+      "next_run_at": "2026-10-19T08:30:00+08:00",
+      "last_run_at": "2026-10-12T08:31:14.113303+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -123,7 +76,7 @@
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T21:35:27.511479+08:00",
-      "next_run_at": "2026-10-01T08:00:00+08:00",
+      "next_run_at": "2026-11-01T08:00:00+08:00",
       "last_run_at": "2026-09-01T08:01:36.964853+08:00",
       "last_status": "ok",
       "last_error": null,
@@ -166,17 +119,17 @@
       "schedule_display": "10 8 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 85
+        "completed": 121
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T22:08:35.538013+08:00",
-      "next_run_at": "2026-09-14T08:10:00+08:00",
-      "last_run_at": "2026-09-11T08:30:27.656328+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T08:10:00+08:00",
+      "last_run_at": "2026-10-16T08:12:57.656126+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -214,15 +167,15 @@
       "schedule_display": "0 4 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 76
+        "completed": 101
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-06T15:25:15.413856+08:00",
-      "next_run_at": "2026-09-14T04:00:00+08:00",
-      "last_run_at": "2026-09-11T04:01:03.031327+08:00",
+      "next_run_at": "2026-10-19T04:00:00+08:00",
+      "last_run_at": "2026-10-16T04:00:58.442861+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -267,7 +220,7 @@
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T02:16:06.049605+08:00",
-      "next_run_at": "2026-10-01T08:10:00+08:00",
+      "next_run_at": "2026-11-01T08:10:00+08:00",
       "last_run_at": "2026-09-01T08:13:14.099160+08:00",
       "last_status": "ok",
       "last_error": null,
@@ -310,17 +263,17 @@
       "schedule_display": "0 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 80
+        "completed": 117
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T03:29:23.410939+08:00",
-      "next_run_at": "2026-09-14T18:00:00+08:00",
-      "last_run_at": "2026-09-11T18:20:39.304924+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T18:00:00+08:00",
+      "last_run_at": "2026-10-16T18:02:20.025749+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
@@ -360,17 +313,17 @@
       "schedule_display": "30 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 78
+        "completed": 116
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T03:29:29.821827+08:00",
-      "next_run_at": "2026-09-14T18:30:00+08:00",
-      "last_run_at": "2026-09-11T18:50:47.492930+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T18:30:00+08:00",
+      "last_run_at": "2026-10-16T18:39:13.241412+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
@@ -380,55 +333,6 @@
         "thread_id": "1510404235915694170"
       },
       "enabled_toolsets": null,
-      "workdir": null,
-      "profile": null,
-      "fire_claim": null
-    },
-    {
-      "id": "afebf6cb0ab1",
-      "name": "\ud83e\udde0 LangGraph \ud30c\uc774\ud504\ub77c\uc778 (18:35, \ub9e4\ud06c\ub85c \ub9ac\ud3ec\ud2b8 \ud6c4)",
-      "prompt": "## \uc5ed\ud560\nLangGraph \ud30c\uc774\ud504\ub77c\uc778 \uc2e4\ud589\uc790. 18:35 KST, \ub9e4\ud06c\ub85c \ub9ac\ud3ec\ud2b8 \uc774\ud6c4 \uc2e4\ud589.\n\n## \uc2e4\ud589 (terminal \ud544\uc218)\n1. `cd ~/trade-pipeline && python3 langgraph/pipeline.py 2>&1`\n\n## Discord \uc804\ub2ec \uaddc\uce59 \u2014 \uac01 Phase \uacb0\uacfc\ub97c \ub530\ub85c\ub530\ub85c \ubcf4\ub0b4\ub77c\n\ud30c\uc774\ud504\ub77c\uc778\uc740 \uc5ec\ub7ec Phase\ub85c \uad6c\uc131\ub418\uc5b4 \uc788\ub2e4. \uac01 Phase\uc758 \ucd9c\ub825\uc744 Discord\ub85c \ubcf4\ub0bc \ub54c:\n- **Phase 0** (fair_value + analyst stdout): \uc885\ubaa9\ubcc4 T0/T1 \uc801\uc815\uac00, \uad34\ub9ac\uc728, Analyst Target \ube44\uad50\ud45c \u2192 Discord \uba54\uc2dc\uc9c0 1\n- **Phase 0.5** (Macro Context): key_driver, regime, market_interpretation, key_macro_data, FRED \uc804\ub7b5, Finnhub \ub274\uc2a4 \ud5e4\ub4dc\ub77c\uc778 \uc694\uc57d \u2192 Discord \uba54\uc2dc\uc9c0 2\n- **Phase 1** (T1 Gap Filter): \ud1b5\uacfc/\ud0c8\ub77d \uc885\ubaa9 \ud45c, \ud544\ud130 \uc870\uac74, \ud1b5\uacfc \uc885\ubaa9\ubcc4 T1\uad34\ub9ac\uc728 \uc21c\uc704 \u2192 Discord \uba54\uc2dc\uc9c0 3\n- **Phase 2** (LangGraph \ubd84\uc11d \uacb0\uacfc): \uac01 \uc885\ubaa9\ubcc4 \uacb0\uc815(BUY/HOLD/SELL), \uc2e0\ub8b0\ub3c4, Bull/Bear/Risk \uc694\uc57d \u2192 Discord \uba54\uc2dc\uc9c0 4\n- **Phase 3** (\ud3ec\ud2b8\ud3f4\ub9ac\uc624 \ube44\uc911): \ucd5c\uc885 \ud3ec\ud2b8\ud3f4\ub9ac\uc624 \ud45c(\uc885\ubaa9, \uacb0\uc815, \ube44\uc911, \ud574\uc790, \uadfc\uac70), \ud604\uae08\ube44\uc911 + \uadfc\uac70, \uae30\ub300\uc218\uc775, \ub9ac\uc2a4\ud06c \uc694\uc57d \u2192 Discord \uba54\uc2dc\uc9c0 5\n\n### \uc911\uc694 \uaddc\uce59\n- \uac01 Phase \ucd9c\ub825 \uc0ac\uc774\uc5d0 \uad6c\ubd84\uc120 `\u2500\u2500\u2500\u2500\u2500`\uc744 \ub123\uc5b4\uc11c \uac00\ub3c5\uc131 \ud655\ubcf4\n- pipeline.py\uc758 stdout \ucd9c\ub825\uc744 \uadf8\ub300\ub85c \ubcf5\uc0ac\ud558\uc9c0 \ub9d0\uace0, \ud575\uc2ec \ub370\uc774\ud130\ub9cc \ud45c/\uc694\uc57d \ud615\ud0dc\ub85c \uac00\uacf5\n- \uae34 \ucd9c\ub825\uc740 \uc798\ub9bc \ubc29\uc9c0\ub97c \uc704\ud574 1500\uc790 \uc774\ub0b4\ub85c \ubd84\ud560\n- \uc2e4\ud328\ud55c Phase\uac00 \uc788\uc73c\uba74 \uc6d0\uc778\uc744 \uba85\uc2dc\ud558\uace0 \ub2e4\uc74c Phase \uc9c4\ud589\n- \ubaa8\ub4e0 Phase \uc644\ub8cc \ud6c4 \ucd1d \uc18c\uc694\uc2dc\uac04\uacfc \ube44\uc6a9(DeepSeek API)\uc744 \ub9c8\uc9c0\ub9c9\uc5d0 \ucd94\uac00",
-      "skills": [
-        "self-healing-cron"
-      ],
-      "skill": "self-healing-cron",
-      "model": "MiniMax-M2.7",
-      "provider": "minimax",
-      "base_url": "https://api.minimax.io/v1",
-      "script": null,
-      "no_agent": false,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "35 18 * * 1-5",
-        "display": "35 18 * * 1-5"
-      },
-      "schedule_display": "35 18 * * 1-5",
-      "repeat": {
-        "times": null,
-        "completed": 78
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-06-07T03:29:32.215561+08:00",
-      "next_run_at": "2026-09-14T18:35:00+08:00",
-      "last_run_at": "2026-09-11T18:51:16.029002+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
-      "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1510404235915694170",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1510404235915694170",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #\uc8fc\uc2dd-\uc99d\uc2dc / Hermes",
-        "thread_id": "1510404235915694170"
-      },
-      "enabled_toolsets": [
-        "terminal",
-        "file"
-      ],
       "workdir": null,
       "profile": null,
       "fire_claim": null
@@ -462,7 +366,7 @@
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-13T17:59:01.110311+08:00",
-      "next_run_at": "2026-10-01T08:00:00+08:00",
+      "next_run_at": "2026-11-01T08:00:00+08:00",
       "last_run_at": "2026-09-01T08:02:07.871663+08:00",
       "last_status": "ok",
       "last_error": null,
@@ -502,17 +406,17 @@
       "schedule_display": "*/15 6-21 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 2960
+        "completed": 4496
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T18:28:23.747299+08:00",
-      "next_run_at": "2026-09-14T06:00:00+08:00",
-      "last_run_at": "2026-09-11T21:45:41.671239+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T06:00:00+08:00",
+      "last_run_at": "2026-10-16T21:45:27.015480+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -549,15 +453,15 @@
       "schedule_display": "*/10 6-22 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 6268
+        "completed": 8715
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T18:28:26.523764+08:00",
-      "next_run_at": "2026-09-14T06:00:00+08:00",
-      "last_run_at": "2026-09-11T22:50:26.776396+08:00",
+      "next_run_at": "2026-10-19T06:00:00+08:00",
+      "last_run_at": "2026-10-16T22:50:09.950679+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -593,15 +497,15 @@
       "schedule_display": "0 6 * * 1",
       "repeat": {
         "times": null,
-        "completed": 12
+        "completed": 17
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-23T08:19:31.196104+08:00",
-      "next_run_at": "2026-09-14T06:00:00+08:00",
-      "last_run_at": "2026-09-07T06:01:21.283592+08:00",
+      "next_run_at": "2026-10-19T06:00:00+08:00",
+      "last_run_at": "2026-10-12T06:00:38.878063+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -638,17 +542,17 @@
       "schedule_display": "0 20 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 63
+        "completed": 103
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-25T22:11:44.206839+08:00",
-      "next_run_at": "2026-09-14T20:00:00+08:00",
-      "last_run_at": "2026-09-11T20:21:16.205526+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T20:00:00+08:00",
+      "last_run_at": "2026-10-16T20:01:17.911627+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "local",
       "origin": {
@@ -681,15 +585,15 @@
       "schedule_display": "50 8 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 65
+        "completed": 89
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T11:49:21.446172+08:00",
-      "next_run_at": "2026-09-14T08:50:00+08:00",
-      "last_run_at": "2026-09-11T08:50:06.581963+08:00",
+      "next_run_at": "2026-10-19T08:50:00+08:00",
+      "last_run_at": "2026-10-16T08:50:03.024140+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -724,15 +628,15 @@
       "schedule_display": "40 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 69
+        "completed": 94
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T11:49:22.451470+08:00",
-      "next_run_at": "2026-09-14T18:40:00+08:00",
-      "last_run_at": "2026-09-11T18:40:19.794548+08:00",
+      "next_run_at": "2026-10-19T18:40:00+08:00",
+      "last_run_at": "2026-10-16T18:40:08.564356+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -742,98 +646,6 @@
         "chat_id": "1520635369836515438",
         "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #\uc8fc\uc2dd-\uc99d\uc2dc / \uc65c \uae30\uc874 \ub514\uc2a4\ucf54\ub4dc \uc0ac\ub77c\uc84c\uc9c0?",
         "thread_id": "1520635369836515438"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "df1faab3310b",
-      "name": "\ud83d\udcc5 \uc77c\uc694\uc77c \uc544\uce68 \uc8fc\uac04 \uc77c\uc815 \ube0c\ub9ac\ud551",
-      "prompt": "\uc624\ub298\uc740 \uc77c\uc694\uc77c \uc544\uce68\uc785\ub2c8\ub2e4. `google-workspace` \uc2a4\ud0ac\uc744 \uc0ac\uc6a9\ud558\uc5ec \ub2e4\uc74c\uc8fc(\uc6d4\uc694\uc77c~\uc77c\uc694\uc77c) \uad6c\uae00 \uce98\ub9b0\ub354 \uc804\uccb4 \uc77c\uc815\uc744 \uc870\ud68c\ud558\uace0, \uc0ac\uc6a9\uc790(aiprofit)\uc5d0\uac8c \ud55c\uad6d\uc5b4\ub85c \uc8fc\uac04 \uc77c\uc815 \ube0c\ub9ac\ud551\uc744 \ud574\uc8fc\uc138\uc694.\n\n\uc2e4\ud589 \uc21c\uc11c:\n1. terminal: `cd ~/.hermes && python3 skills/productivity/google-workspace/scripts/google_api.py calendar list --start \"YYYY-MM-DDT00:00:00Z\" --end \"YYYY-MM-DDT23:59:59Z\"` \ub85c \ub2e4\uc74c\uc8fc \uc6d4~\uc77c \uac01\uac01 \uc870\ud68c (\ub610\ub294 --start \ub2e4\uc74c\uc8fc \uc6d4\uc694\uc77c 00:00 UTC --end \ub2e4\uc74c\uc8fc \uc77c\uc694\uc77c 23:59 UTC \ub85c \ud55c\ubc88\uc5d0 \uc870\ud68c)\n2. \uc77c\uc815\uc744 \ub0a0\uc9dc\uc21c, \uc2dc\uac04\uc21c\uc73c\ub85c \uc815\ub9ac\n3. \uc8fc\uc694 \uc77c\uc815 \uc124\uba85(\ub9e4\ud06c\ub85c \uc774\ubca4\ud2b8\ub294 \uc601\ud5a5\ub3c4 \ud3ec\ud568, \uac1c\uc778 \uc77c\uc815\uc740 \ub0b4\uc6a9 \uc694\uc57d)\n4. \uc8fc\uac04 \ud575\uc2ec \ud3ec\uc778\ud2b8 \uc815\ub9ac\n\n\ud615\uc2dd:\n- \ub0a0\uc9dc\ubcc4 \uad6c\ubd84 \uba85\ud655\ud788\n- \ud22c\uc790 \uad00\ub828 \ub9e4\ud06c\ub85c \uc774\ubca4\ud2b8(PMI, \uace0\uc6a9\ubcf4\uace0\uc11c \ub4f1)\ub294 \ud83d\udd34 \ud45c\uc2dc\n- \uc77c\uc815 \uc5c6\uc73c\uba74 \"\u274c \uacf5\ubc31\" \ud45c\uc2dc\n- \ud558\ub2e8\uc5d0 \ud83d\udd25 \ud575\uc2ec POINT \uc694\uc57d\n\n\uc774 \uc4f0\ub808\ub4dc(#\uc77c\uc815\uad00\ub9ac)\ub294 \uc77c\uc815 \ube0c\ub9ac\ud551 \uc804\uc6a9\uc785\ub2c8\ub2e4. \ubd88\ud544\uc694\ud55c \uc124\uba85 \uc5c6\uc774 \ubc14\ub85c \ube0c\ub9ac\ud551 \ub0b4\uc6a9\ub9cc \uc804\ub2ec\ud558\uc138\uc694.",
-      "skills": [
-        "self-healing-cron",
-        "google-workspace"
-      ],
-      "skill": "self-healing-cron",
-      "model": "MiniMax-M2.7",
-      "provider": "minimax",
-      "base_url": "https://api.minimax.io/v1",
-      "script": null,
-      "no_agent": false,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 8 * * 0",
-        "display": "0 8 * * 0"
-      },
-      "schedule_display": "0 8 * * 0",
-      "repeat": {
-        "times": null,
-        "completed": 11
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-06-28T12:18:28.603694+08:00",
-      "next_run_at": "2026-09-20T08:00:00+08:00",
-      "last_run_at": "2026-09-13T08:01:03.809139+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
-      "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1510404235915694170",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1520640537995247698",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \uc77c\uc815\uad00\ub9ac",
-        "thread_id": "1520640537995247698"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "fffbc0dce0c7",
-      "name": "\ud83d\udcc5 \uc77c\uc694\uc77c \uc800\ub141 \uc8fc\uac04 \uc77c\uc815 \ube0c\ub9ac\ud551",
-      "prompt": "\uc624\ub298\uc740 \uc77c\uc694\uc77c \uc800\ub141\uc785\ub2c8\ub2e4. \ub0b4\uc77c\ubd80\ud130 \uc0c8 \uc8fc\uac00 \uc2dc\uc791\ub429\ub2c8\ub2e4. `google-workspace` \uc2a4\ud0ac\uc744 \uc0ac\uc6a9\ud558\uc5ec \ub2e4\uc74c\uc8fc(\uc6d4\uc694\uc77c~\uc77c\uc694\uc77c) \uad6c\uae00 \uce98\ub9b0\ub354 \uc804\uccb4 \uc77c\uc815\uc744 \uc870\ud68c\ud558\uace0, \uc0ac\uc6a9\uc790(aiprofit)\uc5d0\uac8c \ud55c\uad6d\uc5b4\ub85c \uc8fc\uac04 \uc77c\uc815 \ube0c\ub9ac\ud551\uc744 \ud574\uc8fc\uc138\uc694.\n\n\uc2e4\ud589 \uc21c\uc11c:\n1. terminal: `cd ~/.hermes && python3 skills/productivity/google-workspace/scripts/google_api.py calendar list --start \"\ub2e4\uc74c\uc8fc \uc6d4\uc694\uc77c 00:00 UTC\" --end \"\ub2e4\uc74c\uc8fc \uc77c\uc694\uc77c 23:59 UTC\"` \ub85c \ud55c\ubc88\uc5d0 \uc870\ud68c\n2. \uc77c\uc815\uc744 \ub0a0\uc9dc\uc21c, \uc2dc\uac04\uc21c\uc73c\ub85c \uc815\ub9ac\n3. \uc8fc\uc694 \uc77c\uc815 \uc124\uba85(\ub9e4\ud06c\ub85c \uc774\ubca4\ud2b8\ub294 \uc601\ud5a5\ub3c4 \ud3ec\ud568, \uac1c\uc778 \uc77c\uc815\uc740 \ub0b4\uc6a9 \uc694\uc57d)\n4. \ub0b4\uc77c(\uc6d4\uc694\uc77c) \uc77c\uc815\uc774 \uc788\uc73c\uba74 \ubcc4\ub3c4 \uac15\uc870\n\n\ud615\uc2dd:\n- \ub0a0\uc9dc\ubcc4 \uad6c\ubd84\n- \ud22c\uc790 \uad00\ub828 \ub9e4\ud06c\ub85c \uc774\ubca4\ud2b8(PMI, \uace0\uc6a9\ubcf4\uace0\uc11c \ub4f1)\ub294 \ud83d\udd34 \ud45c\uc2dc\n- \uc77c\uc815 \uc5c6\uc73c\uba74 \"\u274c \uacf5\ubc31\" \ud45c\uc2dc\n- \ub0b4\uc77c(\uc6d4\uc694\uc77c) \uc77c\uc815\uc740 \ub9e8 \uc704\uc5d0 \ub530\ub85c \ud45c\uc2dc\n- \ud558\ub2e8\uc5d0 \ud83d\udd25 \uc8fc\uac04 \ud575\uc2ec POINT \uc694\uc57d + \u23f0 \ub0b4\uc77c \uccb4\ud06c\ub9ac\uc2a4\ud2b8\n\n\uc774 \uc4f0\ub808\ub4dc(#\uc77c\uc815\uad00\ub9ac)\ub294 \uc77c\uc815 \ube0c\ub9ac\ud551 \uc804\uc6a9\uc785\ub2c8\ub2e4. \ubd88\ud544\uc694\ud55c \uc124\uba85 \uc5c6\uc774 \ubc14\ub85c \ube0c\ub9ac\ud551 \ub0b4\uc6a9\ub9cc \uc804\ub2ec\ud558\uc138\uc694.",
-      "skills": [
-        "self-healing-cron",
-        "google-workspace"
-      ],
-      "skill": "self-healing-cron",
-      "model": "MiniMax-M2.7",
-      "provider": "minimax",
-      "base_url": "https://api.minimax.io/v1",
-      "script": null,
-      "no_agent": false,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 20 * * 0",
-        "display": "0 20 * * 0"
-      },
-      "schedule_display": "0 20 * * 0",
-      "repeat": {
-        "times": null,
-        "completed": 11
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-06-28T12:18:29.609205+08:00",
-      "next_run_at": "2026-09-13T20:00:00+08:00",
-      "last_run_at": "2026-09-06T20:01:21.388734+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1510404235915694170",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1520640537995247698",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \uc77c\uc815\uad00\ub9ac",
-        "thread_id": "1520640537995247698"
       },
       "enabled_toolsets": null,
       "workdir": null,
@@ -859,15 +671,15 @@
       "schedule_display": "0 11 * * *",
       "repeat": {
         "times": null,
-        "completed": 77
+        "completed": 112
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T12:20:42.091243+08:00",
-      "next_run_at": "2026-09-14T11:00:00+08:00",
-      "last_run_at": "2026-09-13T11:00:53.106040+08:00",
+      "next_run_at": "2026-10-19T11:00:00+08:00",
+      "last_run_at": "2026-10-18T11:00:13.786362+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -902,17 +714,17 @@
       "schedule_display": "0 6 * * *",
       "repeat": {
         "times": null,
-        "completed": 105
+        "completed": 158
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T07:24:58.698355+08:00",
-      "next_run_at": "2026-09-14T06:00:00+08:00",
-      "last_run_at": "2026-09-13T06:00:48.858093+08:00",
+      "next_run_at": "2026-10-19T06:00:00+08:00",
+      "last_run_at": "2026-10-18T06:00:10.863059+08:00",
       "last_status": "error",
-      "last_error": "Script exited with code 1\nstdout:\n\ud83c\udfe5 Hermes \uc2dc\uc2a4\ud15c \ud5ec\uc2a4\uccb4\ud06c \u2014 2026-09-13 07:00 KST\n\n\u2500\u2500\u2500 \uc11c\ube44\uc2a4 \u2500\u2500\u2500\n\u2705 Nginx (Dashboard Proxy) (:9119)\n\u274c Hermes Dashboard (Backend) (:9199) \u2014 \uc5f0\uacb0 \uc548 \ub428\n\u2705 API Server (:8642)\n\u2705 Webhook Server (:8644)\n\u2705 Hermes Gateway (systemd)\n\u2705 Nginx (systemd)\n\n\u2500\u2500\u2500 \uc2dc\uc2a4\ud15c \u2500\u2500\u2500\n\u26a0\ufe0f Disk /: 80% (30G / 40G)\n\u2705 Memory: 54% (1.0G / 1.9G)\n\ubd80\ud558: \u2705 \u2705 \u2705 1m=0.11 5m=0.18 15m=0.10 (cores=2)\n\ud83d\udd50 up 3 days, 8 hours, 59 minutes\n\n\u2500\u2500\u2500 \ud06c\ub860 \u2500\u2500\u2500\n\ud83d\udcca \ud06c\ub860: 44\uac1c \uc911 44\uac1c \ud65c\uc131, 0\uac1c \uc77c\uc2dc\uc911\uc9c0\n  \u26a0\ufe0f \uc77c\ubd80 \ud06c\ub860 \uc804\uc1a1 \uc2e4\ud328 \uc788\uc74c\n\n--- \uc694\uc57d ---\n\uc11c\ube44\uc2a4: \u27055 \u274c1 | \uc2dc\uc2a4\ud15c: \u27054 \u26a0\ufe0f1 | \ud06c\ub860: \u26a0\ufe0f1\n\n\u274c \uc77c\ubd80 \uc11c\ube44\uc2a4 \ube44\uc815\uc0c1 \u2014 \uc870\uce58 \ud544\uc694!",
+      "last_error": "Script exited with code 1\nstdout:\n\ud83c\udfe5 Hermes \uc2dc\uc2a4\ud15c \ud5ec\uc2a4\uccb4\ud06c \u2014 2026-10-18 07:00 KST\n\n\u2500\u2500\u2500 \uc11c\ube44\uc2a4 \u2500\u2500\u2500\n\u2705 Nginx (Dashboard Proxy) (:9119)\n\u274c Hermes Dashboard (Backend) (:9199) \u2014 \uc5f0\uacb0 \uc548 \ub428\n\u2705 API Server (:8642)\n\u2705 Webhook Server (:8644)\n\u2705 Hermes Gateway (systemd)\n\u2705 Nginx (systemd)\n\n\u2500\u2500\u2500 \uc2dc\uc2a4\ud15c \u2500\u2500\u2500\n\u274c Disk /: 86% (33G / 40G)\n\u26a0\ufe0f Memory: 73% (1.4G / 1.9G)\n\ubd80\ud558: \u2705 \u2705 \u2705 1m=0.17 5m=0.20 15m=0.09 (cores=2)\n\ud83d\udd50 up 5 weeks, 3 days, 8 hours, 58 minutes\n\n\u2500\u2500\u2500 \ud06c\ub860 \u2500\u2500\u2500\n\ud83d\udcca \ud06c\ub860: 32\uac1c \uc911 32\uac1c \ud65c\uc131, 0\uac1c \uc77c\uc2dc\uc911\uc9c0\n  \u26a0\ufe0f \uc77c\ubd80 \ud06c\ub860 \uc804\uc1a1 \uc2e4\ud328 \uc788\uc74c\n\n--- \uc694\uc57d ---\n\uc11c\ube44\uc2a4: \u27055 \u274c1 | \uc2dc\uc2a4\ud15c: \u27053 \u26a0\ufe0f1 \u274c1 | \ud06c\ub860: \u26a0\ufe0f1\n\n\u274c \uc77c\ubd80 \uc11c\ube44\uc2a4 \ube44\uc815\uc0c1 \u2014 \uc870\uce58 \ud544\uc694!",
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -945,15 +757,15 @@
       "schedule_display": "0 7 * * *",
       "repeat": {
         "times": null,
-        "completed": 76
+        "completed": 112
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T12:03:02.265401+08:00",
-      "next_run_at": "2026-09-14T07:00:00+08:00",
-      "last_run_at": "2026-09-13T07:00:50.254739+08:00",
+      "next_run_at": "2026-10-19T07:00:00+08:00",
+      "last_run_at": "2026-10-18T07:00:14.752474+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -988,17 +800,17 @@
       "schedule_display": "0 2 * * *",
       "repeat": {
         "times": null,
-        "completed": 90
+        "completed": 139
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T12:03:06.379003+08:00",
-      "next_run_at": "2026-09-14T02:00:00+08:00",
-      "last_run_at": "2026-09-13T02:00:59.472250+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T02:00:00+08:00",
+      "last_run_at": "2026-10-17T02:00:36.398695+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -1036,17 +848,17 @@
       "schedule_display": "0 22 * * *",
       "repeat": {
         "times": null,
-        "completed": 91
+        "completed": 136
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T01:45:32.688905+08:00",
-      "next_run_at": "2026-09-13T22:00:00+08:00",
-      "last_run_at": "2026-09-12T22:00:43.084521+08:00",
-      "last_status": "error",
-      "last_error": "Script exited with code 1\nstdout:\n[2026-09-12T22:00:42+08:00] daily-repo-orchestrator mirror-only cycle\n=== Hermes daily_repo_orchestrator.py | 2026-09-12 | DRY_RUN=False ===\nTraceback (most recent call last):\n  File \"/home/ubuntu/.hermes/skills/daily-repo-orchestrator/scripts/daily_repo_orchestrator.py\", line 438, in <module>\n    daily_repo_cycle()\n  File \"/home/ubuntu/.hermes/skills/daily-repo-orchestrator/scripts/daily_repo_orchestrator.py\", line 425, in daily_repo_cycle\n    harvested = harvest_repos()\n                ^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.hermes/skills/daily-repo-orchestrator/scripts/daily_repo_orchestrator.py\", line 124, in harvest_repos\n    repos = gh(\"/user/repos?per_page=30&sort=pushed&affiliation=owner\")\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.hermes/skills/daily-repo-orchestrator/scripts/daily_repo_orchestrator.py\", line 115, in gh\n    with urllib.request.urlopen(req, timeout=20) as r:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py\", line 216, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py\", line 525, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py\", line 634, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py\", line 563, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py\", line 496, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/home/ubuntu/.local/share/uv/python/cpython-3.11.15-linux-x86_64-gnu/lib/python3.11/urllib/request.py\", line 643, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 401: Unauthorized\n[2026-09-12T22:00:42+08:00] exit=1",
+      "next_run_at": "2026-10-18T22:00:00+08:00",
+      "last_run_at": "2026-10-17T22:00:50.475040+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -1082,153 +894,15 @@
       "schedule_display": "0 20 * * 0",
       "repeat": {
         "times": null,
-        "completed": 10
+        "completed": 15
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T01:46:44.938615+08:00",
-      "next_run_at": "2026-09-13T20:00:00+08:00",
-      "last_run_at": "2026-09-06T20:00:44.083890+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "origin",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "4076b821ac31",
-      "name": "memory-curator-weekly",
-      "prompt": "Weekly Monday 08:00 KST = 23:00 UTC Sunday. `memory_auto_curator.sh` \uc2e4\ud589 \u2192 wiki/memory/skill \uc0c1\ud0dc \uc810\uac80 + INDEX/MEMORY/USER \ub77c\uc778\uc218 + LOG 5\uac1c \u2192 stdout \ub9ac\ud3ec\ud2b8\ub9cc. read-only \uc808\ub300.\n\n\ubaa9\uc801: \uc704\ud0a4/memory\uac00 \ube44\ub300\ud574\uc9c0\uae30 \uc804\uc5d0 \ucd94\uc138 \uac10\uc9c0. SKILL.md\uac00 5\uac1c \uc774\uc0c1 \uc904\uc5c8\uac70\ub098, INDEX\uac00 100\uc904 \uc99d\uac00\ud558\uba74 \uc54c\ub9bc.\nstdout \ub05d \ubd80\ubd84\uc744 \ub2e8 \ud55c \ub2e8\ub77d\ub9cc \uc54c\ub9bc. \ube48 stdout\ub3c4 OK (silent).\n\uc2a4\ud06c\ub9bd\ud2b8 = `memory_auto_curator.sh` (relative path from ~/.hermes/scripts/)",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "memory_auto_curator.sh",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 23 * * 0",
-        "display": "0 23 * * 0"
-      },
-      "schedule_display": "0 23 * * 0",
-      "repeat": {
-        "times": null,
-        "completed": 10
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T01:47:26.181560+08:00",
-      "next_run_at": "2026-09-13T23:00:00+08:00",
-      "last_run_at": "2026-09-06T23:00:45.701043+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "origin",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "491c817d9ed4",
-      "name": "trigger-backlog-swipper-hourly",
-      "prompt": "Hourly cycle (KST 0-8 \uc708\ub3c4\uc6b0, 4\ud68c/\uc77c): 00:30 / 02:30 / 04:30 / 05:30. `trigger_backlog_swipper.py` \uc2e4\ud589 \u2192 Kanban TODO + GitHub Issues sweep + threshold sanity. SAFE: read-only.\n\nNOTE: \uae30\uc874 cron\uacfc \uc548 \uacb9\uce58\uac8c:\n- 02:00 neo4j-incremental-index (30\ubd84 gap)\n- 04:00 \uc0c8\ubcbd wiki \ub3d9\uae30\ud654 \ud3c9\uc77c (30\ubd84 gap)\n- 06:00~08:00 \uad6c\uac04\uc740 watchdog(*/10) + survey-morning + neo4j-health + \ub9e4\uc77c\uc544\uce68\uc77c\uc815 \ub4f1 \ube7d\ube7d \u2192 06:00 \uc774\uc804\uc73c\ub85c \uc555\ucd95.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "trigger_backlog_swipper.py",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "30 0,2,4,5 * * *",
-        "display": "30 0,2,4,5 * * *"
-      },
-      "schedule_display": "30 0,2,4,5 * * *",
-      "repeat": {
-        "times": null,
-        "completed": 273
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T02:25:24.552405+08:00",
-      "next_run_at": "2026-09-14T00:30:00+08:00",
-      "last_run_at": "2026-09-13T05:30:49.315781+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "origin",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "da557233e6ac",
-      "name": "self-consistency-check-3h",
-      "prompt": "KST 0-8 \uc708\ub3c4\uc6b0 \uc548 3h cycle 2\ud68c: 01:30 / 05:30. `self_consistency_check.py` \u2192 cron health / wiki / memory counts / log anomaly. SAFE: read-only.\n\nNOTE: \uae30\uc874 cron\uacfc \uc548 \uacb9\uce58\uac8c:\n- 00:30 trigger-backlog-swipper (1h gap)\n- 02:00 neo4j-incremental-index, 02:30 trigger-backlog-swipper, 04:00 \uc0c8\ubcbd wiki \ub3d9\uae30\ud654, 04:30 trigger-backlog-swipper \u2192 \uadf8 \uc678 \uc2dc\uac04 \ud53c\ud574\uc11c \ubc30\uce58\n- 05:30\uc740 trigger-backlog-swipper\uc640 \uac19\uc740 \uc2dc\uac01\uc774\ub77c \ube44\ub300\uc911\ubcf4\ub2e4 \uc77c\uad00\uc131 \uc6b0\uc120 \u2192 \uadf8\ub798\ub3c4 \uc704 cron \ub9c8\uc9c0\ub9c9 \ubc1c\ud654(05:30)\uac00 \ub05d\ub098\uae30 \uc804 1\ubd84 \ucc28\uc774\ub85c \ubbf8\uc138 \ubd84\ub9ac: 05:29\ub85c \ubcc0\uacbd.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "self_consistency_check.py",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "29 1,5 * * *",
-        "display": "29 1,5 * * *"
-      },
-      "schedule_display": "29 1,5 * * *",
-      "repeat": {
-        "times": null,
-        "completed": 136
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T02:25:28.597399+08:00",
-      "next_run_at": "2026-09-14T01:29:00+08:00",
-      "last_run_at": "2026-09-13T05:29:48.313619+08:00",
+      "next_run_at": "2026-10-18T20:00:00+08:00",
+      "last_run_at": "2026-10-11T20:00:42.263302+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1266,61 +940,15 @@
       "schedule_display": "30 18 * * 5",
       "repeat": {
         "times": null,
-        "completed": 11
+        "completed": 16
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T02:25:33.315122+08:00",
-      "next_run_at": "2026-09-18T18:30:00+08:00",
-      "last_run_at": "2026-09-11T18:30:17.925384+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "origin",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "dadb1f540867",
-      "name": "evening-optimization-cycle-daily",
-      "prompt": "\ub9e4\uc77c KST 02:50 (UTC 17:50). `evening_optimization_cycle.py` \u2192 log stats + cycle count + cron drift summary. SAFE: read-only.\n\nNOTE: KST 0-8 \uc708\ub3c4\uc6b0 \uc548, \uae30\uc874 cron\uacfc \uc548 \uacb9\uce58\uac8c:\n- 02:00 neo4j-incremental-index, 02:30 trigger-backlog-swipper, 04:00 \uc0c8\ubcbd wiki \ub3d9\uae30\ud654, 04:30 trigger-backlog-swipper\n- 02:50\uc740 02:30 trigger\uc640 20\ubd84 gap + 04:00 dawn-wiki\uc640 1h 10\ubd84 gap \u2192 \ucda9\ub3cc \uc5c6\uc74c\n- 02:30\uc744 \ud53c\ud574\uc11c 02:50\uc73c\ub85c \ubbf8\uc138 \uc774\ub3d9 (\uc0ac\uc6a9\uc790 \"\uae30\uc874 cron\uacfc \uacb9\uce58\uc9c0 \uc54a\ub3c4\ub85d\").",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "evening_optimization_cycle.py",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "50 2 * * *",
-        "display": "50 2 * * *"
-      },
-      "schedule_display": "50 2 * * *",
-      "repeat": {
-        "times": null,
-        "completed": 70
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T02:25:37.356860+08:00",
-      "next_run_at": "2026-09-14T02:50:00+08:00",
-      "last_run_at": "2026-09-13T02:50:46.424386+08:00",
+      "next_run_at": "2026-10-23T18:30:00+08:00",
+      "last_run_at": "2026-10-16T18:30:07.625365+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1358,203 +986,19 @@
       "schedule_display": "30 22 * * 5",
       "repeat": {
         "times": null,
-        "completed": 11
+        "completed": 16
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T02:25:42.160708+08:00",
-      "next_run_at": "2026-09-18T22:30:00+08:00",
-      "last_run_at": "2026-09-11T22:30:23.786930+08:00",
+      "next_run_at": "2026-10-23T22:30:00+08:00",
+      "last_run_at": "2026-10-16T22:30:09.537150+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "19703b962de7",
-      "name": "dawn-heartbeat-15m",
-      "prompt": "\uc0c8\ubcbd heartbeat (KST 0-5\uc2dc, \ub9e4 15\ubd84). 15 * * * * KST = KST 00:15 / 00:30...05:45. \ube44\ub300\uc911 \uac00\ub4dc: \ub2e4\ub978 \ud65c\uc131 cron \ubc1c\ud654 \uc2dc\uac01 \u00b12\ubd84 \uc548\uc774\uba74 90\ucd08 sleep \u2192 1\ud68c retry \u2192 silent exit. \uc2dc\uc2a4\ud15c sanity (disk/mem/load) + GitHub reachability check. \uc815\uc0c1 = silent, \uc774\uc0c1\ub9cc stdout + log append. SAFE: read-only.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "dawn_heartbeat.sh",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "*/15 0-5 * * *",
-        "display": "*/15 0-5 * * *"
-      },
-      "schedule_display": "*/15 0-5 * * *",
-      "repeat": {
-        "times": null,
-        "completed": 1611
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T02:56:32.539317+08:00",
-      "next_run_at": "2026-09-14T00:00:00+08:00",
-      "last_run_at": "2026-09-13T05:45:49.561918+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "origin",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "f405cd52a6e8",
-      "name": "\ud83e\udde0 Memory Usage Alert (\ud3c9\uc77c 09:00 KST)",
-      "prompt": "memory_alert cron. \ud3c9\uc77c 09:00 KST = 00:00 UTC. ~1\ucd08 \uc2e4\ud589. `python3 ~/.hermes/scripts/memory_alert.py check` \u2192 90%\u2191\uc774\uba74 stdout \"\u26a0 MEMORY ALERT\" \u2192 \uc790\ub3d9 Discord \ubc1c\uc1a1. <90%\uba74 silent. SAFE: read-only.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "memory_alert.py",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 0 * * 1-5",
-        "display": "0 0 * * 1-5"
-      },
-      "schedule_display": "0 0 * * 1-5",
-      "repeat": {
-        "times": null,
-        "completed": 69
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T17:35:56.891051+08:00",
-      "next_run_at": "2026-09-14T00:00:00+08:00",
-      "last_run_at": "2026-09-11T00:00:56.691377+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "discord:1510397804139515945:1510404235915694170",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "eba5518c2e16",
-      "name": "\ud83d\udcd0 Design-Execution Gap Monthly (\ub9e4\uc6d4 1\uc77c 09:00 KST)",
-      "prompt": "\ub514\uc790\uc778-\uc2e4\ud589 \uac2d \uc6d4\uac04 \uce21\uc815. \ub9e4\uc6d4 1\uc77c 09:00 KST = 1\uc77c 00:00 UTC. \\`python3 ~/.hermes/scripts/design_exec_gap.py\\` \u2192 JSON \uacb0\uacfc\ub97c ~/.hermes/cron/output/<job_id>/\uc5d0 \uc800\uc7a5. SAFE: read-only.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "design_exec_gap.py",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 0 1 * *",
-        "display": "0 0 1 * *"
-      },
-      "schedule_display": "0 0 1 * *",
-      "repeat": {
-        "times": null,
-        "completed": 3
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T18:07:32.352301+08:00",
-      "next_run_at": "2026-10-01T00:00:00+08:00",
-      "last_run_at": "2026-09-01T00:00:46.617800+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "local",
-      "origin": {
-        "platform": "discord",
-        "chat_id": "1523627322153107476",
-        "chat_name": "\ud5e4\ub974\uba54\uc2a4\ubd07 / #project-manage / \ub108\uc758 \uc774\ub984\uc740 \uc55e\uc73c\ub85c hermes-bot\uc774\uc57c",
-        "thread_id": "1523627322153107476",
-        "user_id": "1327192313616797706"
-      },
-      "enabled_toolsets": null,
-      "workdir": null,
-      "fire_claim": null
-    },
-    {
-      "id": "5e3402867d0c",
-      "name": "\ud83d\udd04 Self-Improve Loop (\ub9e4\uc77c 21:00 KST)",
-      "prompt": "\uc790\uac00\uac1c\uc120 \ub8e8\ud504 (Step 2). \ub9e4\uc8fc \uc77c\uc694\uc77c 21:00 KST = 12:00 UTC. \\`python3 ~/.hermes/scripts/self_improve_loop.py\\` \u2192 \uce21\uc815 + \uac1c\uc120 \uc0ac\ud56d Kanban \uc790\ub3d9 \uc0dd\uc131 + alert. \uac1c\uc120 \uc0ac\ud56d 0\uac74\uc774\uba74 silent. SAFE: Kanban \uc0dd\uc131\ub9cc, \uc678\ubd80 \ud6a8\uacfc \uc5c6\uc74c.",
-      "skills": [],
-      "skill": null,
-      "model": null,
-      "provider": null,
-      "provider_snapshot": null,
-      "model_snapshot": null,
-      "base_url": null,
-      "script": "self_improve_loop.py",
-      "no_agent": true,
-      "context_from": null,
-      "schedule": {
-        "kind": "cron",
-        "expr": "0 12 * * *",
-        "display": "0 12 * * *"
-      },
-      "schedule_display": "0 12 * * *",
-      "repeat": {
-        "times": null,
-        "completed": 68
-      },
-      "enabled": true,
-      "state": "scheduled",
-      "paused_at": null,
-      "paused_reason": null,
-      "created_at": "2026-07-07T18:28:40.305142+08:00",
-      "next_run_at": "2026-09-14T12:00:00+08:00",
-      "last_run_at": "2026-09-13T12:01:08.030684+08:00",
-      "last_status": "ok",
-      "last_error": null,
-      "last_delivery_error": null,
-      "deliver": "local",
       "origin": {
         "platform": "discord",
         "chat_id": "1523627322153107476",
@@ -1588,17 +1032,17 @@
       "schedule_display": "0 2 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 48
+        "completed": 77
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T18:29:58.859391+08:00",
-      "next_run_at": "2026-09-14T02:00:00+08:00",
-      "last_run_at": "2026-09-11T02:01:00.398683+08:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-10-19T02:00:00+08:00",
+      "last_run_at": "2026-10-16T08:11:07.019890+08:00",
+      "last_status": "error",
+      "last_error": "Script exited with code 1\nstderr:\nTraceback (most recent call last):\n  File \"/home/ubuntu/.hermes/scripts/kanban_linear_sync.py\", line 236, in <module>\n    main()\n  File \"/home/ubuntu/.hermes/scripts/kanban_linear_sync.py\", line 214, in main\n    a1 = sync_done_kanban_to_linear(apply, mapping)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.hermes/scripts/kanban_linear_sync.py\", line 119, in sync_done_kanban_to_linear\n    issue = result.get(\"data\", {}).get(\"issue\")\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'get'\nstdout:\n=== Kanban \u2194 Linear Sync (2026-10-16T08:11:06.374355) ===\n[DRY RUN] --apply \ud50c\ub798\uadf8\ub85c \uc2e4\uc81c \ubcc0\uacbd\n\n\ub9e4\ud551: 9\uac74\n\n[1] Kanban done \u2192 Linear Done",
       "last_delivery_error": null,
       "deliver": "local",
       "origin": {
@@ -1634,15 +1078,15 @@
       "schedule_display": "30 21 * * *",
       "repeat": {
         "times": null,
-        "completed": 68
+        "completed": 103
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T19:23:54.667037+08:00",
-      "next_run_at": "2026-09-13T21:30:00+08:00",
-      "last_run_at": "2026-09-12T21:30:42.140065+08:00",
+      "next_run_at": "2026-10-18T21:30:00+08:00",
+      "last_run_at": "2026-10-17T21:30:21.208400+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1680,15 +1124,15 @@
       "schedule_display": "30 13 * * *",
       "repeat": {
         "times": null,
-        "completed": 68
+        "completed": 103
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-08T00:10:35.959212+08:00",
-      "next_run_at": "2026-09-14T13:30:00+08:00",
-      "last_run_at": "2026-09-13T13:30:54.327976+08:00",
+      "next_run_at": "2026-10-19T13:30:00+08:00",
+      "last_run_at": "2026-10-18T13:30:20.573480+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1726,15 +1170,15 @@
       "schedule_display": "50 21 * * *",
       "repeat": {
         "times": null,
-        "completed": 67
+        "completed": 103
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-08T01:16:00.139876+08:00",
-      "next_run_at": "2026-09-13T21:50:00+08:00",
-      "last_run_at": "2026-09-12T21:50:50.203422+08:00",
+      "next_run_at": "2026-10-18T21:50:00+08:00",
+      "last_run_at": "2026-10-17T21:50:27.612823+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1772,17 +1216,17 @@
       "schedule_display": "0 7 * * 0",
       "repeat": {
         "times": null,
-        "completed": 9
+        "completed": 20
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-17T04:01:22.496464+08:00",
-      "next_run_at": "2026-09-20T07:00:00+08:00",
-      "last_run_at": "2026-09-13T07:01:03.839301+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-25T07:00:00+08:00",
+      "last_run_at": "2026-10-18T07:01:09.160505+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -1818,15 +1262,15 @@
       "schedule_display": "45 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 45
+        "completed": 71
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-17T05:34:12.986262+08:00",
-      "next_run_at": "2026-09-14T18:45:00+08:00",
-      "last_run_at": "2026-09-11T18:46:09.760077+08:00",
+      "next_run_at": "2026-10-19T18:45:00+08:00",
+      "last_run_at": "2026-10-16T18:45:39.623431+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1864,15 +1308,15 @@
       "schedule_display": "50 13 * * *",
       "repeat": {
         "times": null,
-        "completed": 59
+        "completed": 97
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-28T19:04:55.161595+08:00",
-      "next_run_at": "2026-09-14T13:50:00+08:00",
-      "last_run_at": "2026-09-13T13:50:54.829391+08:00",
+      "next_run_at": "2026-10-19T13:50:00+08:00",
+      "last_run_at": "2026-10-18T13:50:22.321381+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1910,15 +1354,15 @@
       "schedule_display": "0 20 * * *",
       "repeat": {
         "times": null,
-        "completed": 47
+        "completed": 102
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-28T19:21:49.771412+08:00",
-      "next_run_at": "2026-09-13T20:00:00+08:00",
-      "last_run_at": "2026-09-12T20:00:42.331649+08:00",
+      "next_run_at": "2026-10-18T20:00:00+08:00",
+      "last_run_at": "2026-10-17T20:00:21.569899+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1956,17 +1400,17 @@
       "schedule_display": "0 17 * * *",
       "repeat": {
         "times": null,
-        "completed": 41
+        "completed": 98
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-08-11T13:40:36.639868+08:00",
-      "next_run_at": "2026-09-13T17:00:00+08:00",
-      "last_run_at": "2026-09-12T17:00:57.196380+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T17:00:00+08:00",
+      "last_run_at": "2026-10-18T17:05:22.799935+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -2007,17 +1451,17 @@
       "schedule_display": "0 9 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 22
+        "completed": 59
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-08-20T22:09:06.969000+08:00",
-      "next_run_at": "2026-09-14T09:00:00+08:00",
-      "last_run_at": "2026-09-11T09:20:26.101671+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-19T09:00:00+08:00",
+      "last_run_at": "2026-10-16T09:01:45.003578+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -2032,5 +1476,5 @@
       "fire_claim": null
     }
   ],
-  "updated_at": "2026-09-13T13:50:54.829843+08:00"
+  "updated_at": "2026-10-18T17:05:22.800359+08:00"
 }
