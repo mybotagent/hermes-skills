@@ -394,8 +394,9 @@ When a user asks for "today's news for these N Korean stocks", use this parallel
 
 **Single-query pattern** (one stock):
 ```bash
+# ⚠️ Date format: use +YYYY+MM월 NOT +YYYY년+MM월 — "년" causes zero results for Oct+
 curl -sL -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
-  "https://news.google.com/rss/search?q=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90+2026%EB%85%84+7%EC%9B%94+13%EC%9D%BC&hl=ko&gl=KR&ceid=KR:ko" \
+  "https://news.google.com/rss/search?q=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90+2026+10%EC%9B%94&hl=ko&gl=KR&ceid=KR:ko" \
   -o /tmp/samsung.xml
 ```
 
@@ -405,7 +406,7 @@ import xml.etree.ElementTree as ET, json, urllib.request, urllib.parse, os, re
 from html import unescape
 
 # ⚠️ Ticker codes — ALWAYS verify against user's current portfolio codes before use.
-# KRX codes change; re-listings happen. As of 2026-09-21 verified:
+# KRX codes change; re-listings happen. As of 2026-10-19 verified:
 #   삼성전자 005930, SK하이닉스 000660, 삼성전기 009150,
 #   현대차 005380, 에이피알 352820, HD현대일렉 054050
 TARGETS = [
@@ -414,7 +415,7 @@ TARGETS = [
     ("009150", "삼성전기"),
     ("005380", "현대차"),
     ("352820", "에이피알"),
-    ("267250", "HD현대일렉"),
+    ("054050", "HD현대일렉"),
 ]
 
 def fetch_rss(query, hl="ko", gl="KR", ceid="KR:ko"):
@@ -424,8 +425,8 @@ def fetch_rss(query, hl="ko", gl="KR", ceid="KR:ko"):
 
 results = {}
 for code, name in TARGETS:
-    # Multi-variant query — Korean name + ticker code + date for breadth
-    queries = [f"{name}+2026년+7월", f"{name}+{code}"]
+    # ⚠️ Date format: use +YYYY+MM월 NOT +YYYY년+MM월 — "년" causes zero results
+    queries = [f"{name}+2026+10월", f"{name}+{code}"]
     seen = set()
     items = []
     for q in queries:
@@ -582,7 +583,9 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 12. **Blog URL slugs change after rebrands**: After a company rebrands (e.g. Windsurf → Devin Desktop), old blog URLs at `codeium.com/windsurf/changelog` may 404. Always check the new corporate parent domain (`devin.ai/blog/`) for rebrand-era content.
 13. **Wasting budget on re-reads**: When you extract data and only hold it in your context window, you'll re-read the same HTML to "remember" facts — burning 3-5 calls per source. **Cache extracted data as JSON files in /tmp/** so write_file can ingest them in one call.
 14. **Iteration cap is real**: At ~50 tool calls, you cannot do "fetch → extract → write → polish → fetch more → rewrite" loops for a 30-50KB deliverable. Front-load fetches, write once, ship once.
-15. **Google News Korean RSS coverage gaps**: Certain mid-cap tickers may have **zero same-day results** even with date-qualified queries, while large-caps return full coverage. Workaround: report the gap explicitly, substitute the most recent prior-day article with relevant context, and do NOT invent headlines. As of 2026-09-21 the user's portfolio tickers are: 삼성전자 005930, SK하이닉스 000660, 삼성전기 009150, 현대차 005380, 에이피알 352820, HD현대일렉 054050. (Observed 2026-09-14, confirmed 2026-09-21.)
+15. **Google News Korean RSS query date format breaks on "년"**: Using `삼성전자+2026년+10월` (Korean year character) returns **zero results** for October, while `삼성전자+2026+10월` (without 년) returns 20 items per ticker. July (`7월`) happened to work coincidentally — the 년 character silently corrupts the query for months ≥ 10. **Always use `+YYYY+MM월` format (e.g. `삼성전자+2026+10월`), never `+YYYY년+MM월`.** (Confirmed 2026-10-19 — initial run returned 0 items for all 6 tickers until this was corrected.)
+
+15b. **Google News Korean RSS coverage gaps**: Even with correct date format, certain mid-cap tickers may have **zero same-day results** while large-caps return full coverage. Workaround: report the gap explicitly, substitute the most recent prior-day article with relevant context, and do NOT invent headlines. As of 2026-09-21 the user's portfolio tickers are: 삼성전자 005930, SK하이닉스 000660, 삼성전기 009150, 현대차 005380, 에이피알 352820, HD현대일렉 054050. (Observed 2026-09-14, confirmed 2026-09-21.)
 16. **Naver finance pages are Next.js SPA — do not scrape for news**: `finance.naver.com/item/news.naver?code=XXXXX` and `finance.naver.com/item/news_read.naver?code=XXXXX` now return Next.js server-rendered HTML (as of ~2026). Curl downloads ~100KB of JS-chunk HTML but **zero news items** — the table is empty, no `<td class="title">` exists. **Always use Google News RSS as primary** for Korean stock news; Naver is not a reliable curl target for this class of data. (Confirmed 2026-09-16.)
 
 17. **Google News RSS `link` field does NOT redirect to real article URLs**: When you `curl` the `link` URL from a Google News RSS item, it returns the **same Google News wrapper URL** with `?oc=5&hl=en-US&gl=US&ceid=US:en` params appended — the redirect never resolves. This means the `link` field is only useful as a Google News deep-link, not as a real source URL. **To get the actual source, extract it from the `description` HTML**: look for `<font color="#6f6f6f">source_name</font>` inside the description field. The title in the description `<a href="...">headline text</a>` also links to the Google News wrapper, not the original. (Confirmed 2026-09-25.)
