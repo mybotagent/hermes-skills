@@ -3,7 +3,7 @@
 > Created: 2026-06-15
 > Context: 18:30 매크로 크론에서 subagent 데이터 fabrication 발견
 > Updated: 2026-09-29 — DXY Yahoo Finance workaround added
-> Updated: 2026-10-07 — KOSPI/KOSDAQ ^KS11/^KQ11 confirmed, CL=F WTI confirmed, Korea stocks Yahoo confirmed, Nasdaq/Gold confirmed, ExchangeRate API confirmed
+> Updated: 2026-10-20 — WTI $100.71 confirmed (CL=F), KOSPI 5,552.74 via query2 confirmed, DJI 51,966.03/Nasdaq 26,430.89 confirmed
 
 ## Problem
 
@@ -68,34 +68,35 @@ print(f"USD/KRW: {d['rates'].get('KRW')}")
 
 ### 환율 — Exchange Rate API ✅
 ```
-USD/KRW: 1338.92 (2026-10-07 18:31 KST)
-USD/JPY: 158.15
-EUR/USD: 1.1249
+USD/KRW: 1330.79 (2026-10-20)
+USD/JPY: 158.44
+EUR/USD: 0.891
 ```
 Source: `https://api.exchangerate-api.com/v4/latest/USD`
 
 ### WTI 유가 — Yahoo Finance CL=F ✅
 ```
-WTI: $90.01/bbl (2026-10-07 CL=F close)
+WTI: $100.71/bbl (2026-10-20 CL=F, $100 돌파)
 ```
-Source: `https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?interval=1d&range=1d`
+Source: `https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?interval=1d&range=2d`
 Note: EIA URL (`eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RWTC&f=D`) → **timeout** (2026-09-24 실측). CL=F 사용.
 
 ### US 증시 — Yahoo Finance ✅
 | 티커 | 이름 | 결과 | 비고 |
 |:-----|:----|:-----|:-----|
-| `%5EGSPC` | S&P 500 | ✅ 7,818.93 | query1 |
-| `%5EIXIC` | NASDAQ | ✅ 27,599.89 (사상최고치) | query1 |
-| `%5EVIX` | VIX | ✅ 15.56 | query1 |
-| `%5ETNX` | 10년물 금리 | ✅ 5.269% | query1 |
+| `%5EGSPC` | S&P 500 | ✅ 7,690.73 | query1 |
+| `%5EIXIC` | NASDAQ | ✅ 26,430.89 | query1 |
+| `%5EVIX` | VIX | ✅ 18.58 | query1 |
+| `%5ETNX` | 10년물 금리 | ✅ 5.136% | query1 |
 | `GC%3DF` | Gold | ✅ $4,141.1/oz | query1 |
-| `UUP` | DXY proxy | ✅ 28.9 | DXY ≈ UUP × 3.6 = ~104 |
+| `DX-Y.NYB` | DXY (NYBOT) | ✅ 101.447 | Yahoo Finance NYBOT 선방 |
+
+Note: DJI `%5EDJI` confirmed 51,966.03 (2026-10-20).
 
 ### 한국 증시 — Yahoo Finance ✅
 | 티커 | 이름 | 결과 | 비고 |
 |:-----|:----|:-----|:-----|
-| `%5EKS11` (query2) | KOSPI | ✅ 6,803.9 | **query2必需** — query1은 404 |
-| `%5EKQ11` (query2) | KOSDAQ | ✅ 898.43 | **query2必需** — query1은 404 |
+| `%5EKS11` (query2) | KOSPI | ✅ 5,552.74 | **query2 필수** — query1은 404 |
 | `005930.KS` | 삼성전자 | ✅ 268,500 | |
 | `000660.KS` | SK하이닉스 | ✅ 1,723,000 | |
 | `009150.KS` | 삼성전기 | ✅ 1,604,000 | |
@@ -103,7 +104,9 @@ Note: EIA URL (`eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RWTC&f=D`) → **
 | `352820.KS` | 에이피알 | ✅ 167,000 | |
 | `267250.KS` | HD현대일렉 | ✅ 189,500 | |
 
-### 검증된 Yahoo Finance 티커 (2026-09-29, 2026-10-07 업데이트)
+Note: KOSDAQ Yahoo Finance query2로 `%5EKQ11` 확인 필요 (2026-10-20).
+
+### 검증된 Yahoo Finance 티커 (2026-09-29, 2026-10-20 업데이트)
 
 | 티커 | 이름 | 결과 | 비고 |
 |:-----|:----|:-----|:-----|
@@ -112,12 +115,12 @@ Note: EIA URL (`eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RWTC&f=D`) → **
 | `%5EVIX` | VIX | ✅ | query1 |
 | `%5ETNX` | 10년물 금리 | ✅ | query1 |
 | `GC%3DF` | Gold | ✅ | query1 |
-| `CL%3DF` | WTI 유가 | ✅ $90.01 (2026-10-07) | query1 |
+| `CL%3DF` | WTI 유가 | ✅ $100.71 (2026-10-20) | query1 |
 | `DXY` | DXY | ❌ `'regularMarketPrice'` 키 누락 | Pitfall 59 |
 | `DX-Y.NYB` | DXY (NYBOT) | ✅ 101.447 | Yahoo Finance NYBOT 선방 |
-| `%5EKS11` | KOSPI | ❌ 404 | **query2必需** |
-| `%5EKS11` via query2 | KOSPI | ✅ 6,803.9 | `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11` |
-| `%5EKQ11` via query2 | KOSDAQ | ✅ 898.43 | `https://query2.finance.yahoo.com/v8/finance/chart/%5EKQ11` |
+| `%5EKS11` | KOSPI | ❌ 404 | **query2 필수** |
+| `%5EKS11` via query2 | KOSPI | ✅ 5,552.74 | `https://query2.finance.yahoo.com/v8/finance/chart/%5EKS11` |
+| `%5EDJI` | DJI | ✅ 51,966.03 (2026-10-20) | query1 |
 
 ### 환율 수집 검증 결과 (2026-09-24, 2026-10-07 업데이트)
 

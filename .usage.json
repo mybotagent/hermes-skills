@@ -303,13 +303,13 @@
     "created_at": "2026-06-25T14:12:12.227658+00:00",
     "created_by": null,
     "last_patched_at": "2026-09-01T22:03:14.847721+00:00",
-    "last_used_at": "2026-09-08T22:00:07.267936+00:00",
-    "last_viewed_at": "2026-09-01T22:02:57.628465+00:00",
+    "last_used_at": "2026-10-20T10:35:02.109860+00:00",
+    "last_viewed_at": "2026-10-20T10:35:02.102784+00:00",
     "patch_count": 42,
     "pinned": false,
     "state": "active",
-    "use_count": 92,
-    "view_count": 33
+    "use_count": 93,
+    "view_count": 34
   },
   "data-analysis-pipeline": {
     "archived_at": "2026-10-04T07:58:33.212196+00:00",
@@ -432,14 +432,14 @@
     "archived_at": null,
     "created_at": "2026-05-31T14:10:50.301452+00:00",
     "created_by": null,
-    "last_patched_at": "2026-10-12T10:39:44.004432+00:00",
-    "last_used_at": "2026-10-20T00:10:51.570769+00:00",
-    "last_viewed_at": "2026-10-13T10:40:22.134635+00:00",
-    "patch_count": 414,
+    "last_patched_at": "2026-10-20T10:37:04.885056+00:00",
+    "last_used_at": "2026-10-21T00:10:53.399431+00:00",
+    "last_viewed_at": "2026-10-20T10:36:36.431705+00:00",
+    "patch_count": 420,
     "pinned": false,
     "state": "active",
-    "use_count": 581,
-    "view_count": 331
+    "use_count": 587,
+    "view_count": 335
   },
   "fork-pr-contribution": {
     "archived_at": null,
@@ -602,12 +602,12 @@
     "created_at": "2026-07-02T16:30:43.790761+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-10-20T01:00:52.100907+00:00",
+    "last_used_at": "2026-10-21T01:00:54.031116+00:00",
     "last_viewed_at": "2026-09-07T03:15:46.949090+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "stale",
-    "use_count": 66,
+    "use_count": 67,
     "view_count": 4
   },
   "hermes-agent-skill-authoring": {
@@ -1317,12 +1317,12 @@
     "created_at": "2026-06-12T22:23:12.405952+00:00",
     "created_by": null,
     "last_patched_at": "2026-10-14T10:40:47.844647+00:00",
-    "last_used_at": "2026-10-20T00:10:51.527919+00:00",
+    "last_used_at": "2026-10-21T00:10:53.349690+00:00",
     "last_viewed_at": "2026-10-16T10:39:23.196936+00:00",
     "patch_count": 134,
     "pinned": false,
     "state": "active",
-    "use_count": 884,
+    "use_count": 887,
     "view_count": 142
   },
   "self-improvement-loop": {
@@ -1577,12 +1577,12 @@
     "created_at": "2026-06-25T14:12:12.232049+00:00",
     "created_by": null,
     "last_patched_at": "2026-10-19T12:06:08.065528+00:00",
-    "last_used_at": "2026-10-19T12:05:25.635209+00:00",
+    "last_used_at": "2026-10-20T12:00:59.983500+00:00",
     "last_viewed_at": "2026-10-19T12:05:25.628673+00:00",
     "patch_count": 141,
     "pinned": false,
     "state": "active",
-    "use_count": 193,
+    "use_count": 194,
     "view_count": 88
   },
   "wiki-graphrag-search": {
