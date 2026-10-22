@@ -209,7 +209,7 @@ rm ~/.hermes/cron/.tick.lock
 | USD/KRW | 1,314.50 | **1,518.88** | **+15.5%** |
 | S&P 500 | 5,440 | **7,420.10** | **+36.4%** |
 | CPI (5월 YoY) | 3.2% | **4.2%** | **+31.3%** |
-| Fed Funds Rate | 5.25~5.50% | **4.25~4.50%** | 체제 자체가 다름 |
+| Fed Funds Rate | 5.25~5.50% | **3.75~4.00%** (2026-10 NY Fed 확인, 아래 참고) | 체제 자체가 다름 |
 | DXY | 104.90 | **100.65** | -4.1% |
 | 10년물 금리 | 4.35% | **4.457%** | +2.4% |
 | WTI 유가 | $73.80 | **$74.14** | +0.5% (유일 근접) |
@@ -298,6 +298,8 @@ rm ~/.hermes/cron/.tick.lock
    | **금 가격** | CNBC | `curl -sL "https://www.cnbc.com/quotes/@GC.1" -H "User-Agent..." \| grep -oP '"last":"[0-9,.]+"'` |
    | **미국 10년물 금리** | **CNBC XML API (1순위)** — HTML 스크래핑 불가 | `# curl + python3 re로 XML 파싱 (자세한 코드: references/cron-mode-data-sources.md의 "CNBC REST XML API")\n# 핵심: https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=US10Y&requestMethod=itk`<br>**CNBC HTML(`/quotes/US10Y`)는 2MB+ React boilerplate로 시세 데이터 없음. 반드시 XML API 사용.**<br>Yahoo ^TNX는 지속적 \"Too Many Requests\"로 신뢰 불가 (2026-06-26 확인). |
    | **미국 30년물 금리** | Yahoo ^TYX (CNBC 미지원) | `curl -s --max-time 15 "https://query2.finance.yahoo.com/v8/finance/chart/^TYX?interval=1d" -H "User-Agent: Mozilla/5.0" -o /tmp/tyx.json && python3 -c "import json; d=json.load(open('/tmp/tyx.json')); print('TYX:', d['chart']['result'][0]['meta'][chr(34)+\"regularMarketPrice\"+chr(34)])"` — 2026-06-25 검증: 4.856% |
+   | **미국 CPI** | **BLS Public API v2 (1순위, 2026-10-21 검증)** | `curl -s --max-time 15 "https://api.bls.gov/publicAPI/v2/timeseries/data/CUUR0000SA0?startyear=2024&endyear=2026" -H "Content-Type: application/json" -o /tmp/bls.json` → 원계열 SA 인덱스라 YoY 직접 계산 `((v2026/v2025)-1)*100`. ⚠️ 응답에 `'-'` 결측값이 섞임 → `float()` 변환 시 try/except 필수. 2026-10-21 검증: 7월 3.36% → 8월 3.40% → 9월 3.74%. `fred.stlouisfed.org/graph/fredgraph.csv`는 이 환경에서 빈 응답 → BLS 직접 API 사용 |
+   | **Fed Funds (기준금리)** | **NY Fed Rates API (1순위, 2026-10-21 검증)** | `curl -s --max-time 15 "https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json" -H "User-Agent: Mozilla/5.0"` → `targetRateFrom`~`targetRateTo`가 목표금리 범위, `percentRate`=EFFR. 2026-10-21 검증: target 3.75~4.00%, EFFR 3.88%. SOFR: `.../rates/secured/sofr/last/1.json`. 기간조회: `.../effr/search.json?startDate=...&endDate=...` |
    | **한국 개별주** (005930 등) | **Naver Polling API (1순위, 2026-07-09 검증)** — Yahoo·CNBC 모두 미지원 | `curl -sL --max-time 12 "https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:005930" -H "User-Agent: $UA" -o /tmp/naver.raw && python3 -c "import json; raw=open('/tmp/naver.raw','rb').read(); d=json.loads(raw.decode('euc-kr',errors='ignore')); x=d['result']['areas'][0]['datas'][0]; print(f\"Price: {x['nv']:,} Prev: {x['pcv']:,} Change: {x['cv']:+,} ({x['cr']:+.2f}%)\")"` — 6종목 검증 완료 (삼성전자·SK하이닉스·삼성전기·현대차·에이피알·HD현대일렉) |
 
    ### 🚨 Yahoo Finance 완전 차단 — 2026-07-09 갱신 (이전 "심볼별 차등" 판정도 무효)
@@ -403,6 +405,10 @@ rm ~/.hermes/cron/.tick.lock
    - **DXY 주의**: `.DXY`는 CNBC에서 달러인덱스로 인식. 2026-06-18 검증 완료 (100.646)
    - **2026-06-19 일괄 검증 완료**: `.SPX` 7,500.58 / `.DXY` 100.819 / `US10Y` 4.455% / `.KS11` 9,052.42 / `@CL.1` 76.95 / `@GC.1` 4,171.80 — 모든 CNBC 심볼 정상 동작 확인. Yahoo 대비 CNBC가 시간당 수십건 호출에도 rate-limit 없음.
    - **⚠️ `pdc == last` quirk (2026-07-31 발견)**: 장 마감/미개장 상태에서 `.SPX` 등 일부 심볼은 `<previous_day_closing>`이 `<last>`와 **동일한 값**으로 반환되면서 `<change>`만 실제 값(+121.48 등)을 줄 수 있음. 이때 change는 **실제 전일 종가** 기준이므로, 전일 리포트의 close 값으로 교차 검증해 세션 종가/선물 여부를 판별할 것: `확인 = (last - change) == 전일 리포트 close`. (실제 사례: S&P last=7,437.63, change=+121.48, pdc=7,437.63(==last) → `7,437.63 - 121.48 = 7,316.15` = 전일 리포트 값 → 7/30 미국 세션 종가로 확정, 선물 아님). 한국 지수(.KS11 등)는 pdc가 정상 반환되므로 이 quirk는 US 세션 시간대 심볼에서 주로 발생.
+   - **⚠️ 선물은 XML보다 HTML embed 우선 (2026-10-21 발견)**: `@CL.1`(WTI)·`@GC.1`(금)은 XML의 `<previous_day_closing>`이 **장 마감 스냅샷**이라 intraday 변동이 반영되지 않는다. 2026-10-21 실측: 같은 @CL.1에 대해 XML `last=100.07`(전일 종가 97.82 기준 stale), HTML embed `last=99.93` / `change=+2.11` / `change_pct=+2.16%` / `last_time=2026-10-21T06:24:39-0400`.
+     - **해법**: 선물은 `https://www.cnbc.com/quotes/@CL.1` HTML에서 `last`/`change`/`change_pct`/`last_time`을 뽑고, XML은 **전일 종가 확인용**으로만 쓴다.
+     - `last_time`이 KST 현재보다 미래면(장 마감 후 다음 세션 선반영) → "다음 거래일 예상" 라벨 (Pitfall 61 원칙과 동일).
+     - 지수·금리·DXY(.SPX/.KS11/.KQ11/.VIX/.DXY/US10Y)는 XML이 여전히 1순위.
 
 **2026-06-29 추가 검증**: `.KQ11` (KOSDAQ) / `.VIX` (변동성지수) 모두 정상 동작 확인. 둘 다 `<last>`, `<previous_day_closing>`, `<change>`, `<change_pct>` 표준 4필드 반환.
 
@@ -439,6 +445,32 @@ curl -sL --max-time 12 "https://quote.cnbc.com/quote-html-webservice/quote.htm?s
    - 정량 수치(WTI 가격, S&P500, 금리)는 subagent가 아닌 직접 API 검증
    - 뉴스 헤드라인/요약은 subagent에 위임 가능 (fabrication 위험 낮음)
    - 단, 뉴스 URL도 subagent가 조작할 수 있으므로 `source` 필드와 교차 확인
+
+### 🚨 이전 실행 산출물의 값을 재검증하라 (2026-10-21 신규)
+
+**원칙**: 크론이 만든 JSON/리포트의 **이전 값은 재사용 금지**. 매 실행마다 공식 소스로 다시 뽑는다.
+
+**실제 사례 (2026-10-21 매크로 크론)**: 전일 `macro_context.json`에 저장돼 있던
+`fed_rate: "4.25~4.50%"` → 실제 **3.75~4.00%**, `cpi_yoy: "2.9%"` → 실제 **3.74%**.
+2개 연속 오기 값이 그대로 다음 리포트와 18:35 파이프라인으로 전파될 뻔했다.
+
+**왜 이게 self-healing 문제인가**: 잘못된 값이 *silent*하게 전파되고, 파이프라인은 이를 근거로 비중을 결정한다. 소스 오류가 "실행 실패"로 보이지 않으므로 어떤 자가치유 장치도 잡지 못한다.
+
+**대응**
+1. 금리·물가·환율은 **공식 기관 API**(NY Fed / BLS / exchangerate-api)로 매번 재수집
+2. 전일 값과 다르면 **리포트에 정정 사실을 명시** (숨기면 다음날 또 재사용됨)
+3. 리포트 원문 저장 후 **읽어와서 내용 QA** — 긴 한국어 텍스트는 저장 시 한자/영문 혼입 토큰이 깨질 수 있다
+   ```python
+   import json
+   d = json.load(open(path))
+   BAD = ['wyn','Dd','ipuiae','定义','名词','cend','come']
+   assert not any(b in d.get('macro_report_summary','') for b in BAD)
+   for n in d.get('news_items', []):
+       assert not any(b in n['summary'] for b in BAD), n['summary']
+   ```
+4. 손상은 일괄 replace 말고 **항목 단위**로 정상 한국어 재작성
+
+**상세**: `fair-value-portfolio` 스킬의 `references/macro-report-official-source-verification.md`
 
 ## 🏥 Dashboard(9199) 자동복구 (2026-06-29 추가)
 

@@ -2,6 +2,41 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-10-21 (21:00 KST) — P19 재감염 (26회 연속, working-tree) + logs/index.md 깨진 링크 12건 수정 + push 성공
+
+**발견:**
+- P19: **working-tree 전용 변형** — `git show HEAD:index.md | grep -c '자동 추가'` = 0, `git show origin/main:index.md` = 0 (둘 다 청정). `git diff HEAD -- index.md` = rogue 추가 61줄 + 비-rogue 변경 0 → `git restore index.md` 빠른 경로 적용. 25회(10-19) 이후 26회째 재감염. 라벨 `— 자동 추가 (2026-10-21)`, 내용 = logs/ 51 + subagents-library/ 5 + raw/ 1.
+- **신규 발견 — logs/index.md 링크 무결성 결함**: logs 서브모듈 index.md에 깨진 링크 12건 + 누락 등록 1건 + 삭제된 파일 참조 2건.
+  - `2026/2026-06-10-2115.md` 등 — root-level 파일인데 `2026/` 하위로 잘못 기록된 패턴 (12건 중 다수).
+  - `2026/2026/08-02-0700-weekly-cleanup.md` — `2026/` 중복.
+  - `2026/2026-09-29-2100.md`, `2026/2026-07-03-0025.md` — 파일 없음 (커밋 이력에도 미존재/삭제됨) → 행 제거.
+  - 누락: `2026/2026-09-06-0700-weekly-cleanup.md` (파일은 있으나 index 미등록).
+  - 05-31 13건은 wildcard `[2026-05-31-*](2026/)` 커버 → 오탐 아님.
+- P18: 0건 ✅ (wiki + skill references 모두).
+- **subagents-library submodule 변경 되돌림**: `subagents-library-hub.md`의 wikilink가 `[[harness-engineering-hub]]` → `[[repos/hermes-wiki-claude-code]]`로 변경돼 있었으나, submodule root 기준 resolution에서 깨짐(P24). **parent wiki 기준 경로를 submodule 내부에 넣으면 안 됨** → `git restore`로 되돌림.
+
+**처리:**
+1. `git restore index.md` (P19 61줄 rogue 제거).
+2. logs/index.md 전체 rewrite (83줄 → 88줄): 깨진 링크 12건 경로 수정, 09-06 항목 등록, 07-06 항목 순서 재정렬, October 섹션 신설.
+3. `logs/2026/2026-10-21-2100.md` 신규 로그 생성.
+4. subagents-library 변경 되돌림.
+5. 감사 전수 재실행 — 전부 ✅.
+
+**Git:**
+- logs submodule: `310bc85` (master) — push 성공 `f7a43c8..310bc85`.
+- hermes-wiki parent: `03b9666` (main) — push 성공 `87133f6..03b9666`.
+- GitHub 인증: `.git-credentials` + `git config credential.helper "store --file ~/.git-credentials"` (logs는 credential.helper 미설정 상태라 push 실패 → 설정 후 성공).
+
+**감사 결과:**
+- wikilink-audit.py: broken 0, cross-domain 0, bare-name 0, MDEXT 0 ✅.
+- markdown-link-audit.py: P11 0, broken 0 ✅.
+- index-md-audit.py: 86 registered = 86 actual, dead link 0 ✅.
+- tag-audit.py: 137/137 registered, unknown 0 (taxonomy 149) ✅.
+- auto-fill-dates.py: 0 filled, 18 skipped (raw/ immutable) ✅.
+- P18 cross-file scan: 0 ✅.
+- P19 scan: index.md / HEAD / origin/main 모두 0 ✅.
+- git status: clean, up-to-date with origin/main ✅.
+
 ## 2026-10-19 (21:00 KST) — P19 재감염 (25회 연속) + W42 등록 + GitHub push 성공
 
 **발견:**

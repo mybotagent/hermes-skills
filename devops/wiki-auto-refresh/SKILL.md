@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.37.0"
+version: "1.38.0"
 changelog:
+  - "2026-10-21: P25 신규 — logs/index.md 링크 무결성 양방향 감사 (BROKEN 12건 발견). scripts/logs-index-link-audit.py 신규. 2c-ter는 NOTREF 한 방향만 검사하므로 '루프 0건 보고'를 '깨진 게 없다'로 해석하면 안 됨. P24 역방향 부작용 추가 — submodule 내부에 parent 기준 wikilink 넣으면 submodule이 깨짐 (git restore로 되돌림)."
   - "2026-10-19: P19 25회 연속 재감염 (18a8f1c, 2026-10-18 05:30). Parent c121efb로 복원. W42 등록. GitHub push: .git-credentials + credential.helper store 사용 (SSH/.netrc/gh 모두 없을 때)."
   - "2026-10-12: P19 — 62개 rogue committed 재감염 (hermes-config-sync 04:00+05:30 재삽입). commit c121efb."
   - "2026-10-04: P24 — submodule wikilink 오탐 + 3건 수정 (hermes-trading-hub, neo4j-local, subagents-library-hub). commit c6107cb."
@@ -55,7 +56,7 @@ metadata:
 ```bash
 # 1) 이 스킬의 bundled 파일 확인 (skill_view(name='wiki-auto-refresh') 의 linked_files 참조)
 SCRIPTS=~/.hermes/skills/devops/wiki-auto-refresh/scripts
-ls -la "$SCRIPTS"  # wikilink-audit.py, markdown-link-audit.py, index-md-audit.py, tag-audit.py, auto-fill-dates.py 모두 있어야 함
+ls -la "$SCRIPTS"  # wikilink-audit.py, markdown-link-audit.py, index-md-audit.py, tag-audit.py, auto-fill-dates.py, logs-index-link-audit.py 모두 있어야 함
 
 # 2) wikilink audit 실행 — P7/P9/P10/P12 모두 자동 분류
 python3 "$SCRIPTS/wikilink-audit.py" [WIKI_ROOT]
@@ -76,8 +77,15 @@ python3 "$SCRIPTS/index-md-audit.py" [WIKI_ROOT]
 # 출력: index.md registered N / actual M / dead link X / missing Y (real) + Z (snapshot/예외)
 # "REAL MISSING"만 처리 대상, "SNAPSHOT/ARCHIVE"는 의도된 예외.
 
-# 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시
-#    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
+# 3.6) logs submodule index 링크 무결성 양방향 감사 (P25, 2026-10-21 추가)
+#      ⚠ 2c-ter bash 루프는 NOTREF("파일이 index에 미등록") 한 방향만 검사한다.
+#        index에 등록돼 있는데 대상 파일이 없는 BROKEN 링크는 놓친다.
+#      exit 0 (정보성). --strict 시 BROKEN 1건 이상이면 exit 1.
+python3 "$SCRIPTS/logs-index-link-audit.py" [LOGS_DIR]
+# 기본 LOGS_DIR=~/.hermes/wiki/logs. 출력: BROKEN N / NOTREF N / wildcard_covered N
+# BROKEN 판정 후 처리: 경로 오기 → target 수정 / 파일 부재 → 행 제거 (2c-ter 참조)
+
+# 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시#    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
 #    → patch 도구 사용: read_file(offset=<last_few_lines>) → patch(old_string=<마지막 줄>, new_string=<마지막 줄 + 새 섹션>)
 #    → multi-writer 환경 (병렬 cron 등)에서 "sibling subagent가 read 함" 경고가 나올 수 있음 — 그 경우 read_file로 다시 읽고 patch.
 #    절대 `echo ... >> file` 또는 `cat >> file` heredoc 사용 금지.
@@ -332,6 +340,49 @@ done
 **주의:** `logs/` 레포는 연도별 서브디렉토리(예: `2026/`)에 로그 파일을 저장함. `*.md` glob만으로는 이 파일들을 잡지 못함. 반드시 `find`를 함께 사용할 것. `git status --porcelain`로 dirty submodule을 먼저 감지한 후, 변경된 파일만 집중 검사하는 것도 효율적인 방법.
 
 **⚠ Wildcard/glob 항목 false positive (2026-08-11 검증):** `logs/index.md`에 와일드카드 경로로 배치 등록된 항목(예: `| 05-31 | Initial wiki setup batch (10 files) | [2026-05-31-*](2026/) |`)은 basename grep으로 개별 매치되지 않아 위 검사가 MISSING으로 오탐한다. 실제 사례: `2026/2026-05-31-*.md` 13건이 매회 "MISSING FROM LOGS INDEX"로 보고되지만 모두 이 와일드카드 항목에 커버됨 (2026-08-06 이후 세션 노트의 "May 31 wildcard 커버" = 이 케이스). **MISSING 판정 전에** index.md에서 파일명 prefix + glob 패턴을 먼저 확인할 것: `grep -n '05-31' index.md` → `[2026-05-31-*]` 항목 발견 시 false positive로 분류.
+
+**⚠ 양방향 검사 필수 (2026-10-21 추가) — 위 bash 루프는 한 방향만 검사한다:**
+위 루프는 "파일은 있는데 index.md에 미등록"(NOTREF)만 잡는다. **index.md에 등록돼 있는데 대상 파일이 없는 경우(BROKEN)는 전혀 잡지 못한다.** logs/index.md는 수년간 수동 편집되어 링크 경로가 누적적으로 깨져 있다 (2026-10-21 실행에서 12건 발견).
+
+```bash
+# 양방향 감사 (BROKEN + NOTREF + wildcard 커버 판정)
+python3 "$SCRIPTS/logs-index-link-audit.py" [LOGS_DIR]
+# 기본 LOGS_DIR=~/.hermes/wiki/logs
+# 출력: BROKEN N / NOTREF N / wildcard_covered N
+# exit 0 (정보성). --strict 플래그 시 BROKEN 1건 이상이면 exit 1.
+```
+
+**BROKEN 판정 후 처리 순서:**
+1. 링크 대상이 **경로 오기**인지 **파일 삭제**인지 구분:
+   ```bash
+   # 경로 오기 판별 — basename이 다른 곳에 존재하는지 탐색
+   git -C ~/.hermes/wiki/logs ls-files | grep '<basename>'
+   # 여기서 다른 경로로 매칭 → 경로만 수정
+   # 어디에도 없음 → 파일이 삭제되었거나 존재한 적 없음 → 행 자체 제거
+   git log --all --oneline --diff-filter=D -- '2026/<file>.md'   # 삭제 이력 확인
+   ```
+2. 경로 오기 → 링크 target만 수정 (경로 prefix 중복 `2026/2026/`, root-level 파일을 `2026/` 하위로 잘못 기재, 연도 prefix 누락 `2026-16-2026` → `2026-06-16-2026` 등이 흔함).
+3. 파일 부재 → 행 제거. 링크를 "연결"하려고 새 빈 파일을 만들지 말 것 (존재하지 않는 과거 이벤트의 인위적 생성은 위키 신뢰도 저하).
+4. NOTREF → 신규 로그 파일일 가능성이 높음 → 설명 작성 후 해당 월 섹션에 등록.
+
+**알려진 실제 결함 유형 (2026-10-21, 12건):**
+| 유형 | 예시 | 조치 |
+|:-----|:-----|:-----|
+| root-level 파일을 `2026/` 하위로 기재 | `2026/2026-06-10-2115.md` → 실제 `2026-06-10-2115.md` | prefix 제거 |
+| `2026/` 중복 | `2026/2026/08-02-0700-weekly-cleanup.md` | 중복 제거 |
+| 연도 prefix 누락 | `2026/2026-16-2026.md` → `2026/2026-06-16-2026.md` | 연월 복원 |
+| 월/일 섞임 | `2026/2026-10-2115.md` → `2026/2026-06-10-2115.md` | 정렬 복원 |
+| 파일 부재 | `2026/2026-09-29-2100.md`, `2026/2026-07-03-0025.md` | 행 제거 |
+
+**⚠ Wildcard 커버는 조치 대상 아님:** `[2026-05-31-*](2026/)` 항목이 있으면 `2026/2026-05-31-*.md` 13건은 정상 커버. 스크립트가 WARN으로 분리 보고하므로 NOTREF로 오인하지 말 것 (기존 basename grep 오탐 문제의 해결책).
+
+**⚠ Glob 판정은 target이 아니라 label로 (2026-10-21 — 중요):**
+```markdown
+| 05-31 | Initial wiki setup batch (10 files) | [2026-05-31-*](2026/) |
+```
+- **label** `2026-05-31-*` 이 진짜 glob이고, **target** `2026/` 은 그냥 디렉터리 경로다.
+- target(`2026/`)을 glob 커버 기준으로 쓰면 **2026/ 하위 전체가 커버되어 진짜 NOTREF(미등록 로그)가 전부 묻힌다.** 09-06 누락 1건이 그래서 안 잡혔다.
+- 따라서 스크립트는 **label(또는 target에 `*`가 있을 때만 target basename)** 를 glob 패턴으로 쓴다. target이 디렉터리이고 label에 glob이 없으면 COVERED가 아니라 **AMBIG**로 분리 보고 (사람 판단 필요).
 
 로그 파일이 index.md에 누락된 경우:
 1. 파일 mtime/content 확인 → 설명 작성
@@ -1076,6 +1127,37 @@ python3 -c "import os;print(len(open(os.path.expanduser('~/.hermes/memories/MEMO
 
 **스크립트 실행 규칙:** `wikilink-audit.py` 등은 submodule이 아닌 main wiki 범위에서 실행. Submodule 내부 파일은 lint에서 제외.
 
+**⚠ 역방향 부작용 (2026-10-21 발견) — submodule 내부에 parent 기준 경로를 넣으면 안 됨:**
+P24는 "submodule 내 링크가 broken으로 보고됨"의 오탐을 다루지만, 반대 방향의 위험이 있다 — **submodule 내부 파일을 parent wiki 기준으로 고치면 submodule이 깨진다.**
+
+- 실제 사례: `subagents-library/subagents-library-hub.md`의 `related:` frontmatter와 본문 wikilink가 `[[harness-engineering-hub]]` → `[[repos/hermes-wiki-claude-code]]`로 변경돼 있었다. `repos/hermes-wiki-claude-code.md`는 **parent wiki**의 파일이고 submodule에는 없다 → submodule root 기준 resolution에서 broken.
+- `git -C ~/.hermes/wiki/subagents-library status`에 submodule 내부 파일이 modified로 뜨면, 이 변경이 어느 automation의产物인지 확인.
+- **판단 규칙:** submodule 내부 링크는 **submodule root 기준**으로만 유효하다. parent 기준 경로(`repos/`, `infra/`, `people/` 등)를 submodule 파일에 넣으면 반드시 깨진다. submodule 내부의 cross-repo 참조가 필요하면 wikilink 대신 plain text로 repo명을 적는 것이 안전.
+- **조치:** submodule 내부의 parent 기준 wikilink 변경은 `git -C <submodule> restore <file>` 로 되돌리고, submodule 커밋도 하지 않는다 (parent wiki는 submodule pointer만 관리).
+
+### P25. logs/index.md 링크 무결성 — 한 방향 검사는 진짜 깨진 링크를 놓친다 (2026-10-21 추가)
+
+**증상:** 2c-ter의 bash 루프가 "MISSING FROM LOGS INDEX"를 0건 보고했는데, 실제로 logs/index.md를 열어보니 **등록된 링크 12건의 대상 파일이 존재하지 않았다.**
+
+**원인:** 2c-ter 루프는 "파일 → index에 있나" (NOTREF) 한 방향만 검사한다. 반대 방향인 "index에 등록된 링크 → 파일이 있나" (BROKEN)는 검사하지 않는다. logs/index.md는 수년간 수/manual 편집되어 링크 경로가 누적적으로 깨진 상태였음 (root-level 파일을 `2026/` 하위로 기재, `2026/2026/` 중복, 연월 누락, 삭제된 파일 참조 등).
+
+**핵심 교훈:** "루프가 0건 보고"를 "깨진 게 없다"로 해석하면 안 된다. **양방향 감사**를 돌릴 것.
+
+**자동화:** `scripts/logs-index-link-audit.py` (신규, 2026-10-21) — BROKEN / NOTREF / wildcard-커버(WARN) 3분류. exit 0 (정보성), `--strict` 시 BROKEN 있을 때만 1. wildcard 항목(`[2026-05-31-*](2026/)`)으로 커버되는 파일은 WARN으로 분리 → basename grep 오탐(P24) 회피.
+
+**BROKEN → 경로 오기 vs 파일 삭제 구분:**
+```bash
+# 경로 오기: basename이 다른 경로로 존재하는지 확인
+git -C ~/.hermes/wiki/logs ls-files | grep '<basename>'
+# 파일 삭제: 삭제 이력 확인
+git log --all --oneline --diff-filter=D -- '2026/<file>.md'
+# 삭제 이력도 없음 → 존재한 적 없는 링크 → 행 제거
+```
+
+**2026-10-21 사례:** BROKEN 12건 (경로 오기 10 + 파일 부재 2), NOTREF 1건 (`2026-09-06-0700-weekly-cleanup.md`), wildcard 커버 13건(오탐). logs/index.md 83줄 → 전체 rewrite로 수정 후 commit `310bc85` (logs master), parent `03b9666`.
+
+**주의:** logs/index.md는 `||` double-pipe 테이블 형식이라 patch 반복 실패 시 전체 rewrite가 빠르고 안전 (P18 교훈 재확인).
+
 ### P22. Submodule 파일은 Orphan/Lint 검사의 False Positive — 의도된 오탐 (2026-09-27 추가)
 
 **증상:** orphan 검사(1), broken link 검사(2), index-md-audit(3) 전부 `logs/` · `subagents-library/` 경로에서 N개 누락/broken 오탐.
@@ -1102,5 +1184,7 @@ python3 -c "import os;print(len(open(os.path.expanduser('~/.hermes/memories/MEMO
 - **index.md 등록 감사**: `scripts/index-md-audit.py` (P14, 2026-07-08 — markdown link + plain text bullet + bare path 3종 통합 매치, raw/ 섹션 false-positive 방지)
 - **tag audit (Lint ⑧)**: `scripts/tag-audit.py` (2026-07-21 — SCHEMA.md taxonomy 추출/비교 자동화, per-file 미등록 태그 보고)
 - **updated: auto-fill**: `scripts/auto-fill-dates.py` (2026-07-21 — batch `updated:` frontmatter 채움, P16/P14/immutable 안전 장치 내장)
+- **logs index 링크 무결성 양방향 감사**: `scripts/logs-index-link-audit.py` (2026-10-21 — P25; BROKEN(등록된 링크의 대상 없음) + NOTREF(미등록 파일) + wildcard 커버 판정. 기존 2c-ter bash 루프는 NOTREF 한 방향만 잡음)
 - **세션 노트 (누적)**: `references/session-notes.md` — 일자별 발견/적용/커밋 해시
 - **Weekly cleanup 기록**: `references/weekly-cleanup-2026-08-23.md` — Lint ② broken wikilink 7건, Tag taxonomy 누락 2개, memory 비활성화 환경 정보
+- **2026-10-21 실행 기록**: `references/run-2026-10-21.md` — P19 26회 연속(working-tree) + **P25 logs/index.md BROKEN 12건 유형별 표** + P24 역방향 부작용(submodule 내 parent 경로 금지) + credential.helper는 서브모듈 repo-local 설정

@@ -868,6 +868,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/briefing-timestamp-system.md`** — Briefing timestamp 파이프라인 + market status 표시 + cron timing (2026-07-17 신규)
 - **`references/market-calendar-module.md`** — `scripts/market_calendar.py` — KR/US holiday calendar + market open/close detection + pipeline consumers (2026-07-17 신규)
 - **`references/process-update-theater.md`** —** `execution-discipline` skill의 process-update theater variant. display-layer patching 대신 pipeline-layer fix 우선 원칙. 본 SKILL의 Pitfall 49와 연결됨.
+- **`references/macro-report-official-source-verification.md`** — 🏛 매크로 리포트 공식 소스 교차검증 (2026-10-21 신규). NY Fed EFFR(=기준금리), BLS CPI 원계열 YoY 직접계산, CNBC XML vs HTML(선물은 HTML 우선), exchangerate-api, 한국 6종목 확정 코드, **저장 전 한국어 토큰 손상 QA**, 전일 리포트 값 재검증 규칙
 - **`references/narrative-rotation-analysis.md`** — 네러티브·순환매 분석 프레임워크 (2026-08-06 신규). 종목별 3요소(네러티브/순환매/PER), Google News RSS 패턴, 대량 종목 delegate_task 병렬 패턴, 사이클 정점 PER 판정 원칙
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
@@ -1465,6 +1466,58 @@ WTI: $92.67 (ts=1791800522 → 2026-10-12 10:22:02 UTC = 미래 시각!)
 **WTI가 US 장 закрыто 시цена**:
 - `fetch_macro_data.py`에서 `ts`와 KST now를 비교하여 `ts > now + 1시간`이면 "next session"으로 라벨링
 - macro_report_summary에서 "WTI $92.67 (휴장 중, 다음 거래일 예상)"으로 표기
+
+### 62. 🔴🔴 전일 리포트 값을 신뢰하지 말 것 — 공식 소스로 재검증 (2026-10-21 신규, CRITICAL)
+
+**실제 사례 (2026-10-21)**: 전일(10/20) `macro_context.json`에 저장돼 있던 값이 **2개 연속 틀림**:
+- `fed_rate: "4.25~4.50%"` → 실제 **3.75~4.00%** (NY Fed EFFR 3.88%)
+- `cpi_yoy: "2.9%"` → 실제 **3.74%** (9월, BLS SA)
+
+→ 틀린 값이 전일 리포트 → 오늘 리포트 → JSON → 18:35 파이프라인 Phase 0.5/2/3으로 그대로 전파되는 구조.
+
+**규칙**: `macro_context.json`의 이전 값은 **참고용**이며, 금리·물가·환율은 **매번 공식 기관 API로 다시 뽑는다.**
+- **기준금리** → `https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json` → `targetRateFrom`~`targetRateTo`가 정답 (`percentRate`=EFFR)
+- **US CPI** → BLS `CUUR0000SA0` 원계열 → YoY 직접 계산 (`float()` 변환 시 `'-'` 결측 예외 처리 필수)
+- **환율** → `api.exchangerate-api.com/v4/latest/USD` + News RSS 확정치
+- **지수/금리/DXY** → CNBC XML (심볼당 1회)
+- **선물(WTI/금)** → CNBC **HTML embed 우선** (XML은 `previous_day_closing`이 장 마감 스냅샷이라 intraday 반영이 늦음)
+
+**전일 값과 다르면 리포트에 정정 사실을 명시**한다 (숨기면 다음날 또 틀린 값 재사용).
+
+**참조**: `references/macro-report-official-source-verification.md`
+
+### 63. 🔴 저장 전 텍스트 QA — 한국어 토큰 손상 검사 (2026-10-21 신규)
+
+장문 한국어 요약을 JSON에 저장할 때 한자/영문 혼입 토큰이 깨져 저장되는 사례가 발생했다.
+실제 손상: `"민·관·정서 일제히wynDd불"`(→"일제히 지적하며"), `"定义선 회장"`(→"정의선"), `"名词 금리"`(→"명목"), `"소진에서come."`(→"소진에서 온 것이고"), `"ipuiae"`(→"이라").
+
+**원인**: 저자성 높은 장문 한국어 생성에서 인코딩/토큰 경계 붕괴. 저장 후에만 드러남 → Discord 리포트에도 그대로 노출됨.
+
+**QA 절차 (저장 직후 필수)**:
+```python
+import json
+d = json.load(open(path))
+BAD = ['wyn','Dd','ipuiae','定义','名词','cend','come']
+assert not any(b in d['macro_report_summary'] for b in BAD)
+for n in d['news_items']:
+    assert not any(b in n['summary'] for b in BAD), n['summary']
+```
+
+**조치**: 손상은 **일괄 replace 말고 항목 단위**로 정상 한국어 재작성. 원문은 `.py` 스크립트의 `json.dump`으로 저장(수동 편집 금지).
+
+### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
+
+| 종목 | 코드 | Naver `nm` |
+|:--|:--|:--|
+| 삼성전자 | 005930 | 삼성전자 |
+| SK하이닉스 | 000660 | SK하이닉스 |
+| 삼성전기 | 009150 | 삼성전기 |
+| 현대차 | 005380 | 현대차 |
+| 에이피알 | **278470** | 에이피알 |
+| HD현대일렉트릭 | **267260** | HD현대일렉트릭 |
+
+- ❌ 267270 = `HD건설기계` (다른 회사) / ❌ 054050 = HD현대일렉트릭 아님
+- **Naver `ms` 필드**: `OPEN`=장중, `CLOSE`=마감. 등락률은 `(nv-pcv)/pcv*100` 직접 계산 (`cr`은 절대값 — Pitfall 50)
 
 cron 환경(특히 18:30 매크로 전략 리포트)에서 `execute_code` tool + `web_search` tool 둘 다 사용할 수 없는 상황에서의 검증된 데이터 수집 패턴:
 
