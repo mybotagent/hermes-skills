@@ -2,6 +2,33 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-10-22 (21:00 KST) — P19 재감염 (27회 연속, working-tree) + audit 전항목 통과 + push 성공
+
+**발견:**
+- P19: `index.md` 하단 footer 뒤에 `— 자동 추가 (2026-10-22)` 레이블 서브모듈 항목 62건 대량 삽입 (subagents-library 5 + logs 57).
+  - **working-tree 전용 오염** — `git show HEAD:index.md | grep -c '자동 추가'` = 0, `git show origin/main:index.md` = 0.
+  - `git diff HEAD -- index.md` = rogue 추가분 63줄뿐(+정식 수정 0건) → `git restore index.md` 빠른 경로 적용.
+- P18: 0건 ✅ (wiki 전체 + skills/references/).
+- `raw/2026-W42-weekly-recap-draft.md`는 index.md raw/ 섹션에 이미 PAT B로 정상 등록 확인 → 재등록 불필요.
+
+**처리:**
+1. `git restore index.md` (P19 62줄 rogue 제거).
+2. `logs/2026/2026-10-22-2100.md` 신규 로그 생성 + logs/index.md October 섹션에 행 추가 (P18 triple-pipe 검증 후).
+3. 로그 서브모듈 커밋 `f998ec4` (master) → push 성공 `310bc85..f998ec4`.
+4. parent wiki 커밋 `b56142f` (main) → push 성공 `03b9666..b56142f`.
+
+**감사 결과:**
+- wikilink-audit.py: 84 files, broken 0 / cross-domain 0 / bare-name 0 / MDEXT 0 ✅.
+- markdown-link-audit.py: P11 0, real broken 0 ✅.
+- index-md-audit.py: registered 86 = actual 86, dead link 0, REAL MISSING 0 ✅.
+- logs-index-link-audit.py (P25): broken 0, notref 0, covered 13 (wildcard), ambiguous 0 ✅.
+- tag-audit.py: taxonomy 149, registered 137/137, unknown 0 ✅.
+- auto-fill-dates.py: 0 filled, 18 skipped (raw/ immutable) ✅.
+- P19 scan: index.md / HEAD / origin/main 모두 0 ✅.
+- git status: clean, up-to-date with origin/main ✅.
+
+**참고:** stale(30일+) 68건은 명시적 `updated:` SSOT 기준 기존 상태 — 자동 갱신하지 않음 (사람 검토 대상).
+
 ## 2026-10-21 (21:00 KST) — P19 재감염 (26회 연속, working-tree) + logs/index.md 깨진 링크 12건 수정 + push 성공
 
 **발견:**

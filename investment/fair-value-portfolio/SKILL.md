@@ -868,7 +868,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/briefing-timestamp-system.md`** — Briefing timestamp 파이프라인 + market status 표시 + cron timing (2026-07-17 신규)
 - **`references/market-calendar-module.md`** — `scripts/market_calendar.py` — KR/US holiday calendar + market open/close detection + pipeline consumers (2026-07-17 신규)
 - **`references/process-update-theater.md`** —** `execution-discipline` skill의 process-update theater variant. display-layer patching 대신 pipeline-layer fix 우선 원칙. 본 SKILL의 Pitfall 49와 연결됨.
-- **`references/macro-report-official-source-verification.md`** — 🏛 매크로 리포트 공식 소스 교차검증 (2026-10-21 신규). NY Fed EFFR(=기준금리), BLS CPI 원계열 YoY 직접계산, CNBC XML vs HTML(선물은 HTML 우선), exchangerate-api, 한국 6종목 확정 코드, **저장 전 한국어 토큰 손상 QA**, 전일 리포트 값 재검증 규칙
+- **`references/macro-report-official-source-verification.md`** — 🏛 매크로 리포트 공식 소스 교차검증 (2026-10-21 신규). NY Fed EFFR(=기준금리), BLS CPI 원계열 YoY 직접계산, CNBC XML vs HTML(선물은 HTML 우선), exchangerate-api, 한국 6종목 확정 코드, **저장 전 한국어 토큰 손상 QA**, 전일 리포트 값 재검증 규칙. **2026-10-22 추가**: `US30Y`/`.DJI`/`.IXIC` CNBC XML 심볼 (기존 "30년물 CNBC 미지원" 오류 정정), US 지수 `pdc==last` quirk의 `last - change` 전일종가 역산, **뉴스 URL 자동 추출 패턴(손으로 옮기면 truncate)**
 - **`references/narrative-rotation-analysis.md`** — 네러티브·순환매 분석 프레임워크 (2026-08-06 신규). 종목별 3요소(네러티브/순환매/PER), Google News RSS 패턴, 대량 종목 delegate_task 병렬 패턴, 사이클 정점 PER 판정 원칙
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
@@ -1504,6 +1504,29 @@ for n in d['news_items']:
 ```
 
 **조치**: 손상은 **일괄 replace 말고 항목 단위**로 정상 한국어 재작성. 원문은 `.py` 스크립트의 `json.dump`으로 저장(수동 편집 금지).
+
+### 65. 🔴 뉴스 URL 손수 이동 금지 + dual-save 경로 누락 (2026-10-22 신규)
+
+**Pitfall A — 뉴스 URL truncation**: `news_items[].url`을 리포트 본문에서 손으로 옮기면 Google News의 200~400자 base64 링크가 **중간에서 잘린다**. 2026-10-22 실측: 한국어 뉴스 12건 URL 수동 복사 → 다수 건 truncate → 저장 후에만 발견.
+
+**해법**: 탐색(RSS로 제목·요약 확보) → 수집(RSS에서 제목을 key로 매칭해 URL 자동 추출 후 JSON 주입) 2단계 분리. 저장 직후 assert:
+```python
+for n in news_items:
+    assert n['url'].startswith('https://news.google.com/rss/articles/'), n['url']
+    assert n['url'].endswith('?oc=5') and len(n['url']) > 120, n['url']
+```
+상세 코드: `references/macro-report-official-source-verification.md` 절 4b.
+
+**Pitfall B — dual-save 경로 누락 (Pitfall 22b 재발)**: 18:30 매크로 크론은 `macro_context.json`을 **두 경로 모두**에 저장해야 한다:
+- `~/trading-agents-nuri/data/macro_context.json` (과거 레포 — 프롬프트가 지정한 경로)
+- `~/trade-pipeline/data/macro_context.json` (18:35 `pipeline.py`가 읽는 경로)
+
+프롬프트가 한쪽 경로만 지정해도 **양쪽 모두 저장**할 것. 한쪽만 저장하면 18:35 LangGraph Phase 0.5/2/3이 매크로 데이터를 못 읽고 **조용히 실패**한다 (last_status=ok, 콘솔 에러 없음). 2026-10-22 세션에서 프롬프트가 `~/trading-agents-nuri/`만 지정 → `trade-pipeline/` 저장 누락. 저장 후 반드시:
+```bash
+cp ~/trading-agents-nuri/data/macro_context.json ~/trade-pipeline/data/macro_context.json
+```
+
+**저장 QA는 한 번에**: 텍스트 손상 토큰 검사(Pitfall 63) + URL 무결성 assert + dual-save 확인을 **같은 저장 스크립트 말미**에서 수행. 분리하면 하나를 빠뜨린다.
 
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
 

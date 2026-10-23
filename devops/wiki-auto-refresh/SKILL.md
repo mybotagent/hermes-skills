@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.38.0"
+version: "1.39.0"
 changelog:
+  - "2026-10-22: P26 신규 — session-notes.md는 '최신순 = 맨 위'(prepend) 구조인데 사전 점검 4단계/P20/P23가 '파일 끝 append + tail -100'을 안내하고 있었음 (실제 순서 10-22→10-21→10-19→10-13). 절차 정정: 첫 번째 '## ' 헤더 바로 위 삽입, head -100으로 읽기, P20 앵커 = 다음 섹션의 날짜 헤더 전체. P19 27회 연속(working-tree, 62건) 복구 — git restore fast path로 커밋 불필요."
   - "2026-10-21: P25 신규 — logs/index.md 링크 무결성 양방향 감사 (BROKEN 12건 발견). scripts/logs-index-link-audit.py 신규. 2c-ter는 NOTREF 한 방향만 검사하므로 '루프 0건 보고'를 '깨진 게 없다'로 해석하면 안 됨. P24 역방향 부작용 추가 — submodule 내부에 parent 기준 wikilink 넣으면 submodule이 깨짐 (git restore로 되돌림)."
   - "2026-10-19: P19 25회 연속 재감염 (18a8f1c, 2026-10-18 05:30). Parent c121efb로 복원. W42 등록. GitHub push: .git-credentials + credential.helper store 사용 (SSH/.netrc/gh 모두 없을 때)."
   - "2026-10-12: P19 — 62개 rogue committed 재감염 (hermes-config-sync 04:00+05:30 재삽입). commit c121efb."
@@ -85,11 +86,20 @@ python3 "$SCRIPTS/logs-index-link-audit.py" [LOGS_DIR]
 # 기본 LOGS_DIR=~/.hermes/wiki/logs. 출력: BROKEN N / NOTREF N / wildcard_covered N
 # BROKEN 판정 후 처리: 경로 오기 → target 수정 / 파일 부재 → 행 제거 (2c-ter 참조)
 
-# 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시#    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
-#    → patch 도구 사용: read_file(offset=<last_few_lines>) → patch(old_string=<마지막 줄>, new_string=<마지막 줄 + 새 섹션>)
+# 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시
+#    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
+#    → patch 도구 사용.
+#    ⚠⚠ **세션 노트는 "최신순 = 파일 맨 위" 구조다** (2026-10-22 확인).
+#       실제 순서: 10-22 → 10-21 → 10-19 → 10-13 (뒤로 갈수록 과거).
+#       따라서 새 섹션을 파일 끝이 아니라 **첫 번째 `## ` 헤더 바로 위**에 삽입해야 한다.
+#       ⚠ 이 SKILL.md의 과거 지침("마지막 줄을 앵커로 append")을 따르면
+#         (a) 시간순이 뒤섞이고 (b) P20 mis-anchor(fuzzy match가 매일 반복되는
+#         "감사 결과" footer 줄에 앵커)에 걸려 섹션 유실/중복이 재발한다.
+#    → 절차: read_file(path) **전체 읽기**(offset/limit 없이) →
+#             patch(old_string=<유일한 날짜 헤더>, new_string=<새 섹션 + 그 헤더>)
 #    → multi-writer 환경 (병렬 cron 등)에서 "sibling subagent가 read 함" 경고가 나올 수 있음 — 그 경우 read_file로 다시 읽고 patch.
 #    절대 `echo ... >> file` 또는 `cat >> file` heredoc 사용 금지.
-cat ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md | tail -100  # 참고용 (append는 위 patch 절차)
+head -100 ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md  # 참고용 (추가는 위 patch 절차)
 ```
 
 **왜 이게 필수인가:**
@@ -109,6 +119,11 @@ cd ~/.hermes/wiki
 # index.md 하단에 "자동 추가" 레이블이 붙은 서브모듈 항목이 있는지 확인
 tail -30 index.md | grep -E '자동 추가|subagents-library|logs/'
 # 발견 시: 해당 블록 전체를 제거 (서브모듈은 index 미등록 원칙)
+
+# ⚠ rogue 블록은 항상 footer 줄(*Managed by Hermes Agent...) **아래**에 삽입된다 (2026-10-22 확인).
+#    → footer 위치를 찍으면 rogue 범위가 바로 특정된다:
+grep -n 'Managed by Hermes' index.md
+#    footer 줄 번호 다음부터 파일 끝까지가 rogue 블록 후보.
 
 # 또는 index.md 전체에서 submodule 경로를 포함한 markdown link 패턴 검사
 grep -nE '\(subagents-library/|\(logs/' index.md
@@ -1055,8 +1070,14 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 **왜 발생하는가:** session-notes.md의 각 날짜 섹션 "감사 결과 (모두 통과)" 블록은 매일 거의 동일(복붙 수준). `- git status: clean, up-to-date with origin/main.` 같은 줄이 파일 전체에 수십 회 반복됨. 헤더(`## 2026-08-04`)는 유일해도 footer 줄들이 동일해서 mis-anchor 발생. offset/limit 부분 읽기 상태에서 patch하면 더 위험 (patch 도구의 "partial view" 경고 = mis-anchor 위험 신호).
 
 **예방 (필수):**
-1. **old_string에 날짜-유일 판별자 포함** — 해당 섹션에서만 존재하는 줄을 앵커로: `- auto-fill-dates.py: N filled` (날짜마다 N 다름), 발견 줄의 날짜 레이블(`"자동 추가 (2026-08-05)"`), `**Commit:** <hash>` 줄.
-2. **append 시 파일의 진짜 마지막 줄을 앵커로 하되, 그 줄이 다른 섹션에도 존재하면 위쪽 2~3줄의 유일 컨텍스트까지 포함** — 마지막 줄 단독으로는 부족.
+0. **⚠ 먼저 파일 구조 확인 (P26):** session-notes.md는 **최신순 = 맨 위** 구조다.
+   새 섹션은 **첫 번째 `## ` 헤더 바로 위**에 삽입한다 (파일 끝 append 금지).
+   ```bash
+   grep -n '^## ' ~/.hermes/skills/devops/wiki-auto-refresh/references/session-notes.md | head -5
+   # 맨 위가 가장 최근 날짜가 아니면 본 문서/파일이 다른 구조 — 그때는 먼저 확인.
+   ```
+1. **old_string에 날짜-유일 판별자 포함** — 해당 섹션에서만 존재하는 줄을 앵커로: `- auto-fill-dates.py: N filled` (날짜마다 N 다름), 발견 줄의 날짜 레이블(`"자동 추가 (2026-08-05)"`), `**Commit:** <hash>` 줄, 또는 **다음 섹션의 날짜 헤더 전체**.
+2. **삽입 시 앵커는 "다음(더 오래된) 섹션의 날짜 헤더 전체"** — 파일 끝 마지막 줄 단독으로는 부족 (매일 반복 footer와 fuzzy-match 충돌).
 3. **전체 파일 재읽기 후 patch** — offset/limit 부분 읽기 상태에서 patch 금지 (P18과 동일 규칙).
 
 **탐지 (patch 후 즉시):**
@@ -1079,6 +1100,31 @@ grep -c '^## 2026-08-04' ~/.hermes/skills/devops/wiki-auto-refresh/references/se
 
 **핵심 교훈:** session-notes.md는 매일 같은 구조로 append되는 파일 — **근미동일 섹션 반복이 구조적 위험**. append 시 유일 앵커 확보는 선택이 아니라 필수. patch 실수로 섹션이 유실되어도 원문을 재구성할 수 있도록 patch 전 read 결과를 보존할 것.
 
+### P26. Session-notes.md는 역순(최신순 맨 위) 구조 — "append to end" 지침은 버그다 (2026-10-22 추가)
+
+**증상/발견:**
+- SKILL.md의 사전 점검 4단계와 P20은 session-notes.md에 새 날짜 섹션을 **파일 끝에 append**하도록 안내했으나,
+  실제 파일은 **최신순 = 맨 위** 구조다 (2026-10-22 확인: `## 2026-10-22` → `## 2026-10-21` → `## 2026-10-19` → `## 2026-10-13`).
+- 즉 문서에 적힌 절차대로 하면 (a) 시간순이 뒤집히고 (b) 파일 끝의 오래된/미완성 섹션
+  (`## 2026-10-13 (21:00 KST)` — 헤더만 있고 본문 없음)에 새 내용이 붙어 섹션이 뒤틀린다.
+- 더 나쁘게는 P20 mis-anchor 위험이 증폭된다. 파일 끝 부근의 "감사 결과" footer 줄은
+  매일 거의 동일하므로 fuzzy matcher가 그쪽에 앵커를 잡아 **이전 섹션 본문을 교체**할 수 있다.
+
+**실제 사례 (2026-10-22):** 10-22 섹션을 첫 헤더(10-21) 바로 위에 삽입하는 방식으로 처리.
+- `read_file(path)` 전체 읽기 → `patch(old_string="## 2026-10-21 (21:00 KST) — ...", new_string="<새 10-22 섹션>\n\n## 2026-10-21 (21:00 KST) — ...")`.
+- old_string은 **날짜 헤더 전체**(날짜가 포함되어 유일)로 지정 → footer 줄 앵커를 쓰지 않음.
+- patch 후 검증: `grep -n '^## '` 순서 = 날짜 내림차순, `grep -c '^## 2026-10-22'` = 1, `grep -c '^|- '` = 0.
+
+**조치:**
+1. 사전 점검 4단계의 append 지침 → **"첫 번째 `## ` 헤더 바로 위에 삽입"**으로 정정 (2026-10-22 반영).
+2. `tail -100` 참조 명령 → `head -100`로 변경 (최신 세션이 맨 위이므로 tail은 과거를 읽는다).
+3. read_file은 offset/limit 없이 전체 읽기 — 부분 읽기 상태의 patch는 mis-anchor 위험(P18/P20).
+
+**핵심 교훈:**
+- **session-notes.md는 append형이 아니라 prepend형이다.** "누적 세션 노트"라는 표현에 "맨 아래에 덧붙인다"는 직관이 작동하지만, 실제 구조는 최신순이다.
+- 헤더 그리핑으로 실제 순서를 매 실행 확인하고, 그 구조에 맞춰 삽입 위치를 정할 것.
+- 파일 끝에 헤더만 있고 본문이 없는 섹션(`## 2026-10-13 (21:00 KST)`)이 남아 있으면, 그곳이 과거 append가 잘못 누적된 자리일 수 있다 — 새 섹션을 그 위에 붙이지 말 것.
+
 ### P23. session-notes.md git persistence — skills 디렉토리는 git repo가 아님 (2026-10-01 추가)
 
 **증상:** session-notes.md에 patch로 새 섹션을 append한 후, skill 디렉토리 내에서 `git add/commit` 하려 했으나 "fatal: not a git repository" 오류. patch는 적용되었으나 git에 커밋되지 않아 재실행 시 이전 세션 기록이 없음.
@@ -1093,8 +1139,8 @@ cd ~/.hermes/skills/devops/wiki-auto-refresh && git rev-parse --is-inside-work-t
 
 **session-notes 지속策略:**
 1. **권장: wiki repo 내 별도 파일에 기록** — `~/.hermes/wiki/_session-notes.md`를 wiki repo에 포함시키고 다른 파일들과 함께 `git add -A`로 커밋.优点: 세션 기록이 wiki와 함께 version controlled. 단점: wiki repo 오염 (의도치 않은 세션 로그가 wiki에 포함).
-2. **파일 시스템 수준 보존** — patch 적용만으로 충분. session-notes.md는 skill 디렉토리에 파일로 존재하므로 재실행 시 `tail -100`으로 직전 세션을 읽을 수 있음. 다만 에이전트 재시작 시 memory에서 모든 툴 호출 context가 초기화되므로, 완전한 세션 추적이 필요하면 wiki repo 내 파일 사용.
-3. **현재 구조 유지** — cron 실행 간 session-notes.md는 skill 디렉토리 내 파일로 존재하며, 각 cron 실행이 시작할 때 `tail -100`으로 직전 세션을 읽음. git persistence는 필요 없음 (이미 hermes transcript DB에 세션 기록이 있음).
+2. **파일 시스템 수준 보존** — patch 적용만으로 충분. session-notes.md는 skill 디렉토리에 파일로 존재하며, 각 cron 실행이 시작할 때 `head -100`으로 직전 세션을 읽을 수 있음 (최신순 구조이므로 head 사용 — P26). 다만 에이전트 재시작 시 memory에서 모든 툴 호출 context가 초기화되므로, 완전한 세션 추적이 필요하면 wiki repo 내 파일 사용.
+3. **현재 구조 유지** — cron 실행 간 session-notes.md는 skill 디렉토리 내 파일로 존재하며, 각 cron 실행이 시작할 때 `head -100`으로 직전 세션을 읽음 (P26: prepend 구조). git persistence는 필요 없음 (이미 hermes transcript DB에 세션 기록이 있음).
 
 **핵심 교훈:** skill의 `references/` 디렉토리는 설치 시copy-only이며, git-tracked workflow가 필요하면 wiki repo 내부의 파일을 사용해야 함.
 
@@ -1188,3 +1234,4 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **세션 노트 (누적)**: `references/session-notes.md` — 일자별 발견/적용/커밋 해시
 - **Weekly cleanup 기록**: `references/weekly-cleanup-2026-08-23.md` — Lint ② broken wikilink 7건, Tag taxonomy 누락 2개, memory 비활성화 환경 정보
 - **2026-10-21 실행 기록**: `references/run-2026-10-21.md` — P19 26회 연속(working-tree) + **P25 logs/index.md BROKEN 12건 유형별 표** + P24 역방향 부작용(submodule 내 parent 경로 금지) + credential.helper는 서브모듈 repo-local 설정
+- **2026-10-22 실행 기록**: `references/run-2026-10-22.md` — **P26 session-notes.md prepend 구조(최신순 맨 위) — SKILL.md append 지침이 버그였음** + P19 27회 연속(working-tree, 62건) 판별 3단계 표 + footer 아래 삽입 패턴
