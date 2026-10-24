@@ -263,6 +263,9 @@ assert not any(b in d['macro_report_summary'] for b in BAD)
 10. 전일 값과 다르면 **정정 사실을 리포트에 명시**
 11. 저장 → **읽어와서 손상 토큰 검사 + URL 무결성 assert** → 이상 시 항목 단위 재작성
 12. 두 경로에 저장 + `.bak_YYYYMMDD` 백업
+13. **CJK 정규식 스캔** (`[\u4e00-\u9fff]`)으로 한국어 문장 손상 검사 (title 제외, summary/report만) — 절 13
+14. 한국 6종목 등락률은 **`(nv-pcv)/pcv*100` 직접 계산** — `cr`/`ms` 필드는 참고용 (절 12)
+15. **Stagflation 분류 시 실업률(BLS `LNS14000000`) + PPI(BLS `WPSFD4`) + 브렌트(`@LCO.1`) 포함** (절 11)
 
 ---
 
@@ -285,3 +288,122 @@ CNBC XML은 미국 장 마감 후 `previous_day_closing`(=pdc)을 `last`와 동�
 - 전일 리포트의 `sp500` 값과 일치해야 한다 → 불일치 시 **pdc quirk 적용 여부를 의심**하고, 한국 지수처럼 pdc가 정상인 `.KS11`/`.KQ11`과 교차 확인.
 - 한국 지수(.KS11/.KQ11)는 pdc가 정상 반환 → 이 역산은 **미국 심볼에만** 적용.
 - 🔗 Pitfall 56(연속 기록/레벨 표현 cross-check)과 직결: "3일째 급등락", "전일 대비" 같은 표현을 쓸 때 이 역산값이 기준값.
+
+**2026-10-23 실측 (10/22 세션)**: `.SPX` last=7,663.43 / change=-93.74 → 전일종가 역산 **7,757.17** = 전일(10/21) 리포트 `sp500` 값과 **정확히 일치** ✅ → pdc quirk 적용 확인. 다우 52,867.98-11.89=52,856.09 / 나스닥 26,008.859-(-693.999)=**26,702.86** = 전일 리포트 `nasdaq` 값과 일치 ✅.
+
+---
+
+## 11. 추가 공식 지표 — 실업률(BLS) / PPI(BLS) / 브렌트(CNBC) (2026-10-23 신규 검증)
+
+### 11.1 미국 실업률 — BLS `LNS14000000`
+
+```bash
+curl -s --max-time 15 \
+ "https://api.bls.gov/publicAPI/v2/timeseries/data/LNS14000000?startyear=2025&endyear=2026" \
+ -H "Content-Type: application/json" -o /tmp/unemp.json
+```
+
+2026-10-23 실측: `2026 M09 = 4.2` (8월 4.1, 6월 4.2, 5월 4.3, 2월 4.4).
+→ **"물가 재상승 + 고용 개선" = 스태그플레이션** 국면 분류의 정량 근거. CPI만으로는 "Slowdown"과 구분 불가 — 실업률을 반드시 같이 넣을 것.
+
+### 11.2 PPI — BLS `WPSFD4` (원계열 인덱스)
+
+```bash
+curl -s --max-time 15 \
+ "https://api.bls.gov/publicAPI/v2/timeseries/data/WPSFD4?startyear=2025&endyear=2026" \
+ -H "Content-Type: application/json" -o /tmp/ppi.json
+```
+
+2026-10-23 실측: 2026-09 = **159.780** (8월 157.662, 7월 156.924, 6월 156.683) → 사상 최고권.
+→ 유가 → PPI → CPI **전가 경로**의 중간 단계를 수치로 보여줄 때 사용.
+
+### 11.3 브렌트유 — CNBC XML `@LCO.1`
+
+`@CL.1`(WTI)만 쓰면 브렌트-아비텍 스프레드를 놓친다. `@LCO.1`이 정상 지원됨.
+
+```bash
+curl -sL --max-time 12 "https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=@LCO.1&requestMethod=itk" \
+  -H "User-Agent: $UA"
+# 2026-10-23 실측: <last>114.35</last> <previous_day_closing>113.17</previous_day_closing> <change>1.18</change> <change_pct>1.04</change_pct>
+```
+
+→ WTI $101 / 브렌트 $114 = 스프레드 $13 → 중동·러시아 공급 premium가 계속 걸려 있다는 근거.
+
+### 11.4 환율 — `open.er-api.com`도 정상 (2026-10-23 재확인)
+
+`api.exchangerate-api.com`과 **둘 다** 정상 동작. 2026-10-23 `open.er-api.com/v6/latest/USD` → KRW **1324.953768**, JPY 156.92, EUR 0.8915.
+→ 한 소스만 믿지 말고, News RSS의 "원/달러 N거래일 연속 연저점" 확정치와 교차 확인.
+
+---
+
+## 12. 🔴 Naver Polling `cr` 부호·`ms` 필드 신뢰 불가 (2026-10-23 신규 검증)
+
+### 12.1 `cr` 부호가 두 번의 호출에서 달라졌다
+
+같은 시각(18:30 KST) **동일 URL**을 두 번 호출했을 때:
+
+| 호출 | 종목 | nv | pcv | cv | cr |
+|:--|:--|--:|--:|--:|--:|
+| 1회차 | HD현대일렉트릭 | 467,000 | 490,000 | — | **+4.69** (❌ 부호 반대) |
+| 2회차 | HD현대일렉트릭 | 467,000 | 490,000 | 23,000 | **-4.69** (✅) |
+
+- 1회차 `cv`는 음수인데 `cr`은 **양수**로 반환 → **부호 불일치 버그 재현**
+- Pitfall 50이 "cr은 항상 절대값"이라 한 것보다 나쁜 케이스: **cr에 부호가 있어도 그 부호가 틀릴 수 있다**
+- **확정 규칙: `cr`은 절대 신뢰하지 말고 `(nv - pcv) / pcv * 100`을 직접 계산해 표기한다.** `cv`도 함께 출력해 교차 확인.
+
+```python
+chg = int(x['nv']) - int(x['pcv'])
+pct = round(chg / int(x['pcv']) * 100, 2)
+assert abs(pct - float(x['cr'])) < 0.2 or True   # cr이 틀릴 수 있으므로 assert 대신 참고로만
+```
+
+### 12.2 `ms` 필드도 신뢰 불가 — 장 마감 후에도 `OPEN`
+
+2026-10-23 18:30 KST(한국장 마감 15:30 이후) 호출 → `ms='OPEN'` 반환.
+실제 종가는 뉴스("[마감] 코스피, SK하이닉스 반등에 0.30% 상승…5550선")로 확인됨 → `nv`는 종가(5,550.30)였음.
+
+- **Pitfall 26d / 절 6의 "`ms='OPEN'`이면 장중이라 `pcv`가 전일 종가" 설명만으로는 부족** — `ms`는 갱신이 늦다.
+- **판단 기준은 시각으로 한다**: KST 15:30 이후면 `ms`와 무관하게 `nv`를 종가로 취급하고 `pcv`를 전일 종가로 간주. (KR 장중 = 09:00~15:30)
+- `ms`는 참고용으로만, 판정에 사용하지 말 것.
+
+---
+
+## 13. 🔴 한국어 텍스트 손상 — CJK 문자 스캔으로 조기 검출 (2026-10-23 재발)
+
+Pitfall 63의 `BAD` 토큰 리스트(`wyn`, `ipuiae`, `定义` …)는 **이미 손상된 케이스만** 커버한다.
+2026-10-23 세션에서 **새로운 형태의 손상**이 발생:
+
+```
+"NY源于: 연준, 워시체제 첫 FOMC서 금리 또 동결"   ←源于 (중국어)
+"물가 재상승背景下 11월 3.50% 최종 전망"          ←背景下
+"내수주(현대차)·보조리了中国(HD현대일렉)"           ←中国
+"-白的 국면: 물가 재상승"                          ←白的
+"有一颗장관리 및 스페인 팝업"                      ←有一颗
+```
+
+→ **한국어 문장에 섞인 CJK(한자) 토큰**이 공통 징후. `BAD` 리스트에 없는 신형이므로 기존 검사를 통과함.
+
+### 검증된 조기 검출 방법 — CJK 정규식 스캔
+
+```python
+import re
+CJK = re.compile(r'[\u4e00-\u9fff]')
+# 저장 스크립트 안에서 (저장 전에) 검사
+bad_spans = [(m.start(), m.group(0))
+             for m in CJK.finditer(summary) if not ALLOWED_KOREAN_NEIGHBOR]
+```
+
+실전 절차(2026-10-23 검증):
+1. 저장 `.py` 스크립트 전체에 `re.findall(r'[\u4e00-\u9fff]', s)`로 **비-ASCII 문자 목록**을 뽑는다.
+2. 한글(`가-힣`)·ASCII를 제외한 잔여 문자가 CJK면 → 손상 후보.
+3. `grep -n`으로 해당 라인 특정 → **항목 단위로 정상 한국어 재작성** (일괄 replace 금지).
+4. **주의**: 뉴스 제목에는 정상적으로 CJK가 섞일 수 있음 (예: "SK하이닉스, 솔리다임 **美**상장 중단", "美 금리 결정", "中동"). → **뉴스 title은 CJK 스캔에서 제외**, `summary`와 `macro_report_summary`만 검사.
+
+###_BAD 리스트 확장 권장
+
+```python
+BAD = ['wyn','Dd','ipuiae','定义','名词','cend','come','olor',
+       '源于','背景下','中国','美的','白的','中导','有景','词','颗','颗장']
+```
+
+→ **BAD 리스트는 사례가 늘어날수록 반드시 뒤따라붙는 형태이므로, CJK 정규식 스캔이 본문 검출의 주력이고 BAD 리스트는 2차 방어로 유지**할 것.

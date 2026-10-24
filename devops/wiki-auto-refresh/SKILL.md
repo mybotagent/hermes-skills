@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.39.0"
+version: "1.40.0"
 changelog:
+  - "2026-10-23: P19 판별 3단계(working-tree/HEAD/origin) 공식화 + **rogue 건수 = logs 파일 수에 비례**(신규 로그 1개 추가 → rogue 1건 증가, 정상 패턴 — 10-23 63건) — 건수 증가만으로 오염 확대 추측 금지. logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증 절차 추가 (형제 행과 `||` prefix 일치, 육안 판별보다 확실). P26 부분 읽기 허용 예외 — 날짜-유일 헤더 앵커는 partial-view 상태에서도 정상 적용. P19 28회 연속(working-tree, 63건) 복구 — git restore fast path, 커밋 불필요."
   - "2026-10-22: P26 신규 — session-notes.md는 '최신순 = 맨 위'(prepend) 구조인데 사전 점검 4단계/P20/P23가 '파일 끝 append + tail -100'을 안내하고 있었음 (실제 순서 10-22→10-21→10-19→10-13). 절차 정정: 첫 번째 '## ' 헤더 바로 위 삽입, head -100으로 읽기, P20 앵커 = 다음 섹션의 날짜 헤더 전체. P19 27회 연속(working-tree, 62건) 복구 — git restore fast path로 커밋 불필요."
   - "2026-10-21: P25 신규 — logs/index.md 링크 무결성 양방향 감사 (BROKEN 12건 발견). scripts/logs-index-link-audit.py 신규. 2c-ter는 NOTREF 한 방향만 검사하므로 '루프 0건 보고'를 '깨진 게 없다'로 해석하면 안 됨. P24 역방향 부작용 추가 — submodule 내부에 parent 기준 wikilink 넣으면 submodule이 깨짐 (git restore로 되돌림)."
   - "2026-10-19: P19 25회 연속 재감염 (18a8f1c, 2026-10-18 05:30). Parent c121efb로 복원. W42 등록. GitHub push: .git-credentials + credential.helper store 사용 (SSH/.netrc/gh 모두 없을 때)."
@@ -404,6 +405,21 @@ python3 "$SCRIPTS/logs-index-link-audit.py" [LOGS_DIR]
 2. `logs/index.md`에 적절한 섹션에 항목 추가 (역시간순 정렬 유지)
 3. logs 서브모듈 내부에서 git add/commit/push (`git push origin HEAD:master`)
 4. parent wiki에서 submodule pointer commit: `git add logs && git commit -m "wiki: bump logs" && git push`
+
+**⚠ logs/index.md 행 추가 후 파이프 정합성 검증 (2026-10-23 확립 — P18 self-inflicted 변형 실전):**
+`logs/index.md`는 **`||` double-pipe** 테이블 형식이다. 새 행을 patch로 넣을 때 형제 행과 **파이프 개수가 같아야** 하며, 다르면 P18 변형이 된다.
+```bash
+# 1) triple-pipe 오염 검사 (0이어야 함)
+grep -c '^|||' index.md
+# 2) ★ 인접 행과 파이프 형식 일치 확인 — cat -A로 실제 바이트를 보면 육안보다 확실
+grep -n '10-23\|10-22' index.md | cat -A | cut -c1-60
+#   정상: "|| 10-23 21:00 | ..."  (두 행 모두 동일 prefix)
+#   오염: "||| 10-23 21:00 | ..." (한 행만 triple) 또는 "|| 10-23" vs "| 10-22" (불일치)
+# 3) 재감사
+python3 "$SCRIPTS/logs-index-link-audit.py"   # broken 0 / notref 0
+```
+- **`cat -A`로 새 행과 형제 행의 prefix를 나란히 비교하는 것이 가장 확실** — grep 출력만 봐서는 `||` vs `|||` 차이가 눈에 잘 안 잡힌다.
+- 2026-10-23 실행에서 이 검증으로 triple-pipe 0건 + 인접 행 prefix 일치를 확인 후 commit (`ee408fd`).
 
 **실제 사례 (2026-W29):** `2026-06-10-2115.md`, `2026-07-17-selfheal-discord-thread.md`, `2026-07-17-selfheal-fundamental-fix.md`, `hermes-logs-hub.md` 4개가 logs/index.md에 누락되어 있음. 자체 로그는 root-level flat 구조라 logs/ 내 index.md 관리가 필요.
 
@@ -1031,6 +1047,19 @@ grep -rn '^|- ' ~/.hermes/wiki/ --include='*.md'
 - 이후 08-04/08-05에도 동일 패턴 재발 (working-tree 전용) — diff가 rogue 추가분뿐임을 확인 후 `git restore index.md` 빠른 경로로 복구, 커밋 불필요.
 - **2026-08-10 (10회 연속, 첫 clean-status committed 사례):** 08-08 오염분(57건: subagents-library 5 + logs 51 + raw W32 1)이 08-09 weekly cleanup 커밋(55a0768)에 편승해 HEAD+origin/main 모두 push됨. `git status` clean이었으나 `git show HEAD:index.md` '자동 추가' 57건으로 탐지. 55a0768의 index.md diff가 rogue 추가분뿐임과 ebaec02 청정(0건)을 확인 후 `git show ebaec02:index.md > index.md`로 parent 복원 + raw/2026-W32-weekly-recap-draft.md만 raw 섹션 PAT B 재등록 → commit `d9c577a` (1 file, +2/-58), push `55a0768..d9c577a`.
 
+**⚠ rogue 건수는 logs 파일 수에 비례한다 (2026-10-23 확인):** 10-18 62건 → 10-22 62건 → 10-23 **63건**. logs/ 서브모듈에 신규 로그 파일이 1개 추가되면 다음 실행의 rogue 수도 반드시 1 증가한다 (신규 로그가 index 스캔 대상에 포함되기 때문). **"이번 주에 rogue가 1건 늘었다"는 것은 이상 징후가 아니라 정상 패턴** — 이전 실행의 로그 등록을 새 index.md 스캔이 다시 잡는 것. 건수 증가만으로 오염 범위를 확대 추측하지 말고, 항상 아래 3단계 판별로 실제 오염 여부부터 확인한다.
+
+**P19 판별 3단계 (매 실행 필수 — 2026-10-23 확립 순서):**
+```bash
+cd ~/.hermes/wiki
+grep -c '자동 추가' index.md                        # 1) working tree
+git show HEAD:index.md | grep -c '자동 추가'         # 2) HEAD
+git show origin/main:index.md | grep -c '자동 추가'   # 3) 원격
+git diff HEAD --stat -- index.md                     # diff가 rogue 추가분뿐인가?
+```
+- 2)=0, 3)=0, diff가 rogue 추가분뿐 → **working-tree 전용** → `git restore index.md` (커밋 불필요)
+- 2)>0 → committed 오염 → 오염 커밋 diff 확인 후 parent 복원 또는 footer truncate 경로 (P19 mixed-state edge case)
+
 **실제 사례 (2026-08-16, 11회 연속 — working-tree 전용 + untracked raw draft 동반):** 08-15 오염분(58건: subagents-library 5 + logs 52 + raw W33 1)이 **uncommitted** 상태로 발견 (08-16 weekly cleanup 실행 중). `git status`: `M index.md` + `?? raw/2026-W33-weekly-recap-draft.md`. 08-08(57건: logs 51)보다 1건 많은 58건 — **로그 파일이 늘어날수록 rogue 수도 같이 늘어남** (logs 51→52).
 - **복구 (working-tree 전용)**: 08-10처럼 `git show <parent>:index.md` 복원도 가능했지만, W33 raw/ 섹션 정식 등록 편집이 이미 파일에 patch로 적용된 상태였으므로 **footer 기준 python truncate** 사용 — footer 줄(`*Managed by Hermes Agent...`)을 찾아 그 이후 줄 전부 삭제:
   ```python
@@ -1124,6 +1153,10 @@ grep -c '^## 2026-08-04' ~/.hermes/skills/devops/wiki-auto-refresh/references/se
 - **session-notes.md는 append형이 아니라 prepend형이다.** "누적 세션 노트"라는 표현에 "맨 아래에 덧붙인다"는 직관이 작동하지만, 실제 구조는 최신순이다.
 - 헤더 그리핑으로 실제 순서를 매 실행 확인하고, 그 구조에 맞춰 삽입 위치를 정할 것.
 - 파일 끝에 헤더만 있고 본문이 없는 섹션(`## 2026-10-13 (21:00 KST)`)이 남아 있으면, 그곳이 과거 append가 잘못 누적된 자리일 수 있다 — 새 섹션을 그 위에 붙이지 말 것.
+
+**부분 읽기(partial view) 허용 예외 (2026-10-23 확인):** patch 도구가 "was last read with offset/limit pagination (partial view)" 경고를 내도, **앵커가 날짜-유일 헤더(`## 2026-10-22 (21:00 KST) — ...`)로 확정된 경우 patch는 정상 적용**된다 — 헤더는 파일 전체에서 유일하므로 fuzzy matcher가 다른 위치로 미스 앵커할 여지가 없다. 2026-10-23 실행에서 `read_file(limit=6)` 후 부분 읽기 상태로 patch했으나 새 섹션이 정확한 위치(5행, 맨 위)에 삽입되고 순서/중복 검증을 통과했다.
+- 다만 **기본은 전체 읽기** — 부분 읽기는 "앵커가 100% 날짜 헤더로 확정된 경우"에만 허용.
+- footer 줄(매일 반복되는 "감사 결과" 문구)을 앵커로 쓰면 부분 읽기 여부와 무관하게 mis-anchor 위험이 있다 (P20).
 
 ### P23. session-notes.md git persistence — skills 디렉토리는 git repo가 아님 (2026-10-01 추가)
 
@@ -1235,3 +1268,4 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **Weekly cleanup 기록**: `references/weekly-cleanup-2026-08-23.md` — Lint ② broken wikilink 7건, Tag taxonomy 누락 2개, memory 비활성화 환경 정보
 - **2026-10-21 실행 기록**: `references/run-2026-10-21.md` — P19 26회 연속(working-tree) + **P25 logs/index.md BROKEN 12건 유형별 표** + P24 역방향 부작용(submodule 내 parent 경로 금지) + credential.helper는 서브모듈 repo-local 설정
 - **2026-10-22 실행 기록**: `references/run-2026-10-22.md` — **P26 session-notes.md prepend 구조(최신순 맨 위) — SKILL.md append 지침이 버그였음** + P19 27회 연속(working-tree, 62건) 판별 3단계 표 + footer 아래 삽입 패턴
+- **2026-10-23 실행 기록**: `references/run-2026-10-23.md` — P19 28회 연속(working-tree, 63건) + **rogue 건수 = logs 파일 수에 비례(신규 로그 1개 추가 → rogue 1개 증가, 정상 패턴)** + **logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증** (형제 행과 `||` prefix 일치 확인) + P26 부분 읽기 허용 예외(날짜 헤더 앵커는 partial-view 상태에서도 정상 적용)

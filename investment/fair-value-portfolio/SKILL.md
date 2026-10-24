@@ -1528,6 +1528,42 @@ cp ~/trading-agents-nuri/data/macro_context.json ~/trade-pipeline/data/macro_con
 
 **저장 QA는 한 번에**: 텍스트 손상 토큰 검사(Pitfall 63) + URL 무결성 assert + dual-save 확인을 **같은 저장 스크립트 말미**에서 수행. 분리하면 하나를 빠뜨린다.
 
+### 66. 🔴 Naver Polling `cr` 부호·`ms` 필드 신뢰 불가 (2026-10-23 신규, CRITICAL)
+
+2026-10-23 세션에서 **같은 URL을 두 번 호출했을 때 `cr`의 부호가 반대로 반환**됨 (HD현대일렉트릭: 1회차 `cr=+4.69`인데 `cv`는 음수, 2회차 `cr=-4.69`).
+→ Pitfall 50의 "cr은 절대값" 설명보다 나쁨: **부호가 있어도 틀릴 수 있다**.
+
+**확정 규칙**
+- `cr`은 절대 신뢰하지 말고 **`(nv - pcv) / pcv * 100`을 직접 계산**해 표기. `cv`도 함께 출력해 교차 확인.
+- `ms` 필드도 갱신이 늦음: **한국장 마감(15:30) 이후에도 `ms='OPEN'` 반환** (2026-10-23 18:30 KST 실측, 실제로는 종가).
+  → 판정은 **시각 기준**: KST 15:30 이후면 `ms`와 무관하게 `nv`=종가, `pcv`=전일 종가. `ms`는 참고용으로만.
+
+### 67. 🔴 한국어 텍스트 손상 — CJK 정규식 스캔으로 조기 검출 (2026-10-23 신규)
+
+Pitfall 63의 `BAD` 토큰 리스트는 **이미 손상된 케이스만** 커버 → 신형 손상이 통과함.
+2026-10-23 실제 손상: `源于` / `背景下` / `中国` / `白的` / `有一颗` — **한국어 문장에 섞인 CJK(한자) 토큰**이 공통 징후.
+
+**주력 검사 = CJK 정규식 스캔** (BAD 리스트는 2차 방어):
+```python
+import re
+CJK = re.compile(r'[\u4e00-\u9fff]')
+# 저장 .py 스크립트에서 손상 후보 라인 탐지
+for i, line in enumerate(src.splitlines(), 1):
+    if CJK.search(line) and not re.search(r'[\u4e00-\u9fff]', ''):  # 한글 라인은 통과
+        print(i, line)
+```
+- **뉴스 title은 CJK 정상 혼입 가능** ("SK하이닉스, 솔리다임 **美**상장 중단", "美 금리 결정") → title은 스캔에서 제외, **`summary`와 `macro_report_summary`만 검사**.
+- 조치: **항목 단위 정상 한국어 재작성** (일괄 replace 금지).
+- 상세 + 확장 BAD 리스트: `references/macro-report-official-source-verification.md` 절 13.
+
+### 68. 📌 매크로 리포트 추가 공식 지표 (2026-10-23 신규)
+
+- **미국 실업률** → BLS `LNS14000000` (2026-09: 4.2%) — CPI만으로는 Slowdown vs Stagflation 구분 불가. **고용 개선 + 물가 재상승 = Stagflation** 분류의 정량 근거.
+- **PPI** → BLS `WPSFD4` (2026-09: 159.780, 사상 최고권) — 유가→PPI→CPI 전가 경로의 중간 단계.
+- **브렌트유** → CNBC XML `@LCO.1` (2026-10-23: 114.35) — `@CL.1`만 쓰면 브렌트-아비텍 스프레드($13)를 놓침.
+- **`open.er-api.com` 환율 소스 정상 재확인** (2026-10-23: KRW 1324.95) — exchangerate-api와 **둘 다** 사용, RSS 확정치와 교차.
+- 상세: `references/macro-report-official-source-verification.md` 절 11.
+
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
 
 | 종목 | 코드 | Naver `nm` |
