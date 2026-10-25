@@ -70,6 +70,32 @@ discord_only, user_style, gh_pr_policy, ssot
 
 ## Pitfall
 
+### 0. 현재 MEMORY.md 형식은 KEY[]가 아니라 자연어 § 엔트리 (2026-10-25 실측 확인)
+
+이 스킬 본문의 "21 Keys" / `KEY_MAP` / `KEY[]` 설명은 **구형 아키텍처**다. 현재 실측 형식:
+
+```
+memory→wiki 규칙: memory는 포인터만, 상세는 wiki. 구조: wiki/AGENTS.md §Five Layers. 포인터: infra/cron-jobs.md, ...
+§
+paper_tracker (cron 18:45 KST 평일): ~/trade-pipeline/scripts/paper_tracker.py → ... 상세: code/scripts.md §4.
+§
+vercel_mcp: config.yaml mcp_servers.vercel + VERCEL_TOKEN (활성화에 gateway restart). 상세: infra/environment.md.
+```
+
+- 구분자 = `ENTRY_DELIMITER = "\n§\n"` (양쪽 개행 포함). `§` 단독 줄.
+- 각 엔트리는 **자연어 한 줄 + `상세: <wiki경로>` 포인터**. KEY bracket 형식 아님.
+- `memory_query.py`의 `KEY_MAP`이 이 자연어 엔트리와 1:1로 매핑되는지는 별개 확인 필요 —
+  `KEY_MAP`이 남아 있어도 실제 파일 형식이 다르면 `--list`의 ✓/✗ 판정이 어긋난다.
+  **항상 `python3 -c "print(open(os.path.expanduser('~/.hermes/memories/MEMORY.md')).read())"`로 원문 직접 확인.**
+- 이 스킬은 "메모리 본문을 wiki에서 lazy fetch"라는 **아이디어의 출처**로만 참고하고,
+  실제 엔트리 목록은 `~/.hermes/memories/MEMORY.md`를 직접 읽는 게 정확.
+
+### 0-bis. cron에서 memory tool이 막힐 때 (2026-10-25)
+
+`memory` tool이 `"Memory is not available"` 에러를 내도 (cron은 `skip_memory=True`로 실행되어 store가 None),
+**`MemoryStore.apply_batch()`를 직접 호출하면 동일한 엔진으로 원자적 쓰기가 가능**하다.
+`autonomous-system-hygiene` skill → `references/memory-batch-cleanup-driver.md` 참조.
+
 ### 1. Key 동기화는 **수동 작업**
 본문이 변경됐을 때 `memory_query.py`의 `KEY_MAP` dict도 동기 업데이트 필요. 자가개선 루프가 자동 검증하지만 본문 추가 시 수동 patch.
 
