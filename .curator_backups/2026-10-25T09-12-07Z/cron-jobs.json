@@ -23,15 +23,15 @@
       "schedule_display": "30 8 * * 1",
       "repeat": {
         "times": null,
-        "completed": 16
+        "completed": 20
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T10:49:43.158073+08:00",
-      "next_run_at": "2026-09-21T08:30:00+08:00",
-      "last_run_at": "2026-09-14T08:30:56.325075+08:00",
+      "next_run_at": "2026-10-26T08:30:00+08:00",
+      "last_run_at": "2026-10-19T08:31:56.116365+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -76,7 +76,7 @@
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T21:35:27.511479+08:00",
-      "next_run_at": "2026-10-01T08:00:00+08:00",
+      "next_run_at": "2026-11-01T08:00:00+08:00",
       "last_run_at": "2026-09-01T08:01:36.964853+08:00",
       "last_status": "ok",
       "last_error": null,
@@ -119,17 +119,17 @@
       "schedule_display": "10 8 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 98
+        "completed": 126
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-05-31T22:08:35.538013+08:00",
-      "next_run_at": "2026-09-21T08:10:00+08:00",
-      "last_run_at": "2026-09-18T08:10:55.122041+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T08:10:00+08:00",
+      "last_run_at": "2026-10-23T08:26:15.070116+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -167,15 +167,15 @@
       "schedule_display": "0 4 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 81
+        "completed": 106
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-06T15:25:15.413856+08:00",
-      "next_run_at": "2026-09-21T04:00:00+08:00",
-      "last_run_at": "2026-09-18T04:00:36.586027+08:00",
+      "next_run_at": "2026-10-26T04:00:00+08:00",
+      "last_run_at": "2026-10-23T04:00:21.259744+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -220,7 +220,7 @@
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T02:16:06.049605+08:00",
-      "next_run_at": "2026-10-01T08:10:00+08:00",
+      "next_run_at": "2026-11-01T08:10:00+08:00",
       "last_run_at": "2026-09-01T08:13:14.099160+08:00",
       "last_status": "ok",
       "last_error": null,
@@ -263,17 +263,17 @@
       "schedule_display": "0 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 93
+        "completed": 122
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T03:29:23.410939+08:00",
-      "next_run_at": "2026-09-21T18:00:00+08:00",
-      "last_run_at": "2026-09-18T18:01:03.616114+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T18:00:00+08:00",
+      "last_run_at": "2026-10-23T18:20:12.182019+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
@@ -294,7 +294,7 @@
     {
       "id": "b96583fa9d27",
       "name": "\ud83c\udf0d \ub9e4\ud06c\ub85c \uc804\ub7b5 \ub9ac\ud3ec\ud2b8 + \uc885\ubaa9\ubcc4 \ub274\uc2a4 \uc218\uc9d1 (\uc800\ub141 18:30)",
-      "prompt": "## Role\nGlobal Macro Strategist & Geopolitical Analyst. \ud55c\uad6d\uc5b4\ub85c \ub9ac\ud3ec\ud2b8\ub97c \uc791\uc131\ud55c\ub2e4.\n\n## Core Rules (Hard Constraints)\n1. **Source Hierarchy:** 1\uc21c\uc704 IMF/BIS/World Bank/\uc911\uc559\uc740\ud589 \u2192 2\uc21c\uc704 \uc2f1\ud06c\ud0f1\ud06c \u2192 3\uc21c\uc704 \uacbd\uc81c\uc678\uc2e0 \ub370\uc774\ud130\n2. **Causality:** \ubaa8\ub4e0 \uacb0\ub860\uc740 [\uc6d0\uc778 \u2192 \uc804\ud30c \uacbd\ub85c \u2192 \uacb0\uacfc] \uad6c\uc870\n3. **Neutral Tone:** \uad6c\uc870\uc801 \ubcc0\ud654\ub97c \uae30\uc220, \uc2b9\uc790/\ud328\uc790 \uaddc\uc815 \uae08\uc9c0\n4. **Data-driven:** \uc815\ub7c9\uc801 \uc218\uce58(\uae08\ub9ac, \ubb3c\uac00, \ud658\uc728)\ub9cc \uadfc\uac70\ub85c \ub17c\ub9ac \uc804\uac1c\n\n## Data Collection (\ud544\uc218 \u2014 web_search \uc0ac\uc6a9)\n1. **\uae00\ub85c\ubc8c \ub9e4\ud06c\ub85c:** \ubbf8\uad6d \uace0\uc6a9/\ubb3c\uac00, \uc5f0\uc900 \uae08\ub9ac \uc804\ub9dd, WTI \uc720\uac00, DXY \ub2ec\ub7ec, S&P500, \uc6d0/\ub2ec\ub7ec \ud658\uc728, \ubc18\ub3c4\uccb4 \uc5c5\uc885 \ub3d9\ud5a5\n2. **\ud55c\uad6d\uc8fc \ub274\uc2a4:** web_search\ub85c \ub2e4\uc74c 6\uc885\ubaa9\uc758 \uc624\ub298 \ub274\uc2a4 2~3\uac74\uc529 \uac80\uc0c9\n   - \uc0bc\uc131\uc804\uc790, SK\ud558\uc774\ub2c9\uc2a4, \uc0bc\uc131\uc804\uae30, \ud604\ub300\ucc28, \uc5d0\uc774\ud53c\uc54c, HD\ud604\ub300\uc77c\ub809\n\n## Report Structure\n1. **Executive Summary:** \ud604\uc7ac\ub97c \uc9c0\ubc30\ud558\ub294 \ud575\uc2ec \ub3d9\uc778(Key Driver) 1\uac00\uc9c0 + \ud30c\uae09\ub825\n2. **Current Macro State:** \ud575\uc2ec \uc9c0\ud45c (CPI, Fed Rate, DXY, WTI, \ud658\uc728, 10\ub144\ubb3c \uae08\ub9ac)\n3. **Causal Linkage:** \uae00\ub85c\ubc8c \u2192 \ud55c\uad6d \u2192 \uad00\uc2ec\uc885\ubaa9\ubcc4 \uc601\ud5a5\n4. **Counter-factual:** \uc8fc\uc694 \ubcc0\uc218\uac00 \uc608\uc0c1\uacfc \ub2e4\ub97c \uacbd\uc6b0\n5. **Structural Implications:** 6~12\uac1c\uc6d4 \uc804\ub9dd\n6. **Priority Matrix:** \ud22c\uc790 \uc601\ud5a5\ub3c4\uc21c \uc815\ub9ac\n\n## Output (\ubc18\ub4dc\uc2dc \uc2e4\ud589)\n1. \uc704 \ub9ac\ud3ec\ud2b8\ub97c Discord\uc5d0 \uc804\uc1a1\n2. **data/macro_context.json\uc5d0 \uc800\uc7a5** (\uc544\ub798 \uad6c\uc870)\n3. \ud30c\uc77c \uc800\uc7a5 \uacbd\ub85c: `~/trading-agents-nuri/data/macro_context.json`\n\n```json\n{\n  \"timestamp\": \"ISO datetime\",\n  \"date\": \"YYYY-MM-DD\",\n  \"macro_report_summary\": \"\ub9ac\ud3ec\ud2b8 \uc804\ubb38 (~3000\uc790)\",\n  \"key_macro_data\": {\n    \"fed_rate\": \"4.25~4.50%\",\n    \"dxy\": \"104.2\",\n    \"wti\": \"$78.5\",\n    \"usdkrw\": \"1380\",\n    \"ten_year_yield\": \"4.53%\"\n  },\n  \"market_interpretation\": {\n    \"key_driver\": \"Key Driver 1\uc904 \uc694\uc57d\",\n    \"market_sentiment\": \"risk-on/risk-off\",\n    \"regime\": \"Goldilocks/Overheat/Stagflation/Slowdown/Severe_Inflation/Deflation\",\n    \"impact_analysis\": \"\uc885\ubaa9\uad70\ubcc4 \uc778\uacfc\uad00\uacc4 \uc124\uba85\"\n  },\n  \"news_items\": [\n    {\"title\": \"...\", \"summary\": \"...\", \"url\": \"...\", \"source\": \"web_search\"}\n  ]\n}\n```",
+      "prompt": "## Role\nGlobal Macro Strategist & Geopolitical Analyst. \ud55c\uad6d\uc5b4\ub85c \ub9ac\ud3ec\ud2b8\ub97c \uc791\uc131\ud55c\ub2e4.\n\n## Core Rules (Hard Constraints)\n1. **Source Hierarchy:** 1\uc21c\uc704 IMF/BIS/World Bank/\uc911\uc559\uc740\ud589 \u2192 2\uc21c\uc704 \uc2f1\ud06c\ud0f1\ud06c \u2192 3\uc21c\uc704 \uacbd\uc81c\uc678\uc2e0 \ub370\uc774\ud130\n2. **Causality:** \ubaa8\ub4e0 \uacb0\ub860\uc740 [\uc6d0\uc778 \u2192 \uc804\ud30c \uacbd\ub85c \u2192 \uacb0\uacfc] \uad6c\uc870\n3. **Neutral Tone:** \uad6c\uc870\uc801 \ubcc0\ud654\ub97c \uae30\uc220, \uc2b9\uc790/\ud328\uc790 \uaddc\uc815 \uae08\uc9c0\n4. **Data-driven:** \uc815\ub7c9\uc801 \uc218\uce58(\uae08\ub9ac, \ubb3c\uac00, \ud658\uc728)\ub9cc \uadfc\uac70\ub85c \ub17c\ub9ac \uc804\uac1c\n\n## Data Collection (\ud544\uc218 \u2014 web_search \uc0ac\uc6a9)\n1. **\uae00\ub85c\ubc8c \ub9e4\ud06c\ub85c:** \ubbf8\uad6d \uace0\uc6a9/\ubb3c\uac00, \uc5f0\uc900 \uae08\ub9ac \uc804\ub9dd, WTI \uc720\uac00, DXY \ub2ec\ub7ec, S&P500, \uc6d0/\ub2ec\ub7ec \ud658\uc728, \ubc18\ub3c4\uccb4 \uc5c5\uc885 \ub3d9\ud5a5\n2. **\ud55c\uad6d\uc8fc \ub274\uc2a4:** web_search\ub85c \ub2e4\uc74c 6\uc885\ubaa9\uc758 \uc624\ub298 \ub274\uc2a4 2~3\uac74\uc529 \uac80\uc0c9\n   - \uc0bc\uc131\uc804\uc790, SK\ud558\uc774\ub2c9\uc2a4, \uc0bc\uc131\uc804\uae30, \ud604\ub300\ucc28, \uc5d0\uc774\ud53c\uc54c, HD\ud604\ub300\uc77c\ub809\n\n## Report Structure\n1. **Executive Summary:** \ud604\uc7ac\ub97c \uc9c0\ubc30\ud558\ub294 \ud575\uc2ec \ub3d9\uc778(Key Driver) 1\uac00\uc9c0 + \ud30c\uae09\ub825\n2. **Current Macro State:** \ud575\uc2ec \uc9c0\ud45c (CPI, Fed Rate, DXY, WTI, \ud658\uc728, 10\ub144\ubb3c \uae08\ub9ac)\n3. **Causal Linkage:** \uae00\ub85c\ubc8c \u2192 \ud55c\uad6d \u2192 \uad00\uc2ec\uc885\ubaa9\ubcc4 \uc601\ud5a5\n4. **Counter-factual:** \uc8fc\uc694 \ubcc0\uc218\uac00 \uc608\uc0c1\uacfc \ub2e4\ub97c \uacbd\uc6b0\n5. **Structural Implications:** 6~12\uac1c\uc6d4 \uc804\ub9dd\n6. **Priority Matrix:** \ud22c\uc790 \uc601\ud5a5\ub3c4\uc21c \uc815\ub9ac\n\n## Output (\ubc18\ub4dc\uc2dc \uc2e4\ud589)\n1. \uc704 \ub9ac\ud3ec\ud2b8\ub97c Discord\uc5d0 \uc804\uc1a1\n2. **data/macro_context.json\uc5d0 \uc800\uc7a5** (\uc544\ub798 \uad6c\uc870)\n3. **\ud30c\uc77c \uc800\uc7a5 \uacbd\ub85c \u2014 \ubc18\ub4dc\uc2dc \ub450 \uacf3 \ubaa8\ub450 \uc800\uc7a5** (Pitfall 22b/65: \ud55c\ucabd\ub9cc \uc800\uc7a5\ud558\uba74 18:35 pipeline\uc774 \uc870\uc6a9\ud788 \uc2e4\ud328\ud568):\n   - `~/trading-agents-nuri/data/macro_context.json` (\ud504\ub86c\ud504\ud2b8 \uc9c0\uc815 \uacbd\ub85c)\n   - `~/trade-pipeline/data/macro_context.json` (**18:35 LangGraph pipeline.py\uac00 \uc2e4\uc81c\ub85c \uc77d\ub294 \uacbd\ub85c**)\n   - \ub9ac\ud3ec\ud2b8 \uc0dd\uc131 \ud6c4 \uc544\ub798 \uba85\ub839\uc73c\ub85c \ubc18\ub4dc\uc2dc \ubcf5\uc0ac:\n     `cp ~/trading-agents-nuri/data/macro_context.json ~/trade-pipeline/data/macro_context.json`\n   - \uc800\uc7a5 \ud6c4 \ub450 \ud30c\uc77c\uc758 `timestamp`\uac00 \ub3d9\uc77c\ud55c\uc9c0 \ud655\uc778\ud558\uace0, \ub2e4\ub974\uba74 \ubcf5\uc0ac\ub97c \ub2e4\uc2dc \uc2e4\ud589\ud560 \uac83.\n\n```json\n{\n  \"timestamp\": \"ISO datetime\",\n  \"date\": \"YYYY-MM-DD\",\n  \"macro_report_summary\": \"\ub9ac\ud3ec\ud2b8 \uc804\ubb38 (~3000\uc790)\",\n  \"key_macro_data\": {\n    \"fed_rate\": \"4.25~4.50%\",\n    \"dxy\": \"104.2\",\n    \"wti\": \"$78.5\",\n    \"usdkrw\": \"1380\",\n    \"ten_year_yield\": \"4.53%\"\n  },\n  \"market_interpretation\": {\n    \"key_driver\": \"Key Driver 1\uc904 \uc694\uc57d\",\n    \"market_sentiment\": \"risk-on/risk-off\",\n    \"regime\": \"Goldilocks/Overheat/Stagflation/Slowdown/Severe_Inflation/Deflation\",\n    \"impact_analysis\": \"\uc885\ubaa9\uad70\ubcc4 \uc778\uacfc\uad00\uacc4 \uc124\uba85\"\n  },\n  \"news_items\": [\n    {\"title\": \"...\", \"summary\": \"...\", \"url\": \"...\", \"source\": \"web_search\"}\n  ]\n}\n```",
       "skills": [
         "self-healing-cron"
       ],
@@ -313,17 +313,17 @@
       "schedule_display": "30 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 92
+        "completed": 121
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-07T03:29:29.821827+08:00",
-      "next_run_at": "2026-09-21T18:30:00+08:00",
-      "last_run_at": "2026-09-18T18:31:03.363898+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T18:30:00+08:00",
+      "last_run_at": "2026-10-23T18:34:34.766761+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "discord:1510397804139515945:1510404235915694170",
       "origin": {
@@ -366,7 +366,7 @@
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-13T17:59:01.110311+08:00",
-      "next_run_at": "2026-10-01T08:00:00+08:00",
+      "next_run_at": "2026-11-01T08:00:00+08:00",
       "last_run_at": "2026-09-01T08:02:07.871663+08:00",
       "last_status": "ok",
       "last_error": null,
@@ -406,17 +406,17 @@
       "schedule_display": "*/15 6-21 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 3268
+        "completed": 4815
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T18:28:23.747299+08:00",
-      "next_run_at": "2026-09-21T06:00:00+08:00",
-      "last_run_at": "2026-09-18T21:46:05.157706+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T06:00:00+08:00",
+      "last_run_at": "2026-10-23T21:45:50.337392+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -453,15 +453,15 @@
       "schedule_display": "*/10 6-22 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 6754
+        "completed": 9227
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-17T18:28:26.523764+08:00",
-      "next_run_at": "2026-09-21T06:00:00+08:00",
-      "last_run_at": "2026-09-18T22:50:51.808903+08:00",
+      "next_run_at": "2026-10-26T06:00:00+08:00",
+      "last_run_at": "2026-10-23T22:50:37.824810+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -497,15 +497,15 @@
       "schedule_display": "0 6 * * 1",
       "repeat": {
         "times": null,
-        "completed": 13
+        "completed": 18
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-23T08:19:31.196104+08:00",
-      "next_run_at": "2026-09-21T06:00:00+08:00",
-      "last_run_at": "2026-09-14T06:00:33.221279+08:00",
+      "next_run_at": "2026-10-26T06:00:00+08:00",
+      "last_run_at": "2026-10-19T06:00:55.763093+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -542,17 +542,17 @@
       "schedule_display": "0 20 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 76
+        "completed": 108
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-25T22:11:44.206839+08:00",
-      "next_run_at": "2026-09-21T20:00:00+08:00",
-      "last_run_at": "2026-09-18T20:01:03.083165+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T20:00:00+08:00",
+      "last_run_at": "2026-10-23T20:01:55.940839+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "local",
       "origin": {
@@ -585,15 +585,15 @@
       "schedule_display": "50 8 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 70
+        "completed": 93
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T11:49:21.446172+08:00",
-      "next_run_at": "2026-09-21T08:50:00+08:00",
-      "last_run_at": "2026-09-18T08:50:39.456893+08:00",
+      "next_run_at": "2026-10-26T08:50:00+08:00",
+      "last_run_at": "2026-10-22T08:50:06.295524+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -628,15 +628,15 @@
       "schedule_display": "40 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 74
+        "completed": 97
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T11:49:22.451470+08:00",
-      "next_run_at": "2026-09-21T18:40:00+08:00",
-      "last_run_at": "2026-09-18T18:40:50.265556+08:00",
+      "next_run_at": "2026-10-26T18:40:00+08:00",
+      "last_run_at": "2026-10-23T18:40:30.953337+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -671,15 +671,15 @@
       "schedule_display": "0 11 * * *",
       "repeat": {
         "times": null,
-        "completed": 84
+        "completed": 119
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-28T12:20:42.091243+08:00",
-      "next_run_at": "2026-09-21T11:00:00+08:00",
-      "last_run_at": "2026-09-20T11:00:24.793252+08:00",
+      "next_run_at": "2026-10-26T11:00:00+08:00",
+      "last_run_at": "2026-10-25T11:00:17.602901+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -714,17 +714,17 @@
       "schedule_display": "0 6 * * *",
       "repeat": {
         "times": null,
-        "completed": 114
+        "completed": 232
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T07:24:58.698355+08:00",
-      "next_run_at": "2026-09-21T06:00:00+08:00",
-      "last_run_at": "2026-09-20T06:00:19.396319+08:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-10-26T06:00:00+08:00",
+      "last_run_at": "2026-10-25T06:00:14.465936+08:00",
+      "last_status": "error",
+      "last_error": "Script exited with code 1\nstdout:\n\ud83c\udfe5 Hermes \uc2dc\uc2a4\ud15c \ud5ec\uc2a4\uccb4\ud06c \u2014 2026-10-25 07:00 KST\n\n\u2500\u2500\u2500 \uc11c\ube44\uc2a4 \u2500\u2500\u2500\n\u2705 Nginx (Dashboard Proxy) (:9119)\n\u274c Hermes Dashboard (Backend) (:9199) \u2014 \uc5f0\uacb0 \uc548 \ub428\n\u2705 API Server (:8642)\n\u2705 Webhook Server (:8644)\n\u2705 Hermes Gateway (systemd)\n\u2705 Nginx (systemd)\n\n\u2500\u2500\u2500 \uc2dc\uc2a4\ud15c \u2500\u2500\u2500\n\u274c Disk /: 88% (33G / 40G)\n\u26a0\ufe0f Memory: 73% (1.4G / 1.9G)\n\ubd80\ud558: \u2705 \u2705 \u2705 1m=0.12 5m=0.08 15m=0.09 (cores=2)\n\ud83d\udd50 up 6 weeks, 3 days, 8 hours, 58 minutes\n\n\u2500\u2500\u2500 \ud06c\ub860 \u2500\u2500\u2500\n\ud83d\udcca \ud06c\ub860: 32\uac1c \uc911 32\uac1c \ud65c\uc131, 0\uac1c \uc77c\uc2dc\uc911\uc9c0\n  \u26a0\ufe0f \uc77c\ubd80 \ud06c\ub860 \uc804\uc1a1 \uc2e4\ud328 \uc788\uc74c\n\n--- \uc694\uc57d ---\n\uc11c\ube44\uc2a4: \u27055 \u274c1 | \uc2dc\uc2a4\ud15c: \u27053 \u26a0\ufe0f1 \u274c1 | \ud06c\ub860: \u26a0\ufe0f1\n\n\u274c \uc77c\ubd80 \uc11c\ube44\uc2a4 \ube44\uc815\uc0c1 \u2014 \uc870\uce58 \ud544\uc694!",
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -757,15 +757,15 @@
       "schedule_display": "0 7 * * *",
       "repeat": {
         "times": null,
-        "completed": 83
+        "completed": 118
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T12:03:02.265401+08:00",
-      "next_run_at": "2026-09-21T07:00:00+08:00",
-      "last_run_at": "2026-09-20T07:00:31.464075+08:00",
+      "next_run_at": "2026-10-26T07:00:00+08:00",
+      "last_run_at": "2026-10-25T07:00:16.762340+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -800,17 +800,17 @@
       "schedule_display": "0 2 * * *",
       "repeat": {
         "times": null,
-        "completed": 105
+        "completed": 139
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-06-29T12:03:06.379003+08:00",
-      "next_run_at": "2026-09-21T02:00:00+08:00",
-      "last_run_at": "2026-09-20T02:00:32.156304+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T02:00:00+08:00",
+      "last_run_at": "2026-10-17T02:00:36.398695+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -848,15 +848,15 @@
       "schedule_display": "0 22 * * *",
       "repeat": {
         "times": null,
-        "completed": 108
+        "completed": 143
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T01:45:32.688905+08:00",
-      "next_run_at": "2026-09-20T22:00:00+08:00",
-      "last_run_at": "2026-09-19T22:00:59.109682+08:00",
+      "next_run_at": "2026-10-25T22:00:00+08:00",
+      "last_run_at": "2026-10-24T22:00:45.589944+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -894,15 +894,15 @@
       "schedule_display": "0 20 * * 0",
       "repeat": {
         "times": null,
-        "completed": 11
+        "completed": 16
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T01:46:44.938615+08:00",
-      "next_run_at": "2026-09-20T20:00:00+08:00",
-      "last_run_at": "2026-09-13T20:00:58.801063+08:00",
+      "next_run_at": "2026-10-25T20:00:00+08:00",
+      "last_run_at": "2026-10-18T20:00:33.470444+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -940,15 +940,15 @@
       "schedule_display": "30 18 * * 5",
       "repeat": {
         "times": null,
-        "completed": 12
+        "completed": 17
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T02:25:33.315122+08:00",
-      "next_run_at": "2026-09-25T18:30:00+08:00",
-      "last_run_at": "2026-09-18T18:30:47.990170+08:00",
+      "next_run_at": "2026-10-30T18:30:00+08:00",
+      "last_run_at": "2026-10-23T18:30:31.416826+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -986,15 +986,15 @@
       "schedule_display": "30 22 * * 5",
       "repeat": {
         "times": null,
-        "completed": 12
+        "completed": 17
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T02:25:42.160708+08:00",
-      "next_run_at": "2026-09-25T22:30:00+08:00",
-      "last_run_at": "2026-09-18T22:30:51.674900+08:00",
+      "next_run_at": "2026-10-30T22:30:00+08:00",
+      "last_run_at": "2026-10-23T22:30:34.083899+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1032,17 +1032,17 @@
       "schedule_display": "0 2 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 53
+        "completed": 198
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T18:29:58.859391+08:00",
-      "next_run_at": "2026-09-21T02:00:00+08:00",
-      "last_run_at": "2026-09-18T02:00:33.932697+08:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-10-26T02:00:00+08:00",
+      "last_run_at": "2026-10-23T22:50:37.298581+08:00",
+      "last_status": "error",
+      "last_error": "Script exited with code 1\nstderr:\nTraceback (most recent call last):\n  File \"/home/ubuntu/.hermes/scripts/kanban_linear_sync.py\", line 236, in <module>\n    main()\n  File \"/home/ubuntu/.hermes/scripts/kanban_linear_sync.py\", line 214, in main\n    a1 = sync_done_kanban_to_linear(apply, mapping)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/.hermes/scripts/kanban_linear_sync.py\", line 119, in sync_done_kanban_to_linear\n    issue = result.get(\"data\", {}).get(\"issue\")\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'get'\nstdout:\n=== Kanban \u2194 Linear Sync (2026-10-23T22:50:36.753834) ===\n[DRY RUN] --apply \ud50c\ub798\uadf8\ub85c \uc2e4\uc81c \ubcc0\uacbd\n\n\ub9e4\ud551: 9\uac74\n\n[1] Kanban done \u2192 Linear Done",
       "last_delivery_error": null,
       "deliver": "local",
       "origin": {
@@ -1078,15 +1078,15 @@
       "schedule_display": "30 21 * * *",
       "repeat": {
         "times": null,
-        "completed": 75
+        "completed": 110
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-07T19:23:54.667037+08:00",
-      "next_run_at": "2026-09-20T21:30:00+08:00",
-      "last_run_at": "2026-09-19T21:30:10.744801+08:00",
+      "next_run_at": "2026-10-25T21:30:00+08:00",
+      "last_run_at": "2026-10-24T21:30:17.263849+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1124,15 +1124,15 @@
       "schedule_display": "30 13 * * *",
       "repeat": {
         "times": null,
-        "completed": 75
+        "completed": 110
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-08T00:10:35.959212+08:00",
-      "next_run_at": "2026-09-21T13:30:00+08:00",
-      "last_run_at": "2026-09-20T13:30:30.757347+08:00",
+      "next_run_at": "2026-10-26T13:30:00+08:00",
+      "last_run_at": "2026-10-25T13:30:31.416138+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1170,15 +1170,15 @@
       "schedule_display": "50 21 * * *",
       "repeat": {
         "times": null,
-        "completed": 75
+        "completed": 109
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-08T01:16:00.139876+08:00",
-      "next_run_at": "2026-09-20T21:50:00+08:00",
-      "last_run_at": "2026-09-19T21:50:18.552008+08:00",
+      "next_run_at": "2026-10-25T21:50:00+08:00",
+      "last_run_at": "2026-10-24T21:50:23.627046+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1216,17 +1216,17 @@
       "schedule_display": "0 7 * * 0",
       "repeat": {
         "times": null,
-        "completed": 13
+        "completed": 21
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-17T04:01:22.496464+08:00",
-      "next_run_at": "2026-09-27T07:00:00+08:00",
-      "last_run_at": "2026-09-20T07:00:35.048309+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-11-01T07:00:00+08:00",
+      "last_run_at": "2026-10-25T07:09:04.898731+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -1262,15 +1262,15 @@
       "schedule_display": "45 18 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 51
+        "completed": 76
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-17T05:34:12.986262+08:00",
-      "next_run_at": "2026-09-21T18:45:00+08:00",
-      "last_run_at": "2026-09-18T18:46:27.952394+08:00",
+      "next_run_at": "2026-10-26T18:45:00+08:00",
+      "last_run_at": "2026-10-23T18:46:07.835748+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1308,15 +1308,15 @@
       "schedule_display": "50 13 * * *",
       "repeat": {
         "times": null,
-        "completed": 66
+        "completed": 104
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-28T19:04:55.161595+08:00",
-      "next_run_at": "2026-09-21T13:50:00+08:00",
-      "last_run_at": "2026-09-20T13:50:34.124113+08:00",
+      "next_run_at": "2026-10-26T13:50:00+08:00",
+      "last_run_at": "2026-10-25T13:50:33.715953+08:00",
       "last_status": "ok",
       "last_error": null,
       "last_delivery_error": null,
@@ -1354,17 +1354,17 @@
       "schedule_display": "0 20 * * *",
       "repeat": {
         "times": null,
-        "completed": 54
+        "completed": 240
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-07-28T19:21:49.771412+08:00",
-      "next_run_at": "2026-09-20T20:00:00+08:00",
-      "last_run_at": "2026-09-19T20:00:10.552404+08:00",
-      "last_status": "ok",
-      "last_error": null,
+      "next_run_at": "2026-10-25T20:00:00+08:00",
+      "last_run_at": "2026-10-24T20:00:17.315426+08:00",
+      "last_status": "error",
+      "last_error": "Script exited with code 128\nstdout:\nfatal: could not read Username for 'https://github.com': No such device or address",
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -1400,17 +1400,17 @@
       "schedule_display": "0 17 * * *",
       "repeat": {
         "times": null,
-        "completed": 60
+        "completed": 104
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-08-11T13:40:36.639868+08:00",
-      "next_run_at": "2026-09-20T17:00:00+08:00",
-      "last_run_at": "2026-09-19T17:00:27.086862+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T17:00:00+08:00",
+      "last_run_at": "2026-10-24T17:21:41.673935+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -1451,17 +1451,17 @@
       "schedule_display": "0 9 * * 1-5",
       "repeat": {
         "times": null,
-        "completed": 36
+        "completed": 64
       },
       "enabled": true,
       "state": "scheduled",
       "paused_at": null,
       "paused_reason": null,
       "created_at": "2026-08-20T22:09:06.969000+08:00",
-      "next_run_at": "2026-09-21T09:00:00+08:00",
-      "last_run_at": "2026-09-18T09:00:56.401597+08:00",
-      "last_status": "error",
-      "last_error": "RuntimeError: HTTP 402: The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)",
+      "next_run_at": "2026-10-26T09:00:00+08:00",
+      "last_run_at": "2026-10-23T09:05:19.723214+08:00",
+      "last_status": "ok",
+      "last_error": null,
       "last_delivery_error": null,
       "deliver": "origin",
       "origin": {
@@ -1476,5 +1476,5 @@
       "fire_claim": null
     }
   ],
-  "updated_at": "2026-09-20T13:50:34.124581+08:00"
+  "updated_at": "2026-10-25T17:00:23.949440+08:00"
 }

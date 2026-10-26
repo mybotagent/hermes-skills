@@ -27,6 +27,7 @@ huggingface-hub
 humanizer
 jupyter-live-kernel
 llama-cpp
+llm-wiki
 manim-video
 maps
 nano-pdf
