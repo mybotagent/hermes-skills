@@ -300,7 +300,10 @@ rm ~/.hermes/cron/.tick.lock
    | **미국 30년물 금리** | **CNBC XML `US30Y` (1순위, 2026-10-22 검증)** | `curl -sL --max-time 12 "https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=US30Y&requestMethod=itk" -H "User-Agent: $UA"` → `<last>5.375</last>` / `<previous_day_closing>5.437</previous_day_closing>` / `<change_pct>0.9336</change_pct>` (2026-10-22 실측). ⚠️ 이전 가이드의 "CNBC 미지원"은 **오류** — `US30Y`는 XML 정상 지원. 같은 날 Yahoo `^TYX`는 **빈 응답**(JSON 파싱 실패) → Yahoo fallback 약화 |
    | **미국 CPI** | **BLS Public API v2 (1순위, 2026-10-21 검증)** | `curl -s --max-time 15 "https://api.bls.gov/publicAPI/v2/timeseries/data/CUUR0000SA0?startyear=2024&endyear=2026" -H "Content-Type: application/json" -o /tmp/bls.json` → 원계열 SA 인덱스라 YoY 직접 계산 `((v2026/v2025)-1)*100`. ⚠️ 응답에 `'-'` 결측값이 섞임 → `float()` 변환 시 try/except 필수. 2026-10-21 검증: 7월 3.36% → 8월 3.40% → 9월 3.74%. `fred.stlouisfed.org/graph/fredgraph.csv`는 이 환경에서 빈 응답 → BLS 직접 API 사용 |
    | **Fed Funds (기준금리)** | **NY Fed Rates API (1순위, 2026-10-21 검증)** | `curl -s --max-time 15 "https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json" -H "User-Agent: Mozilla/5.0"` → `targetRateFrom`~`targetRateTo`가 목표금리 범위, `percentRate`=EFFR. 2026-10-21 검증: target 3.75~4.00%, EFFR 3.88%. SOFR: `.../rates/secured/sofr/last/1.json`. 기간조회: `.../effr/search.json?startDate=...&endDate=...` |
-   | **한국 개별주** (005930 등) | **Naver Polling API (1순위, 2026-07-09 검증)** — Yahoo·CNBC 모두 미지원 | `curl -sL --max-time 12 "https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:005930" -H "User-Agent: $UA" -o /tmp/naver.raw && python3 -c "import json; raw=open('/tmp/naver.raw','rb').read(); d=json.loads(raw.decode('euc-kr',errors='ignore')); x=d['result']['areas'][0]['datas'][0]; print(f\"Price: {x['nv']:,} Prev: {x['pcv']:,} Change: {x['cv']:+,} ({x['cr']:+.2f}%)\")"` — 6종목 검증 완료 (삼성전자·SK하이닉스·삼성전기·현대차·에이피알·HD현대일렉) |
+   | **한국 개별주 현재가** | **Naver Polling API (1순위, 2026-07-09 검증)** — Yahoo·CNBC 모두 미지원 | `curl -sL --max-time 12 "https://polling.finance.naver.com/api/realtime?query=SERVICE_ITEM:005930" -H "User-Agent: $UA" -o /tmp/naver.raw && python3 -c "import json; raw=open('/tmp/naver.raw','rb').read(); d=json.loads(raw.decode('euc-kr',errors='ignore')); x=d['result']['areas'][0]['datas'][0]; print(f\"Price: {x['nv']:,} Prev: {x['pcv']:,} Change: {x['cv']:+,} ({x['cr']:+.2f}%)\")"` — 6종목 검증 완료 (삼성전자·SK하이닉스·삼성전기·현대차·에이피알·HD현대일렉) |
+   | **한국 개별주 확정 종가/일변동률/주간수익률/외국인소진율** | **Naver siseJson (1순위, 2026-10-26 검증)** — Polling은 장중 스냅샷이라 확정종가와 불일치 | `https://api.finance.naver.com/siseJson.naver?symbol=005930&requestType=1&startTime=20261013&endTime=20261026&timeframe=day` + `Referer: https://finance.naver.com/item/sise_day.naver?code=005930` 필수 (없으면 빈 응답), EUC-KR. → `references/cron-mode-korean-stock-series-and-text-qa.md` |
+   | **브렌트 유가** | **CNBC XML `@LCO.1` (2026-10-26 검증)** | `curl -sL --max-time 12 "https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=@LCO.1&requestMethod=itk" -H "User-Agent: $UA"` → ICE Brent Crude (Dec'26) 115.08. "CNBC는 Brent 미지원" 기록은 폐기 |
+   | **BLS CPI period 키** | `'M09'` 형식 | 응답의 `period`는 `"M09"` (문자 M 접두). `"09"`로 인덱싱하면 KeyError → YoY 계산 조용히 실패 |
 
    ### 🚨 Yahoo Finance 완전 차단 — 2026-07-09 갱신 (이전 "심볼별 차등" 판정도 무효)
 
@@ -378,6 +381,40 @@ rm ~/.hermes/cron/.tick.lock
    ```
 
    **상세 + 다중 종목 루프 + 에러 처리**: `references/cron-mode-naver-polling-fallback.md`
+
+### 🚨 Polling API는 확정 종가가 아니다 — 리포트 "종가"에는 siseJson 사용 (2026-10-26 신규)
+
+**실측 (2026-10-26 15:33 KST 장 마감 직후, 동일 시점 2개 소스 비교)**:
+| 종목 | Polling (`ms='OPEN'`) | siseJson (확정 종가) | 차이 |
+|:--|:--|:--|:--|
+| 삼성전자 | 214,000 / `cr=+0.70` | 214,000 / **+0.23%** | 변화율 3배 |
+| HD현대일렉트릭 | 445,000 / `cr=+5.32` | 444,000 / **-4.82%** | **방향까지 반대** |
+
+**원인**: Polling의 `cr`/`pcv`는 실시간 스냅샷 기준 → `ms='OPEN'` 상태에서는 확정 종가와 어긋남.
+
+**HARD RULE**:
+- 리포트에 **종가·일변동률·주간수익률**을 쓸 때는 **Naver siseJson** (`api.finance.naver.com/siseJson.naver`) 사용. Polling은 실시간 모멘텀 전용.
+- `ms == 'CLOSE'`일 때만 두 소스가 일치 → 값 인용 전 `ms` 확인.
+- siseJson은 `Referer` 헤더 필수(없으면 빈 응답) + EUC-KR. 응답 행:
+  `["20261026", 시가, 고가, 저가, 종가, 거래량, 외국인소진율]` → **주간수익률·외국인소진율까지 한 번에**.
+- 📄 상세 + 코드: `references/cron-mode-korean-stock-series-and-text-qa.md`
+
+### 🚨 저장 전 한국어 텍스트 CJK 혼입 QA (2026-10-26 신규)
+
+긴 한국어 리포트를 생성·저장하면 **중국어/일본어 토큰이 섞여 저장**되는 것이 반복적으로 발생함
+(실측: `ELP`, `投기`, `累`, `本月`, `回落`, `widgets`, `Kombini`, `交易` 등 한 번에 5개 이상).
+
+**탐지 정규식 — 한자 범위로 검사해야 한다 (한글 정규식으로 잡으면 조용히 통과)**:
+```python
+import re
+cjk = re.findall(r'[一-鿿]', d['macro_report_summary'])
+assert len(cjk) == 0, '한자 혼입 감지'
+for m in re.finditer(r'[一-鿿]+', d['macro_report_summary']):
+    print(repr(d['macro_report_summary'][max(0,m.start()-40):m.end()+40]))
+```
+- 기존 SKILL.md의 고정 BAD 토큰 리스트(`wyn`/`Dd`/`ipuiae`...)는 **무작위 문자열**이라 매번 다른 오염을 못 잡음 → CJK 범위 검사가 본체.
+- **수정은 일괄 replace 말고 항목 단위 정상 한국어 재작성** (replace는 띄어쓰기 깨진 새 결함을 만듦 — `投机`→`투기` 치환 시 `가장 커투기적` 발생).
+- 저장 → **재로드 → 검증** 순서 (저장 직후 검증하면 옛 값이 남음). 두 저장 경로(timestamp 일치)까지 assert.
 
    ### ⚠️ 정량 수치 source disagreement 처리 (2026-06-29 신규)
 
@@ -1039,6 +1076,7 @@ bash ~/.hermes/scripts/self_healing_watchdog.sh
 - `references/cron-delivery-error-recovery.md` — 🔀 Deliver 실패 자가 치유 + HTTP 코드 분류 (2026-07-01)
 - `references/cron-deliver-topic-matching.md` — ⚠️ Wrong-Thread Routing (포맷 OK, topic 틀림) 진단·수정 (2026-07-02 신규)
 - `references/cron-mode-naver-polling-fallback.md` — 🚨 Yahoo 완전 차단 시 Naver Polling API로 한국 개별주 수집 패턴 (EUC-KR 디코딩, 6종목 검증, 2026-07-09 신규)
+- `references/cron-mode-korean-stock-series-and-text-qa.md` — 🆕 한국 개별주 확정 종가/주간수익률/외국인소진율(siseJson) + 한국어 리포트 CJK 혼입 QA 정규화 (2026-10-26 신규)
 - `references/hermes-config-sync-bugs.md` — 🚨 hermes_config_sync.sh 2 critical bugs (rsync wipe + config recursion) + fix (2026-07-09 신규)
 - `references/llm-root-cause-analysis.md` — 🧠 재시도 초과 시 LLM 근본 원인 분석 패턴 (3-layer escalation, prompt 템플릿, 캐시 schema, env keys, 2026-07-10 신규)
 

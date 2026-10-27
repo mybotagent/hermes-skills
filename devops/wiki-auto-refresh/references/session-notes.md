@@ -2,6 +2,33 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-10-26 (21:00 KST) — P19 재감염 (29회 연속, committed 변형) + freelancing-platforms-comparison 등록 + push 성공
+
+**발견:**
+- P19: `index.md` footer 뒤에 `— 자동 추가 (2026-10-25)` 레이블 서브모듈 항목 **65건** 대량 삽입.
+  - **committed 변형 (신규)** — 3단계 판별에서 working tree / HEAD / origin/main **모두 65건**. 이전 28회는 전부 working-tree 전용이었으나 이번엔 04:00 auto-sync 크론(`83f4356 auto-sync 2026-10-26 04:00 KST`)이 rogue 블록을 커밋·push까지 완료한 상태.
+  - 오염 커밋 `83f4356`의 index.md diff = **rogue 추가분 66줄뿐**(정식 수정 0건) → mixed-state edge case 아님 → **parent 복원 경로** 적용.
+  - Parent `a955615` 청정(0건) 확인 후 `git show a955615:index.md > index.md` → 203줄 → 138줄.
+  - **rogue 건수 = logs 파일 수에 비례** (10-23: 63건 → 10-26: 65건). 신규 로그 2건 증가분 + 정상 패턴.
+- index.md 미등록 1건: `solopreneur/freelancing-platforms-comparison.md` — parent 복원 후 이전에도 미등록 상태였음 → solopreneur/ 섹션에 PAT A로 정식 등록.
+- logs/index.md NOTREF 1건: `2026-10-26-1815.md` (root-level, 셀프힐링 로그) → October 섹션에 등록.
+- P18 `^|- ` 검사: wiki 전체 + skill references/ 모두 0건 (clean).
+
+**적용:**
+1. `git show a955615:index.md > index.md` (P19 committed 복구, parent 복원 경로)
+2. `patch`로 solopreneur/ 섹션에 `freelancing-platforms-comparison` 항목 추가 (P28 준수: 고유 앵커 1줄 + 앵커 보존)
+3. logs 서브모듈: `2026/2026-10-26-2100.md` 신규 생성 + `index.md` October 섹션에 2행 추가 (`||` double-pipe 형식, `cat -A`로 인접 행 prefix 일치 검증, triple-pipe 0건)
+   - 1815 로그 링크는 root-level 파일이므로 target `2026-10-26-1815.md` (경로 prefix 없이)
+4. audit 5종 재실행 → 전부 통과 (wikilink 0 / markdown 0 / index-md registered 87 = actual 87, REAL MISSING 0 / tag Unknown 0 / logs-index broken 0 notref 0)
+
+**커밋:**
+- logs submodule (master): `5ada149` → push `ee408fd..5ada149` ✅
+- parent hermes-wiki (main): `fc103d3` → push `83f4356..fc103d3` ✅
+- 최종 상태: working tree / HEAD / origin/main 모두 `자동 추가` 0건, `git status` clean.
+
+**교훈:**
+- 04:00 auto-sync 크론이 rogue를 **커밋 + push까지** 완료하는 committed 변형이 실제로 발생함 (P19 사례 29회째). 3단계 판별(working/HEAD/origin) 매 실행 필수 — HEAD만 봐선 부족하고, `git status` clean이어도 오염 커밋이 push된 상태일 수 있음.
+
 ## 2026-10-23 (21:00 KST) — P19 재감염 (28회 연속, working-tree) + audit 전항목 통과 + push 성공
 
 **발견:**

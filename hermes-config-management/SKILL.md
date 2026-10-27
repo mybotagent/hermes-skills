@@ -37,16 +37,16 @@ hermes config show                       # formatted summary
 
 ```bash
 # Quick survey of all 3 locations
-grep -A8 "\"deepseek\"\|\"minimax\"\|\"openai\"" ~/.hermes/auth.json
-grep -E "DEEPSEEK_API_KEY|MINIMAX_API_KEY|OPENAI_API_KEY" ~/.hermes/.env
+grep -A8 "\"minimax\"\|\"openai\"" ~/.hermes/auth.json
+grep -E "MINIMAX_API_KEY|OPENAI_API_KEY" ~/.hermes/.env
 grep -E "api_key" ~/.hermes/config.yaml
 ```
 
 ### 3. Switch default provider
 ```bash
-hermes config set model.provider <name>      # e.g. deepseek
-hermes config set model.default  <model-id>  # e.g. deepseek-v4-flash
-hermes config set model.base_url <url>       # e.g. https://api.deepseek.com/v1
+hermes config set model.provider <name>      # 현재 정책: minimax
+hermes config set model.default  <model-id>  # e.g. MiniMax-M2.7
+hermes config set model.base_url <url>       # e.g. https://api.minimax.io/v1
 # Leave model.api_key '' → uses credential_pool (priority 1)
 ```
 
@@ -90,8 +90,8 @@ source ~/.hermes/.env && curl -s -X POST https://api.minimax.io/v1/chat/completi
 
 ```
 RuntimeError: Skipped to prevent unintended spend: global inference config drifted
-since this job was created (provider 'minimax' -> 'deepseek';
-model 'minimax-m3' -> 'deepseek-v4-flash'), and this job is unpinned.
+since this job was created (provider 'minimax' -> 'minimax';
+model 'MiniMax-M2.7' -> 'MiniMax-M3'), and this job is unpinned.
 ```
 
 **원인**: Hermes가 잡 생성 시점의 provider/model과 런타임 글로벌 설정이 다르면 "비용 사고 방지"로 자동 skip. 토글 자체가 트리거.
@@ -140,10 +140,10 @@ hermes -z "ok" -m <model-id> --provider <provider>
 
 **문제**: 키 값을 인자로 직접 넘기면 `hermes` CLI가 stdout에 짧게 echo함. 예시:
 ```bash
-hermes config set providers.deepseek.api_key "sk-c4b...063d"
-# stdout: ✓ Set providers.deepseek.api_key = sk-c...063d in /home/ubuntu/.hermes/config.yaml  ← 키 일부 노출
-hermes auth add deepseek --type api_key --api-key "sk-c4b...063d"
-# stdout: Added custom:deepseek credential #2: "DEEPSEEK_API_KEY"  ← 레이블만 노출 (이건 안전)
+hermes config set providers.minimax.api_key "sk-..."
+# stdout: ✓ Set providers.minimax.api_key = sk-... in /home/ubuntu/.hermes/config.yaml  ← 키 일부 노출
+hermes auth add minimax --type api_key --api-key "sk-..."
+# stdout: Added custom:minimax credential #2: "MINIMAX_API_KEY"  ← 레이블만 노출 (이건 안전)
 ```
 
 **CLI별 노출 동작 (2026-07-11 검증)**:
@@ -156,15 +156,15 @@ hermes auth add deepseek --type api_key --api-key "sk-c4b...063d"
 **노출 회피 패턴**:
 ```bash
 # ❌ 노출 — 인자로 직접
-hermes config set providers.deepseek.api_key "sk-c4b...063d"
+hermes config set providers.minimax.api_key "sk-..."
 
 # 🟡 부분 안전 — .env에서 추출 (여전히 CLI가 일부 echo)
-KEY=$(grep -E "^DEEPSEEK_API_KEY=" ~/.hermes/.env | cut -d= -f2-)
-hermes config set providers.deepseek.api_key "$KEY"
+KEY=$(grep -E "^MINIMAX_API_KEY=" ~/.hermes/.env | cut -d= -f2-)
+hermes config set providers.minimax.api_key "$KEY"
 # stdout: ...sk-c...063d in ...  ← 여전히 노출 (CLI 자체가 echo)
 
 # ✅ 가장 안전 — stdin 패턴
-echo "$KEY" | hermes auth add deepseek --type api_key --label "DEEPSEEK_API_KEY" --api-key -
+echo "$KEY" | hermes auth add minimax --type api_key --label "MINIMAX_API_KEY" --api-key -
 # stdout: Added ... (라벨만, 키 0 노출)
 ```
 
