@@ -869,6 +869,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/market-calendar-module.md`** — `scripts/market_calendar.py` — KR/US holiday calendar + market open/close detection + pipeline consumers (2026-07-17 신규)
 - **`references/process-update-theater.md`** —** `execution-discipline` skill의 process-update theater variant. display-layer patching 대신 pipeline-layer fix 우선 원칙. 본 SKILL의 Pitfall 49와 연결됨.
 - **`references/macro-report-official-source-verification.md`** — 🏛 매크로 리포트 공식 소스 교차검증 (2026-10-21 신규). NY Fed EFFR(=기준금리), BLS CPI 원계열 YoY 직접계산, CNBC XML vs HTML(선물은 HTML 우선), exchangerate-api, 한국 6종목 확정 코드, **저장 전 한국어 토큰 손상 QA**, 전일 리포트 값 재검증 규칙. **2026-10-22 추가**: `US30Y`/`.DJI`/`.IXIC` CNBC XML 심볼 (기존 "30년물 CNBC 미지원" 오류 정정), US 지수 `pdc==last` quirk의 `last - change` 전일종가 역산, **뉴스 URL 자동 추출 패턴(손으로 옮기면 truncate)**
+- **`references/macro-report-generation-qa.md`** — 🧪 매크로 리포트 생성→저장 QA 워크플로우 (2026-10-27 신규). 수집→교차검증→URL 자동매칭→본문 QA(저장 전)→dual-save+md5 대조 순서, CNBC HTML quote 엔드포인트 12개 심볼 실측표, 제목 정규화 매칭 코드, CJK+로마자 2계열 QA, 저장 QA 체크리스트
 - **`references/narrative-rotation-analysis.md`** — 네러티브·순환매 분석 프레임워크 (2026-08-06 신규). 종목별 3요소(네러티브/순환매/PER), Google News RSS 패턴, 대량 종목 delegate_task 병렬 패턴, 사이클 정점 PER 판정 원칙
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
@@ -1563,6 +1564,32 @@ for i, line in enumerate(src.splitlines(), 1):
 - **브렌트유** → CNBC XML `@LCO.1` (2026-10-23: 114.35) — `@CL.1`만 쓰면 브렌트-아비텍 스프레드($13)를 놓침.
 - **`open.er-api.com` 환율 소스 정상 재확인** (2026-10-23: KRW 1324.95) — exchangerate-api와 **둘 다** 사용, RSS 확정치와 교차.
 - 상세: `references/macro-report-official-source-verification.md` 절 11.
+
+### 69. 🔴 매크로 리포트 생성→저장 QA 워크플로우 (2026-10-27 신규, CRITICAL)
+
+**순서 고정**: 수집 → **정량값 교차검증** → 뉴스 URL 자동 매핑 → 본문 작성 → **본문 QA(저장 전!)** → 저장+dual-save+무결성 대조.
+
+- **정량값은 저장 직전에 공식 소스로 재조회** (Pitfall 62). 2026-10-27 파이프라인 값과 CNBC 재조회 값이
+  DXY·WTI·US10Y·VIX·금·브렌트 6개에서 어긋남 → **`key_macro_data`와 `macro_report_summary` 양쪽** 갱신 필요.
+  한쪽만 고르면 JSON과 리포트가 서로 다른 수치를 말하게 된다. `grep`으로 구버전 값 0건 확인 후 저장.
+- **CNBC HTML quote 엔드포인트**(`quote.cnbc.com/quote-html-webservice/quote.htm?symbols=`)가
+  `.KS11 .KQ11 .SPX .IXIC .DJI .VIX .DXY US10Y US30Y @CL.1 @LCO.1 @GC.1`을 한 번에 커버.
+  XML과 별개로 사용 가능. `previous_day_closing`도 함께 반환.
+- **뉴스 URL 매칭은 정규화 후 다중 토큰 부분 매칭** — RSS 제목은 `" - 연합뉴스"` 같은 플랫폼 접미사가
+  붙어 단순 `in` 매칭이 실패한다. `re.sub(r'[\s’‘\'"…·]','',s)` 정규화 후 매칭. 매칭 실패 시
+  **임의 URL 금지** — 저장 스크립트에서 assert로 중단.
+- **본문 QA는 저장 전에** — 손상 토큰을 저장→발견→패치→재저장으로 반복하면 8회 이상 재실행된다.
+  저장 전 QA로 1회에 끝낸다.
+- **QA 2계열**: ① CJK 한자 스캔 `re.compile(r'[\u4e00-\u9fff]')` ② **로마자 혼입** (`money`, `well put`,
+  `today's`, `hawkish`, `defenses`, `transistor`, `catalysts`, `S/W`, `US` 등 자연어에 섞인 영어).
+  검사 대상은 `macro_report_summary`와 `news_items[].summary`만 — `title`은 정상 혼입 가능.
+  **조치는 항목 단위 한국어 재작성**(일괄 replace 금지).
+- **dual-save를 저장 스크립트 내부에서** 처리 — 두 경로 write 후 `timestamp`·내용 동등성 assert +
+  `md5sum` 대조까지 한 스크립트 말미에서.
+- **Discord webhook 미탐색 시**: 홈 전체 `grep -r`은 60초 타임아웃 → `.env`/`config.yaml`/`*.py`/`*.sh`로
+  한정. 없으면 **최종 응답에 리포트 전문을 그대로 담는 것이 전송 대체**(크론 응답 자체가 채널로 전달됨).
+
+**참조**: `references/macro-report-generation-qa.md` (전체 순서·검증 코드·실측값 표)
 
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
 

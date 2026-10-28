@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.41.0"
+version: "1.42.0"
 changelog:
+  - "2026-10-27: P29 신규 — 인라인 orphan 스캔은 59건 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) → orphan 판정은 bundled wikilink-audit.py + index-md-audit.py 결과만 신뢰, 인라인 수치를 리포트에 싣지 말 것. P19 30회 연속(working-tree, 66건) — 10-26 committed 변형 → 10-27 working-tree 변형 전환 사례 추가(연속 이틀 서로 다른 변형 → 3단계 판별 매 실행 독립 수행, 복구 경로 분기)."
   - "2026-10-25: P27 신규 — `~/.hermes/scripts/wiki_lint.py`는 태그 taxonomy를 18개 하드코딩 근사한 레거시 스크립트(실제 SCHEMA taxonomy 149개). tag audit에서 'unknown tag: llm/ai/agent/hermes' 오탐 보고 → bundled `scripts/tag-audit.py`(Unknown 0)를 우선할 것, wiki_lint.py 결과는 리포트에 그대로 싣지 말 것. P28 신규 — index.md 섹션 추가 시 patch fuzzy-match가 기존 항목을 삭제할 수 있음(삽입 목적이면 old_string을 고유 앵커 1줄로 잡고 new_string에 앵커 보존, patch 직후 diff로 기존 행 생존 검증). P21 보강 — cron에서 memory tool 차단 시 `MemoryStore.apply_batch()` 드라이버로 원자적 쓰기 가능(직접 파일 편집보다 안전)."
   - "2026-10-23: P19 판별 3단계(working-tree/HEAD/origin) 공식화 + **rogue 건수 = logs 파일 수에 비례**(신규 로그 1개 추가 → rogue 1건 증가, 정상 패턴 — 10-23 63건) — 건수 증가만으로 오염 확대 추측 금지. logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증 절차 추가 (형제 행과 `||` prefix 일치, 육안 판별보다 확실). P26 부분 읽기 허용 예외 — 날짜-유일 헤더 앵커는 partial-view 상태에서도 정상 적용. P19 28회 연속(working-tree, 63건) 복구 — git restore fast path, 커밋 불필요."
   - "2026-10-22: P26 신규 — session-notes.md는 '최신순 = 맨 위'(prepend) 구조인데 사전 점검 4단계/P20/P23가 '파일 끝 append + tail -100'을 안내하고 있었음 (실제 순서 10-22→10-21→10-19→10-13). 절차 정정: 첫 번째 '## ' 헤더 바로 위 삽입, head -100으로 읽기, P20 앵커 = 다음 섹션의 날짜 헤더 전체. P19 27회 연속(working-tree, 62건) 복구 — git restore fast path로 커밋 불필요."
@@ -1076,6 +1077,9 @@ git diff HEAD --stat -- index.md                     # diff가 rogue 추가분�
 **실제 사례 (2026-10-26, 29회 연속 — 04:00 auto-sync가 커밋+push까지 완료한 committed 변형):** 10-26 04:00 크론 커밋 `83f4356 auto-sync 2026-10-26 04:00 KST`가 index.md 하단에 rogue 65건을 삽입하고 **push까지 완료**. 3단계 판별에서 working tree / HEAD / origin/main **모두 65건** → 이전 28회(전부 working-tree 전용)와 달리 committed+push 변형. 오염 커밋 diff = rogue 추가분 66줄뿐(정식 수정 0건) → parent `a955615` 청정(0건) 확인 후 `git show a955615:index.md > index.md` parent 복원 경로 적용 (203줄 → 138줄). 복구 후 `solopreneur/freelancing-platforms-comparison.md`가 미등록 상태로 남아 있어 solopreneur/ 섹션에 PAT A 등록. 로그: `2026/2026-10-26-2100.md`, 커밋 logs `5ada149` / parent `fc103d3`.
 - **교훈:** "04:00 auto-sync가 커밋만 한다"가 아니라 **push까지 한다**는 게 확인됨. `git status` clean이어도 오염이 origin에 반영돼 있을 수 있으므로 3단계 판별(working/HEAD/origin)을 생략하지 말 것.
 
+**실제 사례 (2026-10-27, 30회 연속 — working-tree 전용, `git restore` fast path):** 10-26의 committed 변형 바로 다음 날이 다시 **working-tree 전용**으로 돌아왔음. 3단계 판별: working tree 66건 / HEAD 0건 / origin/main 0건 → `git diff HEAD -- index.md` = rogue 추가분 67줄뿐 → `git restore index.md` fast path로 복구, **커밋 불필요**. rogue 65→66 증가는 logs 신규 파일 1건 증가분(정상 패턴). audit 5종 전항목 통과 + stale 63개(수동 검토 플래그) + auto-fill filled 0/skipped 20(raw). 로그 `2026/2026-10-27-2100.md`, 커밋 logs `f8fcd05` / parent `6e20c22`.
+- **교훈:** 같은 오염이 **연속 이틀 서로 다른 변형**으로 나타날 수 있다 (10-26 committed+push → 10-27 working-tree 전용). "어제 committed였으니 오늘도 committed"로 단정하지 말 것 — 3단계 판별은 매 실행 독립적으로 수행해야 한다. 변형이 달라지면 복구 경로도 달라지므로(commit 필요 vs `git restore` fast path) 판별 결과에 따라 분기할 것.
+
 **실제 사례 (2026-10-12, 25회 연속 — hermes-config-sync 재감염):** 10-05 P19 복구(f7eb27d)로 62개 rogue 제거 후 7일 뒤, 10-10 새 오염 62개가 다시 HEAD에 커밋됨. 커밋 로그에서 오염 삽입 커밋: `a341105 hermes-config-sync: 2026-10-10T05:30:53Z (wiki)`, `65cb2d8 hermes-config-sync: 2026-10-11T05:30:20Z (wiki)`. 즉 04:00 + 05:30 daily auto-sync 크론이 rogue를 재삽입하는 사이클. 이것은 weekly cleanup만이 아니라 **매일 2회(04:00 + 05:30) auto-sync도 P19 오염 수단**이 될 수 있음을 입증. Parent(f7eb27d) diff = rogue 추가분뿐(+정식 수정 0) → `git show f7eb27d:index.md > index.md` parent 복원. + `raw/2026-W41` PAT B 등록.
 
 **실제 사례 (2026-08-17, 15회 연속 — 04:00 auto-sync 커밋에 편승한 committed+push 변형):** 08-16 오염분(58건: subagents-library 5 + logs 53)이 08-17 04:00 auto-sync 커밋 `d36d3b3`에 편승해 HEAD+origin/main 모두 push됨. `git status` clean이었으나 `git show HEAD:index.md` '자동 추가' 58건으로 탐지. 주목할 점: 08-16 weekly cleanup `076bafb`가 전날 58줄을 이미 제거·push했는데, **4시간 뒤 04:00 auto-sync가 같은 rogue 블록을 재삽입** — P19는 주간 cleanup뿐 아니라 매일 2회 실행(04:00/21:00) 중 **어느 auto-sync 커밋에도 편승 가능**하다는 첫 사례. 복구는 08-10과 동일한 parent 복원 경로: `git show 076bafb:index.md` 청정(0건) + `d36d3b3` diff가 rogue 추가분뿐(비-rogue 0건) 확인 후 `git show 076bafb:index.md > index.md` → commit `4afdc74` (1 file, -59), push `d36d3b3..4afdc74`. untracked 없음 (W34 draft 미발생, W33은 076bafb에서 이미 등록). **교훈: git log의 최근 커밋(04:00 auto-sync 포함)이 오염 편승 수단이므로, HEAD 검사는 '자동 추가' grep으로 매 실행 필수 — cleanup 커밋만 의심하지 말 것.**
@@ -1292,6 +1296,25 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 
 **주의:** logs/index.md는 `||` double-pipe 테이블 형식이라 patch 반복 실패 시 전체 rewrite가 빠르고 안전 (P18 교훈 재확인).
 
+### P29. 인라인 orphan 스캔은 고위험 오탐 소스 — bundled audit 결과를 신뢰할 것 (2026-10-27 추가)
+
+**증상:** 임의로 작성한 인라인 orphan 스캔(모든 .md의 inbound wikilink + markdown link를 수집해
+미참조 페이지를 뽑음)이 **59건**을 보고함. 실제로는 전부 오탐.
+
+**오탐 유형:**
+- `raw/**` (PAT B plain-text 등록 — P14)
+- `architecture/how-to-use-hermes/01-09.md` (P13 multi-page sibling — README 등록만으로 의도된 구조)
+- `research/**` (frontmatter `sources:` 로만 참조)
+- `README.md` 등 랜딩 페이지, `architecture/memory-snapshots/`
+
+**위험:** 이 수치를 "orphan 59건"으로 리포트에 그대로 쓰면 사용자가 실제 데이터 손실을 걱정하게 되고,
+오히려 "orphan 처리"를 시도해 정상 페이지를 삭제/아카이브할 수 있다 (P4 데이터 손실).
+
+**교훈:**
+- orphan 판정은 **bundled `wikilink-audit.py` + `index-md-audit.py` 결과만 신뢰** (P13/P14/P22 규칙 내장).
+- 인라인 스캔은 참고용이며 **보고 수치에 포함하지 말 것**.
+- 스킬 본문의 "audit 인라인 재작성 금지"(사전 점검 v2)를 orphan 검사에도 그대로 적용할 것.
+
 ### P22. Submodule 파일은 Orphan/Lint 검사의 False Positive — 의도된 오탐 (2026-09-27 추가)
 
 **증상:** orphan 검사(1), broken link 검사(2), index-md-audit(3) 전부 `logs/` · `subagents-library/` 경로에서 N개 누락/broken 오탐.
@@ -1323,4 +1346,5 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **Weekly cleanup 기록**: `references/weekly-cleanup-2026-08-23.md` — Lint ② broken wikilink 7건, Tag taxonomy 누락 2개, memory 비활성화 환경 정보
 - **2026-10-21 실행 기록**: `references/run-2026-10-21.md` — P19 26회 연속(working-tree) + **P25 logs/index.md BROKEN 12건 유형별 표** + P24 역방향 부작용(submodule 내 parent 경로 금지) + credential.helper는 서브모듈 repo-local 설정
 - **2026-10-22 실행 기록**: `references/run-2026-10-22.md` — **P26 session-notes.md prepend 구조(최신순 맨 위) — SKILL.md append 지침이 버그였음** + P19 27회 연속(working-tree, 62건) 판별 3단계 표 + footer 아래 삽입 패턴
-- **2026-10-23 실행 기록**: `references/run-2026-10-23.md` — P19 28회 연속(working-tree, 63건) + **rogue 건수 = logs 파일 수에 비례(신규 로그 1개 추가 → rogue 1개 증가, 정상 패턴)** + **logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증** (형제 행과 `||` prefix 일치 확인) + P26 부분 읽기 허용 예외(날짜 헤더 앵커는 partial-view 상태에서도 정상 적용)
+- **2026-10-23 실행 기록**: `references/run-2026-10-23.md` — P19 28회 연속(working-tree, 63건) + **rogue 건수 = logs 파일 수에 비례(신규 로그 1개 추가 → rogue 1건 증가, 정상 패턴)** + **logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증** (형제 행과 `||` prefix 일치 확인) + P26 부분 읽기 허용 예외(날짜 헤더 앵커는 partial-view 상태에서도 정상 적용)
+- **2026-10-27 실행 기록**: `references/run-2026-10-27.md` — P19 30회 연속(working-tree, 66건) + **10-26 committed 변형 → 10-27 working-tree 변형 전환 사례(연속 이틀 서로 다른 변형 → 판별은 매 실행 독립)** + logs/index.md 행 추가 patch 절차(`old_string`=형제 행 전체 보존) + **인라인 orphan 스캔 59건은 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) — orphan 판정은 bundled audit 결과만 신뢰**
