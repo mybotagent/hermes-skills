@@ -117,6 +117,62 @@ print(json.dumps(out, ensure_ascii=False, indent=1))
 
 ---
 
+## 2b. 🚨 2026-10-28 추가 검증 — siseJson `json.loads` 실패 + 지수 인덱스 미지원 + stale tmp 오염
+
+### (a) `json.loads`는 죽는다 — 정규식으로만 파싱
+
+siseJson 응답 첫 줄이 **깨진 EUC-KR 헤더 배열**이라 `json.loads`가
+`Expecting value: line 2 column 4 (char 4)` 로 죽는다.
+
+```python
+# ❌ 실패
+d = json.loads(raw.decode('euc-kr', errors='ignore'))
+
+# ✅ 정규식만으로 데이터 행 추출 (헤더 행은 자연스럽게 스킵됨)
+rows = re.findall(r'\["(\d{8})", *([\d.]+), *([\d.]+), *([\d.]+), *([\d.]+), *([\d.]+), *([\d.]+)\]', raw)
+# → (날짜, 시가, 고가, 저가, 종가, 거래량, 외국인소진율)
+```
+
+- 구분자 공백이 일정하지 않으므로 `, *` 로 유연하게 매칭 (기존 코드의 `\s*`도 OK)
+- **정수만 가정 금지** — 거래량·외국인소진율은 소수 → `[\d.]+` 로 잡아야 파싱 안 놓친다
+- 첫 그룹이 8자리 날짜임을 항상 assert
+
+### (b) 지수 인덱스(KOSPI/KOSDAQ)는 Naver 소스 전부 미지원
+
+| 소스 | 요청 | 2026-10-28 실측 |
+|:--|:--|:--|
+| siseJson | `symbol=KOSPI` / `symbol=KOSDAQ` | `[]` — 빈 배열 |
+| Polling | `query=SERVICE_ITEM:KOSPI` / `KOSDAQ` | `datas: []` |
+| **CNBC XML** | `.KS11` / `.KQ11` | ✅ last / pdc / change / change_pct 정상 |
+
+→ **지수는 CNBC XML만.** Naver는 개별 종목 전용.
+(KOSPI 실측: `.KS11` last=6012.44, pdc=5638.34, change=+374.10, change_pct=+6.63,
+last_time=2026-10-28T15:32:40+0900 / KOSDAQ `.KQ11` last=771.28, pdc=743.83, +3.69%)
+
+### (c) 🚨 stale 임시파일 오염 — glob 재사용 금지
+
+`/tmp/q_*.xml`에 심볼별 CNBC 응답을 저장 후 glob으로 일괄 파싱하면
+**어제 실행분 파일이 섞여** 두 세트가 출력된다 (`.SPX` 7,663.43 vs 7,722.60 등).
+어느 쪽이 오늘 값인지 판단 불가 → 리포트 수치가 조용히 틀어진다.
+
+**규칙**:
+- 수집 시작 시 `rm -f /tmp/q_*.xml` 또는 고유 디렉토리(`/tmp/macro_$(date +%s)/`) 사용
+- glob 파싱 후 **mtime 필터**:
+  ```python
+  import os, time
+  cutoff = time.time() - 3600
+  files = [f for f in glob.glob('/tmp/q_*.xml') if os.path.getmtime(f) > cutoff]
+  ```
+- 출력에 **수집 시각**을 함께 찍어 출처 추적 가능하게
+
+### (d) ETF/선물 심볼은 `@` 포함 시 파일명 치환 주의
+
+`@CL.1` → `/tmp/q_@CL.1.xml` 와 `/tmp/q__CL_1.xml`(치환본)이 **둘 다** 생겨
+동일 심볼이 2세트로 중복 수집된다. 반드시 **단일 치환 규칙**을 쓰고(예: `re.sub(r'[^A-Za-z0-9]','_',sym)`)
+파싱 후 심볼 목록과 1:1 대응을 assert.
+
+---
+
 ## 3. Naver 차트 API (`api.stock.naver.com`) — 보조, 사용 시 함정 2개
 
 ```
@@ -230,3 +286,9 @@ for n in a['news_items']:
 - **2026-10-26 (v1)**: 최초 작성. siseJson 일별시계열 API 발견·검증(6종목),
   Polling vs 확정종가 불일치 함정 문서화, CNBC `@LCO.1` 브렌트 XML 검증,
   BLS `M09` period 형식 명시, CJK 혼입 QA 정규화.
+- **2026-10-28 (v2)**: 섹션 2b 추가 —
+  ① siseJson `json.loads` 실패(깨진 EUC-KR 헤더) → **정규식 `re.findall`만 사용**,
+  `[\d.]+` 로 소수(거래량/소진율) 누락 방지
+  ② **지수 인덱스(KOSPI/KOSDAQ)는 Naver siseJson·Polling 전부 빈 배열** → CNBC XML `.KS11`/`.KQ11`만 사용
+  ③ **stale `/tmp` 파일 오염** — glob 재사용 금지 + mtime 필터 + 수집 시각 출력
+  ④ `@CL.1`처럼 `@` 포함 심볼의 파일명 치환 중복(`q_@CL.1` vs `q__CL_1`) → 단일 치환 규칙 + 1:1 assert

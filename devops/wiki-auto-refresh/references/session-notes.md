@@ -2,6 +2,32 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-10-28 (21:00 KST) — P19 재감염 (31회 연속, working-tree) + audit 전항목 통과 + push 성공
+
+**발견:**
+- P19: `index.md` footer 뒤에 `— 자동 추가 (2026-10-28)` 레이블 서브모듈 항목 **67건** 대량 삽입 (subagents-library 5 + logs 62).
+  - **working-tree 전용 오염** — 3단계 판별: working tree **67건** / HEAD **0건** / origin/main **0건**.
+  - `git diff HEAD -- index.md` = rogue 추가분 68줄뿐(+정식 수정 0건) → `git restore index.md` 빠른 경로 적용 (커밋 불필요).
+  - rogue 66→67 증가는 logs 신규 파일 1건 증가분 — 정상 패턴 (P19 "rogue = logs 파일 수에 비례" 규칙).
+- P18: 0건 ✅ (wiki 전체 `^|- ` grep + skills/references/ + index.md/logs-index.md triple-pipe 0건).
+- audit 5종 전항목 통과: wikilink 0 / markdown-link(P11) 0 / index-md registered 87 = actual 87 REAL MISSING 0 / tag Unknown 0 / logs-index broken 0 notref 0 (covered 13 오탐).
+- auto-fill-dates: filled 0 / skipped 20(raw immutable) / errors 0.
+- stale(30일+): 63개 페이지 (수동 검토 대상, P16 — 기계적 갱신 안 함). 날짜 정보 없음 20개(raw immutable).
+- logs 서브모듈 신규 로그 파일 0건 → index.md 신규 등록 불필요.
+
+**적용:**
+1. `git restore index.md` (P19 working-tree 전용 복구)
+2. logs 서브모듈: `2026/2026-10-28-2100.md` 신규 생성 + `index.md` October 섹션 최상단에 행 추가 (`||` double-pipe, `cat -A` 인접 행 prefix 일치 확인, triple-pipe 0건)
+3. audit 5종 + auto-fill 재실행 → 전부 통과
+
+**커밋:**
+- logs submodule (master): `103fed4` → push `f8fcd05..103fed4` ✅
+- parent hermes-wiki (main): `72aaeae` → push `6e20c22..72aaeae` ✅
+- 최종 상태: working tree / HEAD / origin/main 모두 `자동 추가` 0건, `git status` clean.
+
+**교훈:**
+- 10-26(committed+push) → 10-27(working-tree) → 10-28(working-tree) — 변형이 매번 다를 수 있으므로 3단계 판별은 매 실행 독립 수행해야 한다.
+
 ## 2026-10-27 (21:00 KST) — P19 재감염 (30회 연속, working-tree) + audit 전항목 통과 + push 성공
 
 **발견:**

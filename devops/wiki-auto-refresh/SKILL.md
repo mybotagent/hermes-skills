@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.42.0"
+version: "1.43.0"
 changelog:
+  - "2026-10-28: P30 신규 — logs/index.md 행 추가는 python 인서트 방식 권장 (patch보다 P18/P20 리스크 낮음: 기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 행번호 확정). P19 31회 연속(working-tree, 67건) — 10-26 committed → 10-27/10-28 working-tree 3일 연속 변형 사례 추가(변형이 여러 날 유지될 수 있으므로 판별은 매 실행 독립). references/run-2026-10-28.md 추가."
   - "2026-10-27: P29 신규 — 인라인 orphan 스캔은 59건 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) → orphan 판정은 bundled wikilink-audit.py + index-md-audit.py 결과만 신뢰, 인라인 수치를 리포트에 싣지 말 것. P19 30회 연속(working-tree, 66건) — 10-26 committed 변형 → 10-27 working-tree 변형 전환 사례 추가(연속 이틀 서로 다른 변형 → 3단계 판별 매 실행 독립 수행, 복구 경로 분기)."
   - "2026-10-25: P27 신규 — `~/.hermes/scripts/wiki_lint.py`는 태그 taxonomy를 18개 하드코딩 근사한 레거시 스크립트(실제 SCHEMA taxonomy 149개). tag audit에서 'unknown tag: llm/ai/agent/hermes' 오탐 보고 → bundled `scripts/tag-audit.py`(Unknown 0)를 우선할 것, wiki_lint.py 결과는 리포트에 그대로 싣지 말 것. P28 신규 — index.md 섹션 추가 시 patch fuzzy-match가 기존 항목을 삭제할 수 있음(삽입 목적이면 old_string을 고유 앵커 1줄로 잡고 new_string에 앵커 보존, patch 직후 diff로 기존 행 생존 검증). P21 보강 — cron에서 memory tool 차단 시 `MemoryStore.apply_batch()` 드라이버로 원자적 쓰기 가능(직접 파일 편집보다 안전)."
   - "2026-10-23: P19 판별 3단계(working-tree/HEAD/origin) 공식화 + **rogue 건수 = logs 파일 수에 비례**(신규 로그 1개 추가 → rogue 1건 증가, 정상 패턴 — 10-23 63건) — 건수 증가만으로 오염 확대 추측 금지. logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증 절차 추가 (형제 행과 `||` prefix 일치, 육안 판별보다 확실). P26 부분 읽기 허용 예외 — 날짜-유일 헤더 앵커는 partial-view 상태에서도 정상 적용. P19 28회 연속(working-tree, 63건) 복구 — git restore fast path, 커밋 불필요."
@@ -407,6 +408,27 @@ python3 "$SCRIPTS/logs-index-link-audit.py" [LOGS_DIR]
 2. `logs/index.md`에 적절한 섹션에 항목 추가 (역시간순 정렬 유지)
 3. logs 서브모듈 내부에서 git add/commit/push (`git push origin HEAD:master`)
 4. parent wiki에서 submodule pointer commit: `git add logs && git commit -m "wiki: bump logs" && git push`
+
+**⚠ logs/index.md 행 추가 — python 인서트 방식 권장 (2026-10-28 검증, P18 회피):**
+`||` double-pipe 테이블에서 `patch` 도구를 쓰면 P18 self-inflicted 변형(leading pipe 중복/누락) 위험이 있다.
+**python 인서트**로 행을 넣으면 삽입 위치가 행 번호로 확정되어 P20 fuzzy mis-anchor도 차단된다.
+```bash
+cd ~/.hermes/wiki/logs
+python3 - <<'PYEOF'
+p = 'index.md'
+lines = open(p).read().split('\n')
+new = "|| 10-28 21:00 | Daily Wiki Auto-Refresh — ... | [2026-10-28-2100](2026/2026-10-28-2100.md) |"
+i = [k for k, l in enumerate(lines) if l.startswith('|| 10-27 21:00')][0]  # 기준 행 prefix 복사
+lines.insert(i, new)
+open(p, 'w').write('\n'.join(lines))
+print("inserted at", i + 1)
+PYEOF
+sed -n '10,14p' index.md | cat -A | cut -c1-45   # 인접 행 prefix 일치 확인
+grep -c '^|||' index.md                            # 0이어야 함
+```
+- 새 행의 `||` prefix는 **기준 행에서 그대로 복사**하면 triple-pipe가 원천 배제된다.
+- `split('\n')`/`join('\n')`으로 기존 바이트 구조 보존 (P18 방지).
+- 파일 마지막 행에 개행이 없으면(`\ No newline at end of file`) join 후 개행 처리가 달라질 수 있음 → `git diff`로 확인.
 
 **⚠ logs/index.md 행 추가 후 파이프 정합성 검증 (2026-10-23 확립 — P18 self-inflicted 변형 실전):**
 `logs/index.md`는 **`||` double-pipe** 테이블 형식이다. 새 행을 patch로 넣을 때 형제 행과 **파이프 개수가 같아야** 하며, 다르면 P18 변형이 된다.
@@ -1077,6 +1099,9 @@ git diff HEAD --stat -- index.md                     # diff가 rogue 추가분�
 **실제 사례 (2026-10-26, 29회 연속 — 04:00 auto-sync가 커밋+push까지 완료한 committed 변형):** 10-26 04:00 크론 커밋 `83f4356 auto-sync 2026-10-26 04:00 KST`가 index.md 하단에 rogue 65건을 삽입하고 **push까지 완료**. 3단계 판별에서 working tree / HEAD / origin/main **모두 65건** → 이전 28회(전부 working-tree 전용)와 달리 committed+push 변형. 오염 커밋 diff = rogue 추가분 66줄뿐(정식 수정 0건) → parent `a955615` 청정(0건) 확인 후 `git show a955615:index.md > index.md` parent 복원 경로 적용 (203줄 → 138줄). 복구 후 `solopreneur/freelancing-platforms-comparison.md`가 미등록 상태로 남아 있어 solopreneur/ 섹션에 PAT A 등록. 로그: `2026/2026-10-26-2100.md`, 커밋 logs `5ada149` / parent `fc103d3`.
 - **교훈:** "04:00 auto-sync가 커밋만 한다"가 아니라 **push까지 한다**는 게 확인됨. `git status` clean이어도 오염이 origin에 반영돼 있을 수 있으므로 3단계 판별(working/HEAD/origin)을 생략하지 말 것.
 
+**실제 사례 (2026-10-28, 31회 연속 — working-tree 전용, rogue 67건):** 10-26(committed) → 10-27(working-tree) → 10-28(working-tree) 3일 연속. 3단계 판별: working tree 67건 / HEAD 0건 / origin/main 0건 → `git diff HEAD --stat -- index.md` = rogue 추가분 68줄뿐(+정식 수정 0건) → `git restore index.md` fast path, **커밋 불필요**. rogue 66→67 증가는 logs 신규 파일 1건 증가분(정상 패턴). audit 5종 전항목 통과(registered 87 = actual 87 / tag Unknown 0 / logs-index broken 0 notref 0). stale 63개 + 날짜 없음 20개(raw immutable). 로그 `2026/2026-10-28-2100.md`, 커밋 logs `103fed4` / parent `72aaeae`.
+- **교훈:** 10-26 committed → 10-27/10-28 working-tree 로 변형이 **연속 이틀 이상** 유지될 수 있다. "어제 변형이 X였으니 오늘도 X"로 단정하지 말고 **3단계 판별을 매 실행 독립 수행**할 것. 변형이 같으면 복구 경로도 같으므로(`git restore` fast path) 반복 작업이 오히려 안전.
+
 **실제 사례 (2026-10-27, 30회 연속 — working-tree 전용, `git restore` fast path):** 10-26의 committed 변형 바로 다음 날이 다시 **working-tree 전용**으로 돌아왔음. 3단계 판별: working tree 66건 / HEAD 0건 / origin/main 0건 → `git diff HEAD -- index.md` = rogue 추가분 67줄뿐 → `git restore index.md` fast path로 복구, **커밋 불필요**. rogue 65→66 증가는 logs 신규 파일 1건 증가분(정상 패턴). audit 5종 전항목 통과 + stale 63개(수동 검토 플래그) + auto-fill filled 0/skipped 20(raw). 로그 `2026/2026-10-27-2100.md`, 커밋 logs `f8fcd05` / parent `6e20c22`.
 - **교훈:** 같은 오염이 **연속 이틀 서로 다른 변형**으로 나타날 수 있다 (10-26 committed+push → 10-27 working-tree 전용). "어제 committed였으니 오늘도 committed"로 단정하지 말 것 — 3단계 판별은 매 실행 독립적으로 수행해야 한다. 변형이 달라지면 복구 경로도 달라지므로(commit 필요 vs `git restore` fast path) 판별 결과에 따라 분기할 것.
 
@@ -1347,4 +1372,5 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **2026-10-21 실행 기록**: `references/run-2026-10-21.md` — P19 26회 연속(working-tree) + **P25 logs/index.md BROKEN 12건 유형별 표** + P24 역방향 부작용(submodule 내 parent 경로 금지) + credential.helper는 서브모듈 repo-local 설정
 - **2026-10-22 실행 기록**: `references/run-2026-10-22.md` — **P26 session-notes.md prepend 구조(최신순 맨 위) — SKILL.md append 지침이 버그였음** + P19 27회 연속(working-tree, 62건) 판별 3단계 표 + footer 아래 삽입 패턴
 - **2026-10-23 실행 기록**: `references/run-2026-10-23.md` — P19 28회 연속(working-tree, 63건) + **rogue 건수 = logs 파일 수에 비례(신규 로그 1개 추가 → rogue 1건 증가, 정상 패턴)** + **logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증** (형제 행과 `||` prefix 일치 확인) + P26 부분 읽기 허용 예외(날짜 헤더 앵커는 partial-view 상태에서도 정상 적용)
+- **2026-10-28 실행 기록**: `references/run-2026-10-28.md` — P19 31회 연속(working-tree, 67건) + **logs/index.md 행 추가는 python 인서트 방식이 patch보다 P18 리스크가 낮다**(기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 확정으로 P20 mis-anchor 차단) + 10-26(committed)→10-27/10-28(working-tree) 3일 연속 변형 사례
 - **2026-10-27 실행 기록**: `references/run-2026-10-27.md` — P19 30회 연속(working-tree, 66건) + **10-26 committed 변형 → 10-27 working-tree 변형 전환 사례(연속 이틀 서로 다른 변형 → 판별은 매 실행 독립)** + logs/index.md 행 추가 patch 절차(`old_string`=형제 행 전체 보존) + **인라인 orphan 스캔 59건은 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) — orphan 판정은 bundled audit 결과만 신뢰**

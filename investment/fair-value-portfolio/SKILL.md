@@ -870,6 +870,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/process-update-theater.md`** —** `execution-discipline` skill의 process-update theater variant. display-layer patching 대신 pipeline-layer fix 우선 원칙. 본 SKILL의 Pitfall 49와 연결됨.
 - **`references/macro-report-official-source-verification.md`** — 🏛 매크로 리포트 공식 소스 교차검증 (2026-10-21 신규). NY Fed EFFR(=기준금리), BLS CPI 원계열 YoY 직접계산, CNBC XML vs HTML(선물은 HTML 우선), exchangerate-api, 한국 6종목 확정 코드, **저장 전 한국어 토큰 손상 QA**, 전일 리포트 값 재검증 규칙. **2026-10-22 추가**: `US30Y`/`.DJI`/`.IXIC` CNBC XML 심볼 (기존 "30년물 CNBC 미지원" 오류 정정), US 지수 `pdc==last` quirk의 `last - change` 전일종가 역산, **뉴스 URL 자동 추출 패턴(손으로 옮기면 truncate)**
 - **`references/macro-report-generation-qa.md`** — 🧪 매크로 리포트 생성→저장 QA 워크플로우 (2026-10-27 신규). 수집→교차검증→URL 자동매칭→본문 QA(저장 전)→dual-save+md5 대조 순서, CNBC HTML quote 엔드포인트 12개 심볼 실측표, 제목 정규화 매칭 코드, CJK+로마자 2계열 QA, 저장 QA 체크리스트
+- **`references/macro-report-news-coverage-and-text-qa.md`** — 📰 매크로 리포트 뉴스 커버리지 + 텍스트 사전 QA (2026-10-28 신규). 종목당 최대 3건 quota + 저빈도 종목 날짜 창 확장, **저장 스크립트 소스 사전 CJK 스캔**(저장 후 스캔은 8회 재실행 유발), 뉴스 title CJK 제거(clean()), 지수 인덱스는 Naver 미지원(CNBC XML만), siseJson `json.loads` 실패 → 정규식 파싱
 - **`references/narrative-rotation-analysis.md`** — 네러티브·순환매 분석 프레임워크 (2026-08-06 신규). 종목별 3요소(네러티브/순환매/PER), Google News RSS 패턴, 대량 종목 delegate_task 병렬 패턴, 사이클 정점 PER 판정 원칙
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
@@ -1590,6 +1591,34 @@ for i, line in enumerate(src.splitlines(), 1):
   한정. 없으면 **최종 응답에 리포트 전문을 그대로 담는 것이 전송 대체**(크론 응답 자체가 채널로 전달됨).
 
 **참조**: `references/macro-report-generation-qa.md` (전체 순서·검증 코드·실측값 표)
+
+### 70. 🔴 매크로 리포트 뉴스 커버리지 + 텍스트 사전 QA (2026-10-28 신규)
+
+**문제 A — 뉴스 종목 편중**: 12개 쿼리로 32건을 수집했더니 반도체 3종목이 9건을 독식,
+**에이피알·현대차는 27~28일 창에서 0건** → 필수 6종목 중 2종목 누락. 리포트 표는 6종목인데
+뉴스는 4종목만 커버 → "관심종목 뉴스" 요구사항 미충족.
+
+**해법**: ① **종목당 최대 3건 하드캡** (`got >= 3: break`) ② 중복 제거 키 = 정규화 제목 35자
+③ **저빈도 종목은 날짜 창 확장**(48h → 26일) ④ 그래도 0건이면 **같은 종목을 2개 쿼리로 분리**
+("에이피알 주가" + "에이피알 실적 공시"). 저장 후 `REQUIRED_TICKERS <= {n['ticker']}` assert.
+
+**문제 B — CJK 오염을 저장 후에만 발견**: 기존 Pitfall 63/67은 **저장된 JSON**을 검사하지만,
+오염은 LLM이 **저장 스크립트(.py)의 summary 문자열**에서 이미 발생한다 → 저장→검사→패치→재저장
+반복 시 8회 이상 재실행.
+
+**해법 — 순서 고정**: `저장 스크립트 소스 CJK 스캔 → 항목 단위 한국어 재작성 → 실행 → 저장 후 검증`.
+2026-10-28 실제 오염: `지수层面`→`지수 수준으로는`, `跟进했다`→`동반 상승했다`,
+`厂商`→`제조업체`, `给你`→`대형주에`, `비(非)`→`비반도체`. **모두 인코딩 붕괴가 아니라
+LLM의 중국어 단어 혼입** → 일괄 replace 금지, 문장 단위 재작성.
+
+**문제 C — 뉴스 title의 실제 한자**: `SK하이닉스 100兆 역대급 주주환원…` 처럼 RSS 제목에 한자가
+섞여 온다 → Discord 노출 시 혼입으로 보임. 저장 시 `clean()` 으로 한자+전각 제거.
+
+**문제 D — 지수 인덱스는 Naver 미지원 (2026-10-28 실측)**: `siseJson symbol=KOSPI` → `[]`,
+`Polling query=SERVICE_ITEM:KOSPI` → `datas: []`. **KOSPI/KOSDAQ은 CNBC XML `.KS11`/`.KQ11`만 사용.**
+또한 siseJson 응답 첫 줄이 깨진 EUC-KR 헤더라 `json.loads`가 죽는다 → **정규식 `re.findall`로만 파싱**.
+
+**참조**: `references/macro-report-news-coverage-and-text-qa.md`
 
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
 
