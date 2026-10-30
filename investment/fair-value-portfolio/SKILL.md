@@ -1618,6 +1618,15 @@ LLM의 중국어 단어 혼입** → 일괄 replace 금지, 문장 단위 재작
 `Polling query=SERVICE_ITEM:KOSPI` → `datas: []`. **KOSPI/KOSDAQ은 CNBC XML `.KS11`/`.KQ11`만 사용.**
 또한 siseJson 응답 첫 줄이 깨진 EUC-KR 헤더라 `json.loads`가 죽는다 → **정규식 `re.findall`로만 파싱**.
 
+**⚠️ 2026-10-29 추가 — 응답이 JSON이 아니라 Python-literal 형식**: `json.load` → `JSONDecodeError: Expecting value: line 2 column 4`. `ast.literal_eval`도 줄바꿈·탭 들여쓰기 때문에 `unexpected indent`로 실패. → **정규식 파서가 유일하게 안정적**:
+```python
+pat = re.compile(r'\["(\d{8})",\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*(\d+),\s*([\d.]+)\]')
+# 그룹: 날짜, 시가, 고가, 저가, 종가, 거래량, 외국인소진율
+```
+`startTime`/`endTime`은 `YYYYMMDD` 형식. `Referer: https://finance.naver.com/item/sise_day.naver?code={코드}` 헤더 필수.
+
+**⚠️ CJK QA는 `summary`만 검사하면 불충분 (2026-10-29)**: 뉴스 `title`에 `美 재고`, `佛·獨`, `中동` 같은 한자 표기가 실제 매체 헤드라인에 실려 있다. QA 대상에 `title + summary` 둘 다 포함하고, 매핑(`美`→`미국`, `佛`→`프랑스`, `獨`→`독일`, `中`→`중국`)으로 정정할 것.
+
 **참조**: `references/macro-report-news-coverage-and-text-qa.md`
 
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)

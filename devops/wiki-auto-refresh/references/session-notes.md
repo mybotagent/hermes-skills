@@ -2,6 +2,35 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-10-29 (21:00 KST) — P19 재감염 (32회 연속, working-tree) + audit 전항목 통과 + push 성공
+
+**발견:**
+- P19: `index.md` footer 뒤에 `— 자동 추가 (2026-10-29)` 레이블 서브모듈 항목 **68건** 대량 삽입.
+  - **working-tree 전용 오염** — 3단계 판별: working tree **68건** / HEAD **0건** / origin/main **0건**.
+  - `git diff HEAD -- index.md` = rogue 추가분 69줄뿐(+정식 수정 0건) → `git restore index.md` 빠른 경로 적용 (커밋 불필요).
+  - rogue 67→68 증가는 logs 신규 파일 1건 증가분 (정상 패턴).
+- P18 pipe 오염(`^|- `) 스캔: wiki 전체 + skill references 모두 0건.
+
+**Audit (5종 전항목 통과):**
+- wikilink-audit.py: MD 0 / WL 0 / Cross-domain 0 / Barename 0 / MDEXT 0
+- markdown-link-audit.py: P11 0 / Real broken 0
+- index-md-audit.py: registered 87 = actual 87 / dead 0 / missing 0
+- tag-audit.py: taxonomy 149 / used 137 / registered 137 / Unknown 0
+- logs-index-link-audit.py: broken 0 / notref 1(신규) / covered 13
+- auto-fill-dates.py: Filled 0 / Skipped 20(raw immutable) / Errors 0
+
+**Stale:** 63개 페이지(30일+, 수동 검토 플래그) / 날짜 정보 없음 operational 0개
+
+**logs/index.md 갱신 (P30 python 인서트):**
+- 신규 2건 등록: `2026/2026-10-29-2100.md` (본 로그), `2026-10-29-1835.md` (매크로 전략 리포트).
+- 기준 행(`|| 10-28 21:00`) prefix 복사 → triple-pipe 0건, `cat -A` 인접 행 prefix 일치 확인.
+
+**커밋:**
+- logs 서브모듈: `b524f67` (master) — push `103fed4..b524f67`
+- parent wiki: `abc5f96 auto-sync 2026-10-29 21:00 KST` (submodule pointer bump) — push `72aaeae..abc5f96`
+
+---
+
 ## 2026-10-28 (21:00 KST) — P19 재감염 (31회 연속, working-tree) + audit 전항목 통과 + push 성공
 
 **발견:**

@@ -3,6 +3,7 @@ name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
 version: "1.43.0"
 changelog:
+  - "2026-10-29: P19 32회 연속(working-tree, 68건) — git restore fast path, 커밋 불필요. logs/index.md 신규 2건(본 로그 + 매크로 리포트) python 인서트로 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0)."
   - "2026-10-28: P30 신규 — logs/index.md 행 추가는 python 인서트 방식 권장 (patch보다 P18/P20 리스크 낮음: 기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 행번호 확정). P19 31회 연속(working-tree, 67건) — 10-26 committed → 10-27/10-28 working-tree 3일 연속 변형 사례 추가(변형이 여러 날 유지될 수 있으므로 판별은 매 실행 독립). references/run-2026-10-28.md 추가."
   - "2026-10-27: P29 신규 — 인라인 orphan 스캔은 59건 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) → orphan 판정은 bundled wikilink-audit.py + index-md-audit.py 결과만 신뢰, 인라인 수치를 리포트에 싣지 말 것. P19 30회 연속(working-tree, 66건) — 10-26 committed 변형 → 10-27 working-tree 변형 전환 사례 추가(연속 이틀 서로 다른 변형 → 3단계 판별 매 실행 독립 수행, 복구 경로 분기)."
   - "2026-10-25: P27 신규 — `~/.hermes/scripts/wiki_lint.py`는 태그 taxonomy를 18개 하드코딩 근사한 레거시 스크립트(실제 SCHEMA taxonomy 149개). tag audit에서 'unknown tag: llm/ai/agent/hermes' 오탐 보고 → bundled `scripts/tag-audit.py`(Unknown 0)를 우선할 것, wiki_lint.py 결과는 리포트에 그대로 싣지 말 것. P28 신규 — index.md 섹션 추가 시 patch fuzzy-match가 기존 항목을 삭제할 수 있음(삽입 목적이면 old_string을 고유 앵커 1줄로 잡고 new_string에 앵커 보존, patch 직후 diff로 기존 행 생존 검증). P21 보강 — cron에서 memory tool 차단 시 `MemoryStore.apply_batch()` 드라이버로 원자적 쓰기 가능(직접 파일 편집보다 안전)."
