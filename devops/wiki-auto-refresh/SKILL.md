@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.43.0"
+version: "1.44.0"
 changelog:
+  - "2026-10-30: P19 33회 연속(working-tree, 70건) — git restore fast path, 커밋 불필요. logs/index.md 신규 1건 python 인서트 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0). stale 63개 + 날짜 없음 operational 0개."
   - "2026-10-29: P19 32회 연속(working-tree, 68건) — git restore fast path, 커밋 불필요. logs/index.md 신규 2건(본 로그 + 매크로 리포트) python 인서트로 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0)."
   - "2026-10-28: P30 신규 — logs/index.md 행 추가는 python 인서트 방식 권장 (patch보다 P18/P20 리스크 낮음: 기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 행번호 확정). P19 31회 연속(working-tree, 67건) — 10-26 committed → 10-27/10-28 working-tree 3일 연속 변형 사례 추가(변형이 여러 날 유지될 수 있으므로 판별은 매 실행 독립). references/run-2026-10-28.md 추가."
   - "2026-10-27: P29 신규 — 인라인 orphan 스캔은 59건 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) → orphan 판정은 bundled wikilink-audit.py + index-md-audit.py 결과만 신뢰, 인라인 수치를 리포트에 싣지 말 것. P19 30회 연속(working-tree, 66건) — 10-26 committed 변형 → 10-27 working-tree 변형 전환 사례 추가(연속 이틀 서로 다른 변형 → 3단계 판별 매 실행 독립 수행, 복구 경로 분기)."

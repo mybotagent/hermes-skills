@@ -872,6 +872,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/macro-report-generation-qa.md`** — 🧪 매크로 리포트 생성→저장 QA 워크플로우 (2026-10-27 신규). 수집→교차검증→URL 자동매칭→본문 QA(저장 전)→dual-save+md5 대조 순서, CNBC HTML quote 엔드포인트 12개 심볼 실측표, 제목 정규화 매칭 코드, CJK+로마자 2계열 QA, 저장 QA 체크리스트
 - **`references/macro-report-news-coverage-and-text-qa.md`** — 📰 매크로 리포트 뉴스 커버리지 + 텍스트 사전 QA (2026-10-28 신규). 종목당 최대 3건 quota + 저빈도 종목 날짜 창 확장, **저장 스크립트 소스 사전 CJK 스캔**(저장 후 스캔은 8회 재실행 유발), 뉴스 title CJK 제거(clean()), 지수 인덱스는 Naver 미지원(CNBC XML만), siseJson `json.loads` 실패 → 정규식 파싱
 - **`references/narrative-rotation-analysis.md`** — 네러티브·순환매 분석 프레임워크 (2026-08-06 신규). 종목별 3요소(네러티브/순환매/PER), Google News RSS 패턴, 대량 종목 delegate_task 병렬 패턴, 사이클 정점 PER 판정 원칙
+- **`references/macro-report-script-construction-and-sisejson-parsing.md`** — 🛠 저장 스크립트 구성 안전성 + siseJson 헤더 행 파싱 (2026-10-30 신규). 긴 리포트 본문을 `.py` 문자열에 embed 시 LLM degeneration → 본문을 `.md`로 분리, 날짜 앵커 엄격 정규식으로 siseJson 헤더 행 스킵, 10일 창 1회 호출로 일변동·주간·외국인소진율 확보, 사건명 쿼리(1차 원인) 필수, dual-save 전체 동등성 assert
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
 - `build_macro_summary()`가 `macro_ctx`의 모든 필드를 추출하지 않음
@@ -1628,6 +1629,50 @@ pat = re.compile(r'\["(\d{8})",\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+),\
 **⚠️ CJK QA는 `summary`만 검사하면 불충분 (2026-10-29)**: 뉴스 `title`에 `美 재고`, `佛·獨`, `中동` 같은 한자 표기가 실제 매체 헤드라인에 실려 있다. QA 대상에 `title + summary` 둘 다 포함하고, 매핑(`美`→`미국`, `佛`→`프랑스`, `獨`→`독일`, `中`→`중국`)으로 정정할 것.
 
 **참조**: `references/macro-report-news-coverage-and-text-qa.md`
+
+### 71. 🔴 저장 스크립트에 리포트 본문 embed 금지 — LLM degeneration (2026-10-30 신규, CRITICAL)
+
+**증상**: 3,900자 리포트 본문을 `.py` 파일의 `"""..."""` 문자열 리터럴로 한 번에 생성하자
+LLM이 **퇴화(degeneration)** — 수천 자 meaningless 반복(`"('_ "_ "_ "_ ...`) + 무의미 단어 혼입
+(`1,606 Recreation management`) → SyntaxError로 스크립트 자체가 죽음.
+
+**원인**: LLM이 수천 자 단일 문자열 리터럴을 생성하면 토큰 붕괴 위험. 파일이 길수록 뒤쪽부터 오염.
+
+**해법 — 본문을 별도 텍스트 파일로 분리**:
+```python
+# STEP 1: write_file()로 본문만 /tmp/macro_body_YYYYMMDD.md 에 저장
+# STEP 2: 저장 스크립트는 읽기만
+body = open('/tmp/macro_body_20261030.md', encoding='utf-8').read().strip()
+assert len(body) > 2500
+assert not re.search(r'[\u4e00-\u9fff]', body)   # 저장 전 CJK 중단
+```
+- 긴 산문은 `.py`가 아니라 `.md`에 → degeneration 격리 + syntax error 원천 차단
+- 짧은 필드(`key_driver`, `impact_analysis`)는 `.py`에 두되 **500자 이내**로 제한
+- 본문 QA는 저장 스크립트 말미에서 assert로 강제 (Pitfall 63/67/70의 "저장 전 QA" 원칙)
+
+**siseJson 헤더 행 파싱 (2026-10-30 실측 추가)**:
+- 응답 첫 줄이 헤더 배열이라 `split(',')` + `int()` → `ValueError: invalid literal for int() ... '醫媛'`
+- 해법: **날짜로 앵커된 엄격 정규식** → 헤더 행은 매칭 자체가 안 됨
+  ```python
+  pat = re.compile(r'\["(\d{8})",\s*([\d,]+),\s*([\d,]+),\s*([\d,]+),\s*([\d,]+),\s*([\d,]+),\s*([\d.]+)\]')
+  # 그룹: 날짜, 시가, 고가, 저가, 종가(4), 거래량, 외국인소진율(6)
+  ```
+- `startTime`/`endTime` 10~11일 창 → 일변동률·**주간수익률**·**외국인소진율**을 1회 호출로 모두 확보
+
+**1차 원인 쿼리 필수 (2026-10-30 추가)**: 6종목 뉴스만으로는 매크로 드라이버를 놓친다.
+2026-10-30 실제 드라이버는 삼성전자/하이닉스 뉴스가 아니라 **구글 모회사(알파벳) AI 투자 충격**이었음.
+→ `알파벳 구글 AI`, `나스닥 AI주`, `코스피 급락`, `서킷브레이커`, `연준 12월 인상`, `유가 급등` 등
+**사건명 쿼리**를 별도 수집하고 전이 경로를 리포트에 서술.
+
+**dual-save는 `timestamp`만이 아니라 전체 동등성까지**:
+```python
+shutil.copy2(p1, p2)
+d1 = json.load(open(p1)); d2 = json.load(open(p2))
+assert d1 == d2, 'FILES DIFFER'          # ← timestamp 비교만으론 부족
+json.dump(data, f, ensure_ascii=False)   # True면 한자가 \uXXXX로 escaping → 한국어 검증 무의미
+```
+
+**참조**: `references/macro-report-script-construction-and-sisejson-parsing.md`
 
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
 
