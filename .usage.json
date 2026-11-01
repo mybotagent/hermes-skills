@@ -94,14 +94,14 @@
     "archived_at": null,
     "created_at": "2026-07-07T09:38:30.638998+00:00",
     "created_by": "agent",
-    "last_patched_at": "2026-10-24T23:10:08.547413+00:00",
-    "last_used_at": "2026-10-24T23:10:02.320989+00:00",
-    "last_viewed_at": "2026-10-24T23:10:02.315712+00:00",
-    "patch_count": 54,
+    "last_patched_at": "2026-10-31T23:07:23.721400+00:00",
+    "last_used_at": "2026-10-31T23:00:48.098025+00:00",
+    "last_viewed_at": "2026-10-31T23:00:48.093318+00:00",
+    "patch_count": 55,
     "pinned": false,
     "state": "active",
-    "use_count": 43,
-    "view_count": 43
+    "use_count": 45,
+    "view_count": 45
   },
   "baoyu-infographic": {
     "archived_at": "2026-10-04T07:58:32.934575+00:00",
@@ -888,13 +888,13 @@
     "created_at": "2026-07-07T14:12:00.200814+00:00",
     "created_by": null,
     "last_patched_at": "2026-10-24T23:10:21.361873+00:00",
-    "last_used_at": "2026-10-24T23:10:16.628008+00:00",
-    "last_viewed_at": "2026-10-24T23:10:16.623627+00:00",
+    "last_used_at": "2026-10-31T23:00:39.553217+00:00",
+    "last_viewed_at": "2026-10-31T23:00:39.545455+00:00",
     "patch_count": 4,
     "pinned": false,
     "state": "active",
-    "use_count": 7,
-    "view_count": 7
+    "use_count": 8,
+    "view_count": 8
   },
   "model-diversity-poc": {
     "archived_at": null,
@@ -1317,12 +1317,12 @@
     "created_at": "2026-06-12T22:23:12.405952+00:00",
     "created_by": null,
     "last_patched_at": "2026-10-28T10:37:38.849080+00:00",
-    "last_used_at": "2026-10-30T10:30:39.469590+00:00",
+    "last_used_at": "2026-11-01T00:10:22.279768+00:00",
     "last_viewed_at": "2026-10-28T10:37:29.008113+00:00",
     "patch_count": 146,
     "pinned": false,
     "state": "active",
-    "use_count": 917,
+    "use_count": 920,
     "view_count": 148
   },
   "self-improvement-loop": {
