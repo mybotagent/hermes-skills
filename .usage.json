@@ -433,12 +433,12 @@
     "created_at": "2026-05-31T14:10:50.301452+00:00",
     "created_by": null,
     "last_patched_at": "2026-10-30T10:37:45.685703+00:00",
-    "last_used_at": "2026-10-30T10:37:34.128133+00:00",
+    "last_used_at": "2026-11-02T00:10:04.361031+00:00",
     "last_viewed_at": "2026-10-30T10:37:34.123429+00:00",
     "patch_count": 440,
     "pinned": false,
     "state": "active",
-    "use_count": 613,
+    "use_count": 614,
     "view_count": 346
   },
   "fork-pr-contribution": {
@@ -576,12 +576,12 @@
     "created_at": "2026-07-03T00:00:15.157970+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-10-26T00:30:36.454820+00:00",
+    "last_used_at": "2026-11-02T00:30:04.732803+00:00",
     "last_viewed_at": "2026-09-14T00:10:31.055097+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 118,
+    "use_count": 119,
     "view_count": 6
   },
   "heartmula": {
@@ -602,12 +602,12 @@
     "created_at": "2026-07-02T16:30:43.790761+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-10-30T01:00:33.572053+00:00",
+    "last_used_at": "2026-11-02T01:00:04.282315+00:00",
     "last_viewed_at": "2026-09-07T03:15:46.949090+00:00",
     "patch_count": 0,
     "pinned": false,
     "state": "stale",
-    "use_count": 74,
+    "use_count": 75,
     "view_count": 4
   },
   "hermes-agent-skill-authoring": {
@@ -632,7 +632,7 @@
     "last_viewed_at": "2026-09-07T02:32:01.635485+00:00",
     "patch_count": 8,
     "pinned": false,
-    "state": "stale",
+    "state": "active",
     "use_count": 16,
     "view_count": 16
   },
@@ -806,7 +806,7 @@
     "view_count": 0
   },
   "llm-investment-agent-architecture": {
-    "archived_at": null,
+    "archived_at": "2026-11-01T10:13:59.705054+00:00",
     "created_at": "2026-06-06T06:02:16.670750+00:00",
     "created_by": "agent",
     "last_patched_at": "2026-06-06T18:52:35.760322+00:00",
@@ -814,7 +814,7 @@
     "last_viewed_at": "2026-07-29T04:48:41.348973+00:00",
     "patch_count": 37,
     "pinned": false,
-    "state": "stale",
+    "state": "archived",
     "use_count": 32,
     "view_count": 32
   },
@@ -1317,16 +1317,16 @@
     "created_at": "2026-06-12T22:23:12.405952+00:00",
     "created_by": null,
     "last_patched_at": "2026-10-28T10:37:38.849080+00:00",
-    "last_used_at": "2026-11-01T00:10:22.279768+00:00",
+    "last_used_at": "2026-11-02T00:30:04.691539+00:00",
     "last_viewed_at": "2026-10-28T10:37:29.008113+00:00",
     "patch_count": 146,
     "pinned": false,
     "state": "active",
-    "use_count": 920,
+    "use_count": 922,
     "view_count": 148
   },
   "self-improvement-loop": {
-    "archived_at": null,
+    "archived_at": "2026-11-01T10:13:59.743214+00:00",
     "created_at": "2026-07-02T11:46:54.024547+00:00",
     "created_by": "agent",
     "last_patched_at": "2026-07-28T11:06:20.135089+00:00",
@@ -1334,7 +1334,7 @@
     "last_viewed_at": "2026-07-28T11:06:00.481591+00:00",
     "patch_count": 13,
     "pinned": false,
-    "state": "stale",
+    "state": "archived",
     "use_count": 14,
     "view_count": 14
   },
@@ -1430,7 +1430,7 @@
     "view_count": 0
   },
   "ssh-access-diagnostics": {
-    "archived_at": null,
+    "archived_at": "2026-11-01T10:13:59.779764+00:00",
     "created_at": "2026-08-02T23:17:54.253917+00:00",
     "created_by": "agent",
     "last_patched_at": "2026-08-02T23:53:45.899069+00:00",
@@ -1438,7 +1438,7 @@
     "last_viewed_at": "2026-08-02T23:45:07.329204+00:00",
     "patch_count": 2,
     "pinned": false,
-    "state": "stale",
+    "state": "archived",
     "use_count": 2,
     "view_count": 2
   },
