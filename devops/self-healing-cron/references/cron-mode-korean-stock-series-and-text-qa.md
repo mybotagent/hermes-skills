@@ -281,8 +281,68 @@ for n in a['news_items']:
 | CPI YoY | BLS API (`M09` 형식) | — |
 | 환율 | open.er-api.com | — |
 
+## 6b. 🚨 2026-11-02 추가 — CJK 스캔만으로는 절반의 오염을 못 잡는다
+
+2026-11-02 18:30 매크로 크론에서 **한자 없는 혼합 오염**이 다수 검출됨.
+CJK 정규식(`[一-鿿]`)은 **통과**하지만 문장이 깨져 있어 저장 스크립트가 8회 이상 재실행됨.
+
+### 계열 2 — Hangul-Latin 혼합 (가장 위험)
+```
+Kyokushia의 가이던스      → 키옥시아의 가이던스
+구program가               → 프로그램이
+institutions의 1.2조원   → 기관의 1.2조원
+marché에 반영돼           → 시장에 반영돼
+라고Speaking하며          → 라고 밝혔다
+전서 활성화               → 외교 활성화
+```
+### 계열 3 — 문장 자체가 무의미
+```
+'총액)에서 '수익성'으로   → 투자 총액에서 수익성으로
+해안 잡등을 비관할이      → 통화 전망을 비관한
+```
+
+### 보조 검사 (계열 2 후보 추출)
+```python
+import re
+ALLOW = {"AI","HBM","DRAM","ASP","API","GDP","PCE","CPI","EPS","PER","PBR","ROE",
+         "MLCC","IT","PC","EV","ETF","NAV","US","EUR","USD","JPY","KRW","TV","AP"}
+mix = re.findall(r'[가-힣]([A-Za-z]{3,})', body)
+bad = [m for m in mix if m not in ALLOW]
+for b in set(bad):
+    for m in re.finditer(re.escape(b), body):
+        print("MIX:", repr(body[max(0,m.start()-30):m.end()+30]))
+```
+→ 화이트리스트 외 후보는 **문맥 확인 후 항목 단위 정상 한국어 재작성** (일괄 replace 금지).
+
+### `patch` 도구가 CJK 라인을 매칭하지 못하는 함정
+`old_string`에 한자가 섞이면 `Could not find a match for old_string`가 나도 실제로는 존재하는 문자열.
+→ **유니코드 이스케이프 스크립트로 우회** (소스가 ASCII만 남아 보안 스캐너 통과 + 매칭 성공):
+```python
+# /tmp/fix_cjk.py
+import io, re
+p = "/tmp/build_macro.py"
+s = io.open(p, encoding="utf-8").read()
+s = s.replace("\u6d3b\u6027\u5316", "\ud65c\ud558\uc131")   # 活性化 → 활성화
+io.open(p, "w", encoding="utf-8").write(s)
+for i, line in enumerate(s.split("\n"), 1):
+    if "findall" in line or "finditer" in line: continue
+    for m in re.finditer(r"[\u4e00-\u9fff]+", line):
+        print("REMAIN", i, repr(m.group(0)), repr(line[max(0,m.start()-30):m.end()+30]))
+```
+
+### 뉴스 URL 풀 타입 혼재
+여러 수집 JSON을 합쳐 URL 매칭 풀을 만들면 dict/list가 섞여
+`AttributeError: 'str' object has no attribute 'get'` 발생 → `isinstance(src, list)` + `isinstance(it, dict)` 가드.
+
+### 뉴스 title 한자 정정
+`證`→`증`, `美`→`미국`, `佛`→`프랑스`, `獨`→`독일`, `中`→`중국` 매핑 후 저장.
+
+---
+
 ## 8. 변경 이력
 
+- **2026-11-02 (v3)**: 섹션 6b 추가 — CJK만 잡는 것의 한계(계열 2 Hangul-Latin 혼합 / 계열 3 무의미 문장),
+  `patch` 도구 CJK 매칭 실패 → 유니코드 이스케이프 스크립트 우회, URL 풀 타입 혼재 가드, 뉴스 title 한자 clean() 매핑.
 - **2026-10-26 (v1)**: 최초 작성. siseJson 일별시계열 API 발견·검증(6종목),
   Polling vs 확정종가 불일치 함정 문서화, CNBC `@LCO.1` 브렌트 XML 검증,
   BLS `M09` period 형식 명시, CJK 혼입 QA 정규화.

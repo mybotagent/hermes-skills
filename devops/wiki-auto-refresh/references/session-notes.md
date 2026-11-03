@@ -2,6 +2,40 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-02 (21:00 KST) — P19 재감염 0건 (34회 연속 재감염 종료) + P10 MDEXT 2건 + tag taxonomy +3 + push 성공
+
+**발견:**
+- P19: **재감염 0건** — 3단계 판별에서 working tree / HEAD / origin/main 모두 `자동 추가` 0건. 10-30 이후 34회 연속 재감염이 **중단**됨. `git restore` 복구 경로 불필요.
+- P18 pipe 오염(`^|- `) 스캔: wiki 전체 + skill references 모두 0건. index.md / logs/index.md / SCHEMA.md triple-pipe 0건.
+- P10 MDEXT 2건: `code/finviz-screener-parsing.md`의 `[[code/scripts.md]]`, `[[infra/cron-jobs.md]]` → `.md` 제거 (P10 규칙).
+- Lint ⑧: 미등록 태그 3건(`finviz`, `screener`, `debugging`)이 신규 페이지 1건에 집중 → **taxonomy 확장** 판단 → SCHEMA.md `code/` 행에 3개 추가 (149 → 152). 개별 페이지 수정 0건.
+
+**Audit (5종 전항목 통과):**
+- wikilink-audit.py: MD 0 / WL 0 / Cross-domain 0 / Barename 0 / MDEXT 0
+- markdown-link-audit.py: P11 0 / Real broken 0
+- index-md-audit.py: registered 89 = actual 89 / dead 0 / REAL MISSING 0
+- tag-audit.py: taxonomy 152 / used 140 / registered 140 / Unknown 0
+- logs-index-link-audit.py: broken 0 / notref 0 / covered 13 / ambiguous 0
+- auto-fill-dates.py: Filled 0 / Skipped 21(raw immutable) / Errors 0
+
+**Stale:** 63개 페이지(30일+, 수동 검토 플래그) / 날짜 정보 없음 21개(전부 raw/ immutable)
+
+**logs/index.md 갱신 (P30 python 인서트):**
+- **신규 월 섹션 신설**: `### November` — logs/index.md에 2026-11 로그가 처음 등장 → October 섹션 **앞**에 November 섹션 생성 (역시간순).
+- ⚠ 첫 시도에서 기준 행(`|| 10-30 21:00`) 앞에 삽입 → October 테이블 헤더와 November 헤더가 뒤섞여 구조 깨짐. `git checkout index.md`로 되돌린 뒤 **월 섹션 헤더 위치(### October) 앞에 삽입**하는 방식으로 재시도 → 정상.
+- 기준 행 prefix 복사 → triple-pipe 0건, `cat -A` 인접 행 prefix 일치 확인.
+
+**커밋:**
+- logs 서브모듈: `01ebf95` (master) — push `fabf116..01ebf95`
+- parent wiki: `a726483 auto-sync 2026-11-02 21:00 KST` — push `0748ae4..a726483`
+- 최종 상태: working tree / HEAD / origin/main 모두 `자동 추가` 0건, `git status` clean.
+
+**교훈:**
+- **신규 월 첫 로그 등장 시 월 섹션을 기존 월 섹션 앞에 신설**해야 한다 (역시간순). 기준 데이터 행 앞에 삽입하면 테이블 헤더가 뒤섞인다.
+- P19 재감염 종료는 로직 변경의 결과가 아니라 외부 자동화 프로세스(`self_hermes.py` / auto-sync cron) 동작 변경의 결과일 가능성이 높다. **재발 가능성을 배제하지 말고 3단계 판별은 매 실행 독립 수행**할 것.
+
+---
+
 ## 2026-10-30 (21:00 KST) — P19 재감염 (33회 연속, working-tree) + audit 전항목 통과 + push 성공
 
 **발견:**

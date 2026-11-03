@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.44.0"
+version: "1.45.0"
 changelog:
+  - "2026-11-02: **P19 재감염 0건 — 34회 연속 재감염 종료** (외부 자동화 프로세스 동작 변경으로 추정; 재발 배제 아님, 3단계 판별 계속). P10 MDEXT 2건 수정(code/finviz-screener-parsing.md), tag taxonomy 149→152(+finviz/screener/debugging), logs/index.md November 섹션 신설(신규 월 첫 로그 — 삽입 기준은 데이터 행이 아닌 '월 섹션 헤더'!, 순서 역전 주의). audit 5종 전항목 통과, stale 63개 + 날짜 없음 21개(raw immutable). references/run-2026-11-02.md 추가."
   - "2026-10-30: P19 33회 연속(working-tree, 70건) — git restore fast path, 커밋 불필요. logs/index.md 신규 1건 python 인서트 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0). stale 63개 + 날짜 없음 operational 0개."
   - "2026-10-29: P19 32회 연속(working-tree, 68건) — git restore fast path, 커밋 불필요. logs/index.md 신규 2건(본 로그 + 매크로 리포트) python 인서트로 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0)."
   - "2026-10-28: P30 신규 — logs/index.md 행 추가는 python 인서트 방식 권장 (patch보다 P18/P20 리스크 낮음: 기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 행번호 확정). P19 31회 연속(working-tree, 67건) — 10-26 committed → 10-27/10-28 working-tree 3일 연속 변형 사례 추가(변형이 여러 날 유지될 수 있으므로 판별은 매 실행 독립). references/run-2026-10-28.md 추가."
@@ -431,6 +432,16 @@ grep -c '^|||' index.md                            # 0이어야 함
 - 새 행의 `||` prefix는 **기준 행에서 그대로 복사**하면 triple-pipe가 원천 배제된다.
 - `split('\n')`/`join('\n')`으로 기존 바이트 구조 보존 (P18 방지).
 - 파일 마지막 행에 개행이 없으면(`\ No newline at end of file`) join 후 개행 처리가 달라질 수 있음 → `git diff`로 확인.
+
+**⚠ 신규 월 섹션 신설 시 (2026-11-02 검증) — 삽입 기준은 "월 섹션 헤더"다:**
+새 달의 첫 로그가 등장하면 새 월 섹션(`### November`)을 **기존 월 섹션 헤더(`### October`) 앞에** 삽입해야 한다 (역시간순).
+- **잘못된 방법:** 기준 *데이터 행*(`|| 10-30 21:00`) 앞에 월 섹션 블록을 삽입 → 기존 월의 테이블 헤더가 새 섹션 뒤로 밀려나 **헤더-섹션 순서 역전** 발생.
+- **올바른 방법:** 월 섹션 헤더 위치(`l.strip() == '### October'`)를 찾아 그 앞에 블록 삽입.
+```python
+oct_idx = [k for k,l in enumerate(lines) if l.strip() == '### October'][0]
+lines[oct_idx:oct_idx] = ["### November", "", "|| Date | Event | File |", "||:-----|:------|:-----|", newrow, ""]
+```
+- 잘못 삽입했을 경우: logs는 별도 repo이므로 `git -C logs checkout index.md`로 되돌리고 재시도 가능 (parent submodule pointer는 자동 반영).
 
 **⚠ logs/index.md 행 추가 후 파이프 정합성 검증 (2026-10-23 확립 — P18 self-inflicted 변형 실전):**
 `logs/index.md`는 **`||` double-pipe** 테이블 형식이다. 새 행을 patch로 넣을 때 형제 행과 **파이프 개수가 같아야** 하며, 다르면 P18 변형이 된다.

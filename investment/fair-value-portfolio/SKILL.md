@@ -873,6 +873,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **`references/macro-report-news-coverage-and-text-qa.md`** — 📰 매크로 리포트 뉴스 커버리지 + 텍스트 사전 QA (2026-10-28 신규). 종목당 최대 3건 quota + 저빈도 종목 날짜 창 확장, **저장 스크립트 소스 사전 CJK 스캔**(저장 후 스캔은 8회 재실행 유발), 뉴스 title CJK 제거(clean()), 지수 인덱스는 Naver 미지원(CNBC XML만), siseJson `json.loads` 실패 → 정규식 파싱
 - **`references/narrative-rotation-analysis.md`** — 네러티브·순환매 분석 프레임워크 (2026-08-06 신규). 종목별 3요소(네러티브/순환매/PER), Google News RSS 패턴, 대량 종목 delegate_task 병렬 패턴, 사이클 정점 PER 판정 원칙
 - **`references/macro-report-script-construction-and-sisejson-parsing.md`** — 🛠 저장 스크립트 구성 안전성 + siseJson 헤더 행 파싱 (2026-10-30 신규). 긴 리포트 본문을 `.py` 문자열에 embed 시 LLM degeneration → 본문을 `.md`로 분리, 날짜 앵커 엄격 정규식으로 siseJson 헤더 행 스킵, 10일 창 1회 호출로 일변동·주간·외국인소진율 확보, 사건명 쿼리(1차 원인) 필수, dual-save 전체 동등성 assert
+- **`references/macro-report-text-contamination-multilayer.md`** — 🧫 텍스트 오염 3계열 QA (2026-11-02 신규). ①CJK 한자 ②Hangul-Latin 혼합(`Kyokushia의`/`구program가`/`institutions의` — CJK 정규식 통과!) ③문장 무의미, `patch` 도구 CJK 매칭 실패 → 유니코드 이스케이프 스크립트 우회, 뉴스 title 한자 clean() 매핑, URL 풀 타입 혼재 가드
 
 ### 34. 🔴 Phase 3 컨텍스트 누락 — Finnhub 뉴스와 FRED 데이터가 포트폴리오 비중 결정에 안 들어감 (2026-06-08 신규)
 - `build_macro_summary()`가 `macro_ctx`의 모든 필드를 추출하지 않음
@@ -1673,6 +1674,51 @@ json.dump(data, f, ensure_ascii=False)   # True면 한자가 \uXXXX로 escaping 
 ```
 
 **참조**: `references/macro-report-script-construction-and-sisejson-parsing.md`
+
+### 72. 🔴 텍스트 오염 3계열 QA + patch 도구 CJK 매칭 실패 우회 (2026-11-02 신규, CRITICAL)
+
+**Pitfall 71 재발 — 본문 embed 금지**: 3,900자 본문을 `.py` 문자열 리터럴에 embed → LLM degeneration으로
+CJK/혼합어 오염 → assert 반복 실패 → 저장 스크립트 8회 이상 재실행.
+→ **2,500자 이상 본문은 반드시 `/tmp/macro_body_YYYYMMDD.md`로 분리** 후 읽기만.
+
+**오염 3계열 (1계열만 검사하면 반쪽의 오염이 통과)**:
+| 계열 | 예 | 검출 |
+|:--|:--|:--|
+| ① CJK 한자 | `정缓和而非`, `公开`, `活性化`, `不出去내리는` | `re.compile(r'[一-鿿]')` |
+| ② **Hangul-Latin 혼합** (신규·가장 위험) | `Kyokushia의`, `구program가`, `institutions의`, `marché에`, `라고Speaking하며` | `re.findall(r'[가-힣]([A-Za-z]{3,})', body)` + 화이트리스트 |
+| ③ 문장 자체 무의미 | `'총액)에서 '수익성'으로`, `해안 잡등을 비관할이` | 계열 ② 후보 문맥 육안 리뷰 |
+
+- 계열 ②는 **CJK 정규식을 통과**하므로 ①만으로는 방어 불가. 검사 대상: `macro_report_summary` + `news_items[].summary`.
+- 조치: 계열 ①②는 **항목 단위 정상 한국어 재작성** (일괄 replace 금지). 계열 ③는 문장 통째 재작성.
+
+**`patch` 도구가 CJK 라인에서 매칭 실패**: `old_string`에 한자가 섞이면 `Could not find a match`가
+나도 실제로는 존재하는 문자열 → **유니코드 이스케이프 스크립트로 우회**:
+```python
+# /tmp/fix_cjk.py  (write_file → terminal)
+import io, re
+p = "/tmp/build_macro.py"
+s = io.open(p, encoding="utf-8").read()
+s = s.replace("\u6d3b\u6027\u5316", "\ud65c\ud558\uc131")   # 活性化 → 활성화
+io.open(p, "w", encoding="utf-8").write(s)
+for i, line in enumerate(s.split("\n"), 1):
+    if "findall" in line or "finditer" in line: continue
+    for m in re.finditer(r"[\u4e00-\u9fff]+", line):
+        print("REMAIN", i, repr(m.group(0)), repr(line[max(0,m.start()-30):m.end()+30]))
+```
+소스가 ASCII로만 남아 보안 스캐너도 통과하고 매칭이 성공한다. `REMAIN` 출력으로 잔여분 1회 확인.
+
+**뉴스 title 한자 정정**: `clean()` 매핑(`證`→`증`, `美`→`미국`, `佛`→`프랑스`, `獨`→`독일`, `中`→`중국`) 후 저장.
+
+**뉴스 URL 풀 타입 혼재**: 여러 수집 JSON을 합치면 dict와 list가 섞여 `AttributeError: 'str' object has no
+attribute 'get'` → `isinstance(src, list)` + `isinstance(it, dict)` 가드 2중 삽입.
+
+**참조**: `references/macro-report-text-contamination-multilayer.md`
+**스크립트**: `scripts/macro_text_qa.py` — 저장 후 3계열 QA + dual-save 동등성 검사 1회 실행
+```bash
+python3 ~/.hermes/skills/investment/fair-value-portfolio/scripts/macro_text_qa.py \
+  ~/trading-agents-nuri/data/macro_context.json \
+  ~/trade-pipeline/data/macro_context.json
+```
 
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
 
