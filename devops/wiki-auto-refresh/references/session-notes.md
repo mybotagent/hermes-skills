@@ -2,6 +2,18 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-03 (21:00 KST) — P19 재감염 0건 (35회 연속 종료 유지) + audit 5종 전항목 통과 + 위키 본문 변경 0건 + push 성공
+
+- P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git status -sb` = `## main...origin/main` (clean).
+- **재감염 0건이 2일 연속(11-02, 11-03) 유지** — 10-28(working-tree) → 10-30(working-tree) → 11-02(0) → 11-03(0). 외부 자동화 프로세스의 index.md 삽입 동작이 실제로 차단된 국면으로 보임. 재발 배제 아님 — 3단계 판별은 매 실행 독립 수행 계속.
+- audit 5종 전항목 통과: wikilink (87 .md, BROKEN_MD/WL 0, CROSSDOM 0, BARENAME 0, MDEXT 0) / markdown-link (P11 0, broken 0) / index-md (registered 89 = actual 89, dead 0, missing 0) / tag (taxonomy 152, used 140, registered 140, Unknown 0) / logs-index (broken 0, notref 0, covered 13, ambiguous 0).
+- P18 검사: wiki `^|- ` 0건, skill references 0건, logs/index.md triple-pipe(`^|||`) 0건, index.md 내 submodule 경로 링크 0건.
+- stale 63개 (명시적 날짜 30일+, 최장 analysis/methodology.md 153일) — 자동 갱신 없이 플래그만. 날짜 없음 21개 = 전부 raw/ immutable. auto-fill-dates filled 0 / skipped 21.
+- 위키 본문 변경 0건 — index.md/SCHEMA.md/AGENTS.md 모두 무수정. 변경은 로그 2건뿐.
+- logs/index.md: November 섹션 이미 존재 (P30 — 월 섹션 신설 불필요). 기준 행 `|| 11-02 21:00` prefix 복사 후 python 인서트로 11-03 행 추가 (삽입 위치 line 12). `cat -A` 검증으로 형제 행과 `||` prefix 일치 확인, triple-pipe 0건.
+- 커밋: hermes-logs(master) `ee707e6`, hermes-wiki(main) `c2cfe4f` (submodule pointer bump) → push 완료 (`a726483..c2cfe4f`).
+- 참고: 반복 실행 시 무조건 커밋 만들기보다 실제 변경이 있을 때만 커밋하는 것이 원칙 (P19 fast path 원칙과 동일).
+
 ## 2026-11-02 (21:00 KST) — P19 재감염 0건 (34회 연속 재감염 종료) + P10 MDEXT 2건 + tag taxonomy +3 + push 성공
 
 **발견:**

@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.45.0"
+version: "1.46.0"
 changelog:
+  - "2026-11-03: **scripts/stale-audit.py 신규** — stale(30d+)/날짜없음 census를 bundled 스크립트로 승격 (매 실행 인라인 재작성 금지, P29 정합). P31 신규 — **audit 5종 전항목 통과 + 위키 본문 변경 0건이면 커밋 금지**(무의미한 empty commit 금지, 단 로그는 생성). P19 재감염 0건 2일 연속(35회 연속 종료 유지). logs/index.md November 섹션 기존 확인 → 월 섹션 신설 불필요(P30), 11-02 행 prefix 복사 후 python 인서트. references/run-2026-11-03.md 추가."
   - "2026-11-02: **P19 재감염 0건 — 34회 연속 재감염 종료** (외부 자동화 프로세스 동작 변경으로 추정; 재발 배제 아님, 3단계 판별 계속). P10 MDEXT 2건 수정(code/finviz-screener-parsing.md), tag taxonomy 149→152(+finviz/screener/debugging), logs/index.md November 섹션 신설(신규 월 첫 로그 — 삽입 기준은 데이터 행이 아닌 '월 섹션 헤더'!, 순서 역전 주의). audit 5종 전항목 통과, stale 63개 + 날짜 없음 21개(raw immutable). references/run-2026-11-02.md 추가."
   - "2026-10-30: P19 33회 연속(working-tree, 70건) — git restore fast path, 커밋 불필요. logs/index.md 신규 1건 python 인서트 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0). stale 63개 + 날짜 없음 operational 0개."
   - "2026-10-29: P19 32회 연속(working-tree, 68건) — git restore fast path, 커밋 불필요. logs/index.md 신규 2건(본 로그 + 매크로 리포트) python 인서트로 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0)."
@@ -92,6 +93,18 @@ python3 "$SCRIPTS/index-md-audit.py" [WIKI_ROOT]
 python3 "$SCRIPTS/logs-index-link-audit.py" [LOGS_DIR]
 # 기본 LOGS_DIR=~/.hermes/wiki/logs. 출력: BROKEN N / NOTREF N / wildcard_covered N
 # BROKEN 판정 후 처리: 경로 오기 → target 수정 / 파일 부재 → 행 제거 (2c-ter 참조)
+
+# 3.7) stale / 날짜 정보 없음 census (2026-11-03 추가) — bundled 스크립트 사용
+#      ⚠ 이전에는 매 실행 인라인 python으로 계산했으나 "audit 인라인 재작성 금지"(P29)
+#        와 같은 원칙이라 bundled로 승격함. 규칙은 P16을 그대로 인코딩:
+#        updated: > created: > inline Last updated (git은 절대 명시적 날짜를 덮어쓰지 않음).
+python3 "$SCRIPTS/stale-audit.py" [WIKI_ROOT] [--days 30]
+# 출력: STALE(명시적 날짜 30d+) N / NO DATE(operational) N / NO DATE(immutable raw 등) N
+# exit 0 (정보성). SUMMARY 줄은 리포트에 그대로 인용 가능.
+# ★ 리포트에서 stale과 날짜 없음을 **반드시 별도 집계** — 섞지 말 것 (P16).
+# ★ 검증 기준선 (2026-11-03): stale=63 / no_date_operational=0 / no_date_immutable=21.
+#   첫 실행(2026-11-04)에서 이 기준선과 크게 어긋나면 스크립트 로직을 먼저 점검할 것
+#   (예: 2026-11-04 기준 stale는 64+가 정상 — 11-03 페이지도 30일 경과에 근접).
 
 # 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시
 #    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
@@ -550,7 +563,9 @@ Stale: K개 페이지
 - `logs/`와 `subagents-library/`는 **submodule** — 이 저장소의 변경사항이 아님. `git status`에서 나타나면 무시
 - **`find` 명령어로 파일 목록 조회 시** submodule 디렉토리를 반드시 제외: `find . -name '*.md' -not -path './logs/*' -not -path './subagents-library/*'`
 - **`index.md` vs `INDEX.md`**: 파일명은 **소문자 `index.md`**가 정확 (AGENTS.md 스키마 규칙). `INDEX.md`(대문자)는 잘못된 명칭
-- **변경사항이 없으면** `"[SILENT]"`로 응답 (크론 모드), 또는 "변경 없음"으로 간단히 완료
+- **변경사항이 없으면** `"[SILENT]"`로 응답 (크론 모드), 또는 "변경 없음"으로 간단히 완료.
+  ⚠ 단 "변경 없음"이어도 **실행 로그 파일은 생성·등록·push** 한다 (무변화도 추적되어야 함).
+  ⚠ 반대로 위키 본문 변경이 0건이면 **무의미한 커밋을 만들지 말 것** (P31).
 - **hub 페이지**는 wiki 루트의 `hermes-trading-hub.md` 또는 그에 준하는 최상위 네비게이션 페이지. orphan wikilink는 여기에 우선 추가
 - **stale 날짜 포맷**: 프론트매터 `updated: YYYY-MM-DD`, `created: YYYY-MM-DD`, 본문 `**Last updated:** YYYY-MM-DD` 세 가지 포맷 모두 확인
 - **빈 디렉토리**(`code/stock-analysis-toolkit/` 등)는 wiki 페이지가 아니므로 무시
@@ -1133,7 +1148,27 @@ git diff HEAD --stat -- index.md                     # diff가 rogue 추가분�
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 
+### P31. No-op 실행 — 무의미한 커밋을 만들지 말 것 (2026-11-03 추가)
+
+**증상:** audit 5종이 모두 통과하고 위키 본문 변경이 0건인데, "매일 실행이니 뭔가 남겨야 한다"는 이유로
+빈 커밋(`auto-sync ...`)이나 의미 없는 위키 편집을 만드는 유혹. 2026-11-03 실행에서 실제 변경은
+**로그 2건(신규 로그 파일 + logs/index.md 행 추가)뿐**이었고 위키 본문(index.md/SCHEMA.md/AGENTS.md)은 무수정이었다.
+
+**원칙 (P19 fast path와 동일한 계열 — "실제 변경이 있을 때만 커밋"):**
+- audit 5종 전항목 통과 + 위키 본문 변경 0건 → **위키 repo는 커밋하지 않는다.**
+  단, **실행 로그 자체는 항상 생성·등록·push한다** (그래야 "오늘 실행했고 변화가 없었다"가 추적된다).
+- logs 서브모듈에 변경이 생겼다면 (신규 로그 파일 + logs/index.md 행) → logs는 커밋, parent는 submodule pointer bump로 커밋.
+- parent 커밋 메시지는 "auto-sync"보다 **변경 내용을 설명**하는 게 낫다 (빈 diff 방지).
+
+**"변경 없음"도 유효한 결과다:** cron 지시가 "변경 없으면 간단히 보고"를 포함하면,
+감사 결과 표 + "위키 본문 변경 0건"으로 리포트하고 종료하는 것이 올바른 행동이다.
+무의미한 편집(예: updated: 날짜만 기계적으로 갱신, 주석 추가)을 만들어 변경분을 manufacture하지 말 것.
+
+**stale 판정 주의:** stale 63개는 *보고 대상*이지 *조치 대상*이 아니다. P16에 따라 자동 갱신하지 않는다.
+"stale이 N개 있으니까 N개를 고쳐야 한다"는 식의 자동 편집은 P16 위반이다.
+
 ### P20. patch 도구 fuzzy-match mis-anchor — session-notes.md 근미동일 섹션 (2026-08-05 추가)
+
 
 **증상:** session-notes.md에 새 날짜 섹션을 append할 때 old_string이 (a) 공통 footer 줄(`- git status: clean, up-to-date with origin/main.` 등 매일 반복되는 감사 결과 줄)과 (b) 새 헤더만으로 구성된 경우, patch fuzzy matcher가 **파일 앞쪽의 동일한 footer 줄에 앵커를 잘못 잡아**:
 - 이전 날짜 섹션의 마지막 줄이 새 variant로 덮어써짐 (실제: 08-03 마지막 줄 "+ 08-02 신규 등록" → "커버 확인"으로 오변경)
@@ -1380,6 +1415,7 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **tag audit (Lint ⑧)**: `scripts/tag-audit.py` (2026-07-21 — SCHEMA.md taxonomy 추출/비교 자동화, per-file 미등록 태그 보고)
 - **updated: auto-fill**: `scripts/auto-fill-dates.py` (2026-07-21 — batch `updated:` frontmatter 채움, P16/P14/immutable 안전 장치 내장)
 - **logs index 링크 무결성 양방향 감사**: `scripts/logs-index-link-audit.py` (2026-10-21 — P25; BROKEN(등록된 링크의 대상 없음) + NOTREF(미등록 파일) + wildcard 커버 판정. 기존 2c-ter bash 루프는 NOTREF 한 방향만 잡음)
+- **stale / 날짜없음 census**: `scripts/stale-audit.py` (2026-11-03 — P16 인코딩; updated: > created: > inline Last updated 우선순위, git fallback 없음. STALE 30d+ / NO DATE(operational·immutable) 별도 집계. 인라인 재작성 금지)
 - **세션 노트 (누적)**: `references/session-notes.md` — 일자별 발견/적용/커밋 해시
 - **Weekly cleanup 기록**: `references/weekly-cleanup-2026-08-23.md` — Lint ② broken wikilink 7건, Tag taxonomy 누락 2개, memory 비활성화 환경 정보
 - **2026-10-21 실행 기록**: `references/run-2026-10-21.md` — P19 26회 연속(working-tree) + **P25 logs/index.md BROKEN 12건 유형별 표** + P24 역방향 부작용(submodule 내 parent 경로 금지) + credential.helper는 서브모듈 repo-local 설정
@@ -1387,3 +1423,4 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **2026-10-23 실행 기록**: `references/run-2026-10-23.md` — P19 28회 연속(working-tree, 63건) + **rogue 건수 = logs 파일 수에 비례(신규 로그 1개 추가 → rogue 1건 증가, 정상 패턴)** + **logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증** (형제 행과 `||` prefix 일치 확인) + P26 부분 읽기 허용 예외(날짜 헤더 앵커는 partial-view 상태에서도 정상 적용)
 - **2026-10-28 실행 기록**: `references/run-2026-10-28.md` — P19 31회 연속(working-tree, 67건) + **logs/index.md 행 추가는 python 인서트 방식이 patch보다 P18 리스크가 낮다**(기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 확정으로 P20 mis-anchor 차단) + 10-26(committed)→10-27/10-28(working-tree) 3일 연속 변형 사례
 - **2026-10-27 실행 기록**: `references/run-2026-10-27.md` — P19 30회 연속(working-tree, 66건) + **10-26 committed 변형 → 10-27 working-tree 변형 전환 사례(연속 이틀 서로 다른 변형 → 판별은 매 실행 독립)** + logs/index.md 행 추가 patch 절차(`old_string`=형제 행 전체 보존) + **인라인 orphan 스캔 59건은 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) — orphan 판정은 bundled audit 결과만 신뢰**
+- **2026-11-03 실행 기록**: `references/run-2026-11-03.md` — **P31 no-op 실행에서 무의미한 커밋 금지(위키 본문 변경 0건이면 wiki repo 커밋 안 함, 로그는 항상 생성)** + **scripts/stale-audit.py 신규**(stale/날짜없음 census를 bundled로 승격 — 인라인 재작성 금지) + P19 재감염 0건 2일 연속(35회 연속 종료 유지) + logs/index.md November 섹션 기존 확인 → python 인서트
