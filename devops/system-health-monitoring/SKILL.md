@@ -279,6 +279,30 @@ GitHub에서 `isArchived=true`여도 로컬에서 clone 받아 사용 중일 수
 ### 7. `.hermes/state.db`는 Hermes 자체 관리
 사용자 청크나 메모리 캐시. **사용자가 명시적으로 요청하지 않는 한 삭제 금지**.
 
+### 7.5 `hermes doctor` 가 멈추는 경우 — state.db 대형화 (2026-11-05 신규)
+`hermes doctor` 가 **출력 없이 무한 정지**하면 거의 항상 `state.db` 크기 문제다.
+doctor는 FTS 쓰기 건강 probe에서 `PRAGMA integrity_check` / `quick_check` 를 돌리는데,
+대용량 DB에서 수백 초 초과한다.
+
+**실측 (2026-11-05)**: `state.db` 1.4GB → doctor가 `state.db exists (6984 sessions)` 출력
+직후 정지. `dbstat` 분해 결과 **표준 FTS(`messages_fts*`)와 trigram FTS
+(`messages_fts_trigram*`)가 동일 메시지 내용을 2벌 저장** → FTS가 전체의 ~70%,
+실제 본문(150MB)의 6.6배.
+
+**진단 (읽기 전용, 안전)**:
+```bash
+python3 -c "
+import sqlite3
+c=sqlite3.connect('file:/home/ubuntu/.hermes/state.db?mode=ro',uri=True,timeout=60)
+c.execute('CREATE VIRTUAL TABLE temp.est USING dbstat(main)')
+for name,sz in c.execute('SELECT name, SUM(pgsize) FROM temp.est GROUP BY name ORDER BY 2 DESC LIMIT 12'):
+    print(f'{sz/1048576:9.1f} MB  {name}')"
+```
+**조치**: `hermes sessions prune` → 불필요한 trigram FTS 정리 → `wal_checkpoint(TRUNCATE)` + `VACUUM`.
+(단, `state.db` 자체 삭제는 여전히 ❌ — 위 Pitfall #7)
+
+**상세**: `hermes-version-management` skill → `references/upstream-remote-drift-2026-11-05.md`
+
 ### 8. health_check.py exit code: WARN ≠ FAIL (2026-09-09)
 **문제**: 모든 서비스 정상인데 ⚠️ 전송 실패 감지만으로 exit 1 → watchdog가 "스크립트 실패"로 오진 → 무한 재시도 루프. **실제 사례**: 모든 ✅ 통과, 크론 상태에 ⚠️ "일부 크론 전송 실패 있음"만 존재 → exit 1 → watchdog가 health_check를 "실패한 스크립트"로 분류.
 

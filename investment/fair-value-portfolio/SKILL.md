@@ -1720,6 +1720,56 @@ python3 ~/.hermes/skills/investment/fair-value-portfolio/scripts/macro_text_qa.p
   ~/trade-pipeline/data/macro_context.json
 ```
 
+### 73. 🔴🔴 본문 embed 2회 재발 + QA 로직 재작성 금지 (2026-11-04 신규, CRITICAL)
+
+**Pitfall 71/72가 2026-11-04 세션에서 그대로 재발.** 3,263자 리포트 본문을 저장 스크립트의
+`REPORT = """..."""` 문자열 리터럴에 embed → LLM degeneration으로 CJK/한자 혼입 8건:
+
+| 검출 | 위치 |
+|:----|:-----|
+| `箱子` / `今后政策` / `联邦` / `信件` / `联邦 LEVEL` | Executive Summary · Counter-factual · Structural Implications |
+| `一个新` | news summary |
+| `證` / `美` / `大人的` | news title/summary |
+
+**근본 규칙 (이제 3회째 같은 사고)**: **2,500자 이상 산문은 `.py`에 절대 넣지 않는다.**
+`.py` 문자열 리터럴 안의 긴 한국어 산문은 언제나 degeneration 위험이 있다.
+
+**이번 세션의 추가 발견 — QA를 손으로 다시 짜는 것도 낭비**:
+- 저장 스크립트 안에 `cjk_check`/`mixed_check`/`WHITELIST`를 **직접 짜고** assert를 걸었다.
+- 스킬에 이미 `scripts/macro_text_qa.py`가 있는데 쓰지 않아 QA 로직이 두 벌로 분산됨.
+- → **QA는 스킬 스크립트 1개(`scripts/macro_text_qa.py`)에만 두고, 저장 스크립트는 저장+동등성 assert만.**
+
+**이번 세션에 실제 통과한 4-STEP 구조 (그대로 복제)**:
+```
+STEP 1. write_file("/tmp/macro_body_20261104.md")   ← 본문 전체
+STEP 2. write_file("/tmp/build_macro.py")            ← body는 read()만, QA 로직 없음
+        body = open('/tmp/macro_body_20261104.md', encoding='utf-8').read().strip()
+        assert len(body) > 2500
+STEP 3. python3 /tmp/build_macro.py                  ← 저장 + dual-save + 전체 동등성 assert
+STEP 4. python3 ~/.hermes/skills/investment/fair-value-portfolio/scripts/macro_text_qa.py <p1> <p2>
+```
+- STEP 4는 **저장 후** 검사라 오염 시 원본 `.md`를 고쳐 재실행해야 한다.
+  → 저장 전에 `.md`만 스캔해 1회에 잡는다:
+  ```bash
+  python3 -c "import re,sys; s=open(sys.argv[1],encoding='utf-8').read(); print(re.findall(r'[一-鿿]',s))" /tmp/macro_body_20261104.md
+  ```
+  (출력이 `[]`이어야 통과)
+
+**dual-save는 `cp` 대신 한 스크립트에서 2개 write + 전체 동등성 assert** (2026-11-04 실측 통과):
+```python
+for t in targets:            # nuri + trade-pipeline
+    with io.open(t,'w',encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+d1=json.load(open(targets[0])); d2=json.load(open(targets[1]))
+assert d1 == d2 and d1['timestamp'] == d2['timestamp']
+```
+- `ensure_ascii=False` 필수 (True면 한자가 `\uXXXX`로 escaping → 한국어 검증 무의미).
+
+**뉴스 title 한자 정정은 저장 스크립트에서 선처리** — `macro_text_qa.py`는 title을 WARN만 출력하므로
+`證`→`증`, `美`→`미국` 매핑을 저장 전에 적용한다.
+
+**참조**: `references/macro-report-body-embed-and-qa-reuse.md`
+
 ### 64. 🔴 한국 6종목 코드 확정 매핑 (2026-10-21 재검증)
 
 | 종목 | 코드 | Naver `nm` |

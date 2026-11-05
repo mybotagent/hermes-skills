@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.46.0"
+version: "1.47.0"
 changelog:
+  - "2026-11-04: P19 재감염 0건 **3일 연속**(11-02/11-03/11-04) — 종료가 이어지는 국면 실증. stale-audit.py 검증 기준선(11-03: stale=63 / operational=0 / immutable=21) 대비 **11-04도 완전 일치** → 스크립트 로직 정상 확인 (기준선 어긋나면 스크립트 로직 우선 점검). P31 실전 확인 — 위키 본문 변경 0건이면 parent 커밋은 **submodule pointer bump만**, 커밋 메시지는 `auto-sync <날짜>`가 아니라 **변경 내용을 설명**(`wiki: bump logs submodule (...)`). logs/index.md November 섹션 기존 확인 → `|| 11-03 21:00` 기준 행 prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-04.md 추가."
   - "2026-11-03: **scripts/stale-audit.py 신규** — stale(30d+)/날짜없음 census를 bundled 스크립트로 승격 (매 실행 인라인 재작성 금지, P29 정합). P31 신규 — **audit 5종 전항목 통과 + 위키 본문 변경 0건이면 커밋 금지**(무의미한 empty commit 금지, 단 로그는 생성). P19 재감염 0건 2일 연속(35회 연속 종료 유지). logs/index.md November 섹션 기존 확인 → 월 섹션 신설 불필요(P30), 11-02 행 prefix 복사 후 python 인서트. references/run-2026-11-03.md 추가."
   - "2026-11-02: **P19 재감염 0건 — 34회 연속 재감염 종료** (외부 자동화 프로세스 동작 변경으로 추정; 재발 배제 아님, 3단계 판별 계속). P10 MDEXT 2건 수정(code/finviz-screener-parsing.md), tag taxonomy 149→152(+finviz/screener/debugging), logs/index.md November 섹션 신설(신규 월 첫 로그 — 삽입 기준은 데이터 행이 아닌 '월 섹션 헤더'!, 순서 역전 주의). audit 5종 전항목 통과, stale 63개 + 날짜 없음 21개(raw immutable). references/run-2026-11-02.md 추가."
   - "2026-10-30: P19 33회 연속(working-tree, 70건) — git restore fast path, 커밋 불필요. logs/index.md 신규 1건 python 인서트 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0). stale 63개 + 날짜 없음 operational 0개."
@@ -102,9 +103,11 @@ python3 "$SCRIPTS/stale-audit.py" [WIKI_ROOT] [--days 30]
 # 출력: STALE(명시적 날짜 30d+) N / NO DATE(operational) N / NO DATE(immutable raw 등) N
 # exit 0 (정보성). SUMMARY 줄은 리포트에 그대로 인용 가능.
 # ★ 리포트에서 stale과 날짜 없음을 **반드시 별도 집계** — 섞지 말 것 (P16).
-# ★ 검증 기준선 (2026-11-03): stale=63 / no_date_operational=0 / no_date_immutable=21.
-#   첫 실행(2026-11-04)에서 이 기준선과 크게 어긋나면 스크립트 로직을 먼저 점검할 것
-#   (예: 2026-11-04 기준 stale는 64+가 정상 — 11-03 페이지도 30일 경과에 근접).
+# ★ 검증 기준선 (2026-11-03 확정): stale=63 / no_date_operational=0 / no_date_immutable=21.
+#   2026-11-04 실행에서 **완전 일치 확인** → 스크립트 로직 정상.
+#   이후 실행에서 이 기준선과 크게 어긋나면 스크립트 로직을 먼저 점검할 것
+#   (stale는 날짜가 흐를수록 1씩 늘어날 수 있음 — 30일 경과 페이지가 새로 생기는 것).
+#   어긋남 폭이 1~2 수준이면 정상(신규 stale 발생). 10 이상이면 스크립트/SSOT 로직 점검.
 
 # 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시
 #    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
@@ -1127,6 +1130,8 @@ git diff HEAD --stat -- index.md                     # diff가 rogue 추가분�
 **실제 사례 (2026-10-26, 29회 연속 — 04:00 auto-sync가 커밋+push까지 완료한 committed 변형):** 10-26 04:00 크론 커밋 `83f4356 auto-sync 2026-10-26 04:00 KST`가 index.md 하단에 rogue 65건을 삽입하고 **push까지 완료**. 3단계 판별에서 working tree / HEAD / origin/main **모두 65건** → 이전 28회(전부 working-tree 전용)와 달리 committed+push 변형. 오염 커밋 diff = rogue 추가분 66줄뿐(정식 수정 0건) → parent `a955615` 청정(0건) 확인 후 `git show a955615:index.md > index.md` parent 복원 경로 적용 (203줄 → 138줄). 복구 후 `solopreneur/freelancing-platforms-comparison.md`가 미등록 상태로 남아 있어 solopreneur/ 섹션에 PAT A 등록. 로그: `2026/2026-10-26-2100.md`, 커밋 logs `5ada149` / parent `fc103d3`.
 - **교훈:** "04:00 auto-sync가 커밋만 한다"가 아니라 **push까지 한다**는 게 확인됨. `git status` clean이어도 오염이 origin에 반영돼 있을 수 있으므로 3단계 판별(working/HEAD/origin)을 생략하지 말 것.
 
+**실제 사례 (2026-11-02 / 11-03 / 11-04, 재감염 0건 3일 연속):** 10-30(working-tree 70건) 이후 11-02부터 `자동 추가` 0건이 연속. 3단계 판별에서 working tree / HEAD / origin/main 모두 0, `git diff HEAD --stat -- index.md` 빈 결과, `git stash list` 비어 있음 → **복구 경로 자체가 불필요**. 외부 자동화 프로세스(04:00/05:30 auto-sync)의 index.md 삽입 동작이 실제로 차단된 국면. **재발 배제 아님** — 3단계 판별을 매 실행 독립 수행하는 것만 고수하면 된다 (패턴이 바뀌어도 fast path/parent 복원 경로로 분기 가능).
+
 **실제 사례 (2026-10-28, 31회 연속 — working-tree 전용, rogue 67건):** 10-26(committed) → 10-27(working-tree) → 10-28(working-tree) 3일 연속. 3단계 판별: working tree 67건 / HEAD 0건 / origin/main 0건 → `git diff HEAD --stat -- index.md` = rogue 추가분 68줄뿐(+정식 수정 0건) → `git restore index.md` fast path, **커밋 불필요**. rogue 66→67 증가는 logs 신규 파일 1건 증가분(정상 패턴). audit 5종 전항목 통과(registered 87 = actual 87 / tag Unknown 0 / logs-index broken 0 notref 0). stale 63개 + 날짜 없음 20개(raw immutable). 로그 `2026/2026-10-28-2100.md`, 커밋 logs `103fed4` / parent `72aaeae`.
 - **교훈:** 10-26 committed → 10-27/10-28 working-tree 로 변형이 **연속 이틀 이상** 유지될 수 있다. "어제 변형이 X였으니 오늘도 X"로 단정하지 말고 **3단계 판별을 매 실행 독립 수행**할 것. 변형이 같으면 복구 경로도 같으므로(`git restore` fast path) 반복 작업이 오히려 안전.
 
@@ -1148,6 +1153,22 @@ git diff HEAD --stat -- index.md                     # diff가 rogue 추가분�
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 
+### P32. "새 월 섹션 존재 확인"은 로그 등록 전에 반드시 — 그리고 anchor 행은 직전 날짜 (2026-11-04 추가)
+
+**증상/배경:** logs/index.md는 월 단위 `### <Month>` 섹션 아래에 `|| MM-DD HH:MM | ... |` 행을 쌓는 구조다.
+새 달 첫 로그를 등록할 때는 월 섹션 신설이 필요하지만(P30), **월 섹션이 이미 있는지 먼저 확인해야** 존재하는 섹션 위에 중복 섹션을 만들지 않는다.
+
+**절차 (확정):**
+1. 먼저 월 섹션 존재 확인:
+   ```bash
+   cd ~/.hermes/wiki/logs && grep -n '^### ' index.md | head
+   # 새 달 섹션(예: "### November")이 이미 있으면 신설 불필요 (P30)
+   ```
+2. 행 추가 anchor는 **직전 실행 날짜의 행**으로 잡는다 (예: `|| 11-03 21:00`). 월 섹션 헤더가 아니라 **데이터 행 prefix를 복사**하면 triple-pipe가 원천 배제된다.
+3. python 인서트 후 3중 검증: `cat -A` 인접 행 prefix 일치 / `grep -c '^|||'` = 0 / `git diff --check` 통과 / `logs-index-link-audit.py` 재실행.
+
+**2026-11-04 사례:** November 섹션 이미 존재(11-03 실행이 신설) → 신설 불필요. anchor `|| 11-03 21:00` 복사 후 인서트(삽입 위치 line 12), `cat -A`에서 11-04/11-03/11-02 행 모두 `||` 동일 확인, triple-pipe 0건, `git diff --check` 통과, logs-index 감사 broken=0/notref=0.
+
 ### P31. No-op 실행 — 무의미한 커밋을 만들지 말 것 (2026-11-03 추가)
 
 **증상:** audit 5종이 모두 통과하고 위키 본문 변경이 0건인데, "매일 실행이니 뭔가 남겨야 한다"는 이유로
@@ -1159,6 +1180,17 @@ git diff HEAD --stat -- index.md                     # diff가 rogue 추가분�
   단, **실행 로그 자체는 항상 생성·등록·push한다** (그래야 "오늘 실행했고 변화가 없었다"가 추적된다).
 - logs 서브모듈에 변경이 생겼다면 (신규 로그 파일 + logs/index.md 행) → logs는 커밋, parent는 submodule pointer bump로 커밋.
 - parent 커밋 메시지는 "auto-sync"보다 **변경 내용을 설명**하는 게 낫다 (빈 diff 방지).
+  - 실제 적용 예 (2026-11-04): `git add logs && git commit -m "wiki: bump logs submodule (2026-11-04 auto-refresh — no wiki body changes)"`.
+  - generic `auto-sync <날짜> 21:00 KST` 메시지는 위키 본문 변경이 없는 실행에서 **내용 없는 커밋처럼 보인다** → 위 형태를 쓸 것.
+
+**★ P31의 "위키 본문 변경 0건" 판정 기준 (2026-11-04 확정):**
+```bash
+cd ~/.hermes/wiki
+git diff HEAD --stat -- index.md     # ← 빈 결과면 위키 본문 변경 0건
+git status --porcelain              # ← "M logs" 만 뜨면 = submodule pointer만 변경
+```
+- `git status --porcelain` 출력이 **`M logs` 한 줄**뿐이고 `git diff HEAD --stat -- index.md`가 비어 있으면 → 위키 본문 무수정 확정.
+- 이 경우 parent 커밋은 submodule pointer bump 1건만 만든다. `git add -A`로 위키 전체를 무차별 스테이징하지 말고 **`git add logs`** 만 대상으로 할 것 (P6 부작용 방지).
 
 **"변경 없음"도 유효한 결과다:** cron 지시가 "변경 없으면 간단히 보고"를 포함하면,
 감사 결과 표 + "위키 본문 변경 0건"으로 리포트하고 종료하는 것이 올바른 행동이다.
@@ -1424,3 +1456,4 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **2026-10-28 실행 기록**: `references/run-2026-10-28.md` — P19 31회 연속(working-tree, 67건) + **logs/index.md 행 추가는 python 인서트 방식이 patch보다 P18 리스크가 낮다**(기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 확정으로 P20 mis-anchor 차단) + 10-26(committed)→10-27/10-28(working-tree) 3일 연속 변형 사례
 - **2026-10-27 실행 기록**: `references/run-2026-10-27.md` — P19 30회 연속(working-tree, 66건) + **10-26 committed 변형 → 10-27 working-tree 변형 전환 사례(연속 이틀 서로 다른 변형 → 판별은 매 실행 독립)** + logs/index.md 행 추가 patch 절차(`old_string`=형제 행 전체 보존) + **인라인 orphan 스캔 59건은 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) — orphan 판정은 bundled audit 결과만 신뢰**
 - **2026-11-03 실행 기록**: `references/run-2026-11-03.md` — **P31 no-op 실행에서 무의미한 커밋 금지(위키 본문 변경 0건이면 wiki repo 커밋 안 함, 로그는 항상 생성)** + **scripts/stale-audit.py 신규**(stale/날짜없음 census를 bundled로 승격 — 인라인 재작성 금지) + P19 재감염 0건 2일 연속(35회 연속 종료 유지) + logs/index.md November 섹션 기존 확인 → python 인서트
+- **2026-11-04 실행 기록**: `references/run-2026-11-04.md` — P19 재감염 0건 **3일 연속** + **stale-audit.py 기준선(11-03) 대비 완전 일치 확인으로 스크립트 로직 검증** + **P31 실전: parent 커밋은 submodule pointer bump만, `git add logs`만 스테이징**(무차별 `git add -A` 금지) + 커밋 메시지를 변경 내용으로 기술(`wiki: bump logs submodule (...)`) + logs/index.md python 인서트(기준 행 `|| 11-03 21:00`) + `cat -A`/`git diff --check` 검증

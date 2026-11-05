@@ -2,6 +2,17 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-04 (21:00 KST) — P19 재감염 0건 (3일 연속 유지) + audit 5종 전항목 통과 + 위키 본문 변경 0건 + push 성공
+
+- P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git status -sb` = `## main...origin/main` (clean), `git stash list` 비어 있음.
+- **재감염 0건 3일 연속(11-02, 11-03, 11-04) 유지** — 외부 자동화 프로세스의 index.md 삽입 동작이 차단된 국면 지속. 재발 배제 아님, 3단계 판별 매 실행 독립 수행 계속.
+- audit 5종 전항목 통과: wikilink (87 .md, BROKEN_MD/WL 0, CROSSDOM 0, BARENAME 0, MDEXT 0) / markdown-link (P11 0, broken 0) / index-md (registered 89 = actual 89, dead 0, missing 0) / tag (taxonomy 152, used 140, registered 140, Unknown 0) / logs-index (broken 0, notref 0, covered 13, ambiguous 0).
+- P18 검사: wiki `^|- ` 0건, skill references 0건, logs/index.md triple-pipe(`^|||`) 0건, index.md 내 submodule 경로 링크 0건.
+- stale-audit.py 기준선 검증: `stale=63 no_date_operational=0 no_date_immutable=21` — 11-03 기준선과 완전 일치 (스크립트 로직 정상). auto-fill-dates filled 0 / skipped 21(raw immutable).
+- 위키 본문 변경 0건 — index.md/SCHEMA.md/AGENTS.md 모두 무수정. 변경은 로그 2건뿐 (P31 — wiki 본문 커밋 안 함, submodule pointer bump만).
+- logs/index.md: November 섹션 기존 확인 → 월 섹션 신설 불필요(P30). 기준 행 `|| 11-03 21:00` prefix 복사 후 python 인서트로 11-04 행 추가 (삽입 위치 line 12). `cat -A` 검증으로 형제 행과 `||` prefix 일치 확인, triple-pipe 0건, `git diff --check` 통과.
+- 커밋: hermes-logs(master) `609c071`, hermes-wiki(main) `94d5a3a` (submodule pointer bump) → push 완료 (`c2cfe4f..94d5a3a`).
+
 ## 2026-11-03 (21:00 KST) — P19 재감염 0건 (35회 연속 종료 유지) + audit 5종 전항목 통과 + 위키 본문 변경 0건 + push 성공
 
 - P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git status -sb` = `## main...origin/main` (clean).
