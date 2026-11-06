@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.47.0"
+version: "1.48.0"
 changelog:
+  - "2026-11-05: **P33 신규 — 중복 `updated:` frontmatter 키** (24개 페이지). auto-fill-dates.py v1.15.0 잔재(기존 `updated:` 줄 미감지 상태에서 새 줄 삽입). YAML last-wins라 **유효 날짜는 불변** → 의미 보존적 제거 가능(마지막 줄만 유지). `scripts/dup-updated-audit.py` 신규 번들(감지 + `--fix`). **검증: 수정 전/후 `yaml.safe_load` 전수 비교 → semantic diff 0건 필수** — diff가 안 0이면 폐기. **P34 신규 — 신규 루트 페이지 생성 크론 주의**: `LOG.md`(18:00 미국 증시 브리핑 크론)가 untracked+미등록으로 방치되면 `git status` 영구 dirty + index-md-audit REAL MISSING 지속 → frontmatter 보강(SCHEMA 최소 규격) + index.md 등록 + 같은 커밋에 `git add`. **stale 카운트 감소도 원인을 확인할 것**(이번 실행 63→62 = 04:00 크론이 `infra/neo4j-local.md`의 `updated:`를 실제 갱신 — 스크립트 버그 아님). P19 재감염 0건 **4일 연속**(11-02~11-05). references/run-2026-11-05.md 추가."
   - "2026-11-04: P19 재감염 0건 **3일 연속**(11-02/11-03/11-04) — 종료가 이어지는 국면 실증. stale-audit.py 검증 기준선(11-03: stale=63 / operational=0 / immutable=21) 대비 **11-04도 완전 일치** → 스크립트 로직 정상 확인 (기준선 어긋나면 스크립트 로직 우선 점검). P31 실전 확인 — 위키 본문 변경 0건이면 parent 커밋은 **submodule pointer bump만**, 커밋 메시지는 `auto-sync <날짜>`가 아니라 **변경 내용을 설명**(`wiki: bump logs submodule (...)`). logs/index.md November 섹션 기존 확인 → `|| 11-03 21:00` 기준 행 prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-04.md 추가."
   - "2026-11-03: **scripts/stale-audit.py 신규** — stale(30d+)/날짜없음 census를 bundled 스크립트로 승격 (매 실행 인라인 재작성 금지, P29 정합). P31 신규 — **audit 5종 전항목 통과 + 위키 본문 변경 0건이면 커밋 금지**(무의미한 empty commit 금지, 단 로그는 생성). P19 재감염 0건 2일 연속(35회 연속 종료 유지). logs/index.md November 섹션 기존 확인 → 월 섹션 신설 불필요(P30), 11-02 행 prefix 복사 후 python 인서트. references/run-2026-11-03.md 추가."
   - "2026-11-02: **P19 재감염 0건 — 34회 연속 재감염 종료** (외부 자동화 프로세스 동작 변경으로 추정; 재발 배제 아님, 3단계 판별 계속). P10 MDEXT 2건 수정(code/finviz-screener-parsing.md), tag taxonomy 149→152(+finviz/screener/debugging), logs/index.md November 섹션 신설(신규 월 첫 로그 — 삽입 기준은 데이터 행이 아닌 '월 섹션 헤더'!, 순서 역전 주의). audit 5종 전항목 통과, stale 63개 + 날짜 없음 21개(raw immutable). references/run-2026-11-02.md 추가."
@@ -95,8 +96,17 @@ python3 "$SCRIPTS/logs-index-link-audit.py" [LOGS_DIR]
 # 기본 LOGS_DIR=~/.hermes/wiki/logs. 출력: BROKEN N / NOTREF N / wildcard_covered N
 # BROKEN 판정 후 처리: 경로 오기 → target 수정 / 파일 부재 → 행 제거 (2c-ter 참조)
 
-# 3.7) stale / 날짜 정보 없음 census (2026-11-03 추가) — bundled 스크립트 사용
-#      ⚠ 이전에는 매 실행 인라인 python으로 계산했으나 "audit 인라인 재작성 금지"(P29)
+# 3.8) 중복 `updated:` frontmatter 키 감사 (P33, 2026-11-05 추가)
+#      auto-fill-dates.py v1.15.0이 기존 `updated:` 줄을 감지 못 한 채 새 줄을 삽입한 잔재.
+#      YAML은 last-wins라 *유효* 날짜는 마지막 값 — 즉 의미는 보존되지만 SCHEMA 최소 규격 위반.
+#      exit 0 (정보성). --fix 시 마지막 occurrence만 남기고 앞쪽 중복 줄 제거 (의미 보존적).
+python3 "$SCRIPTS/dup-updated-audit.py" [WIKI_ROOT]
+python3 "$SCRIPTS/dup-updated-audit.py" [WIKI_ROOT] --fix
+# ★ --fix 적용 시 **반드시 수정 전/후 `yaml.safe_load` 결과를 전수 비교**해 semantic diff 0건 확인.
+#   diff가 0이 아니면 폐기하고 되돌릴 것 (frontmatter 값이 바뀐 것).
+# ★ 제거할 줄은 "마지막 occurrence"를 제외한 것들 — YAML last-wins를 이용하는 의미 보존적 제거.
+
+# 3.7) stale / 날짜 정보 없음 census (2026-11-03 추가) — bundled 스크립트 사용#      ⚠ 이전에는 매 실행 인라인 python으로 계산했으나 "audit 인라인 재작성 금지"(P29)
 #        와 같은 원칙이라 bundled로 승격함. 규칙은 P16을 그대로 인코딩:
 #        updated: > created: > inline Last updated (git은 절대 명시적 날짜를 덮어쓰지 않음).
 python3 "$SCRIPTS/stale-audit.py" [WIKI_ROOT] [--days 30]
@@ -1153,6 +1163,60 @@ git diff HEAD --stat -- index.md                     # diff가 rogue 추가분�
 
 **P19와 P18의 연관 관계:** P19가 index.md에 대량 서브모듈 항목을 추가하는 과정에서 `|-` 접두사가 잘못된 줄에 `||-`로 오염됨 (P18). 그리고 같은 실행이 infra/cron-jobs.md에도 P18 오염을 일으킴. 즉 **P19가 원인, P18이 부수 효과**인 경우가 많음. P18 발견 시 항상 P19 검사도 함께 수행.
 
+### P33. 중복 `updated:` frontmatter 키 — auto-fill-dates.py v1.15.0 잔재 (2026-11-05 추가)
+
+**증상:** 페이지 frontmatter에 `updated:`가 두 줄씩 들어 있다.
+```yaml
+---
+tags: ["analysis", "methodology"]
+related: ["analysis/orbit-valuation.md"]
+updated: 2026-06-03
+updated: 2026-07-01
+---
+```
+
+**원인:** auto-fill-dates.py **v1.15.0**이 multi-line frontmatter 블록에서 기존 `updated:` 줄을 감지하지 못한 채 새 `updated:`를 삽입. v1.16.0에서 `has_updated` regex를 frontmatter 블록 기반으로 개선해 **재발은 막았으나, 이미 오염된 페이지의 잔재는 복구되지 않은 채 방치**되어 있었다.
+
+**영향 (중요):** YAML은 **last-wins** → `yaml.safe_load`는 마지막 값을 반환 → **유효 `updated:` 날짜는 불변**. 즉 "날짜가 잘못 덮어써진" 게 아니라 **중복 키가 남아 있는** 상태다. 그래서:
+- 자동 수정은 **가능하며 안전하다** (마지막 occurrence만 남기고 앞쪽 제거 = 의미 보존적)
+- 다만 SCHEMA.md 최소 frontmatter 규칙 위반 + lint가 duplicate key로 실패할 수 있음 + 사람이 편집할 때 SSOT가 모호
+
+**⚠ 수정 시 검증 (필수):**
+```bash
+# 수정 전 effective YAML 스냅샷 저장 (git show HEAD:<file> 로 비교하는 게 더 안전)
+python3 "$SCRIPTS/dup-updated-audit.py" --fix
+# → 수정 후: 현재 YAML vs HEAD YAML 를 파일 단위로 전수 비교
+#   semantic diff가 0건이어야 정상. 0이 아니면 폐기.
+git diff --check && python3 "$SCRIPTS/wikilink-audit.py" && python3 "$SCRIPTS/markdown-link-audit.py" && python3 "$SCRIPTS/index-md-audit.py"
+```
+전수 비교 스크립트 요지(각 파일의 frontmatter를 `yaml.safe_load` 해 HEAD 버전과 키별 비교):
+```python
+cur = yaml.safe_load(cur_text.split('---')[1]) or {}
+orig = yaml.safe_load(subprocess.run(['git','show',f'HEAD:{rel}'],capture_output=True,text=True,cwd=wiki).stdout.split('---')[1]) or {}
+for k in set(list(cur)+list(orig)):
+    assert str(cur.get(k)) == str(orig.get(k))
+```
+- **`str()` 비교를 쓸 것** — YAML date는 `datetime.date` 객체라 `==` 비교 시 None과 불일치하는 등 거짓 양성 발생 (2026-11-05 실행에서 처음 이 함정으로 24건 false diff가 났음).
+
+**2026-11-05 사례:** 24개 페이지 수정 (analysis/ 4, architecture/ 5, infra/ 4, repos/ 4, solopreneur/ 2, code/ 1, watchlist/ 1, 루트 3). semantic diff 0건 확인. commit `8c13760`.
+
+### P34. 신규 루트 페이지 생성 크론 — untracked + 미등록 방치 금지 (2026-11-05 추가)
+
+**증상:** `git status`에 `?? LOG.md` untracked. `index-md-audit.py`가 REAL MISSING 1건으로 보고.
+
+**원인:** 2026-11-05 18:00 미국 증시 브리핑 크론(cron id `2916cc9c2ceb`)이 `~/.hermes/wiki/LOG.md`를 생성하지만, (a) index.md에 등록하지 않고 (b) git에 stage하지 않음.
+
+**판단:**
+- `hermes-trading-log.md`(변경 이력 로그)와 **중복되는가?** → 아니면 신규 legit 페이지. Karpathy 패턴 §3계층의 "LOG.md = append-only 변경 기록" 역할.
+- `git log -- <file>`에 이력이 없고 untracked면 신규 생성물 → **삭제/아카이브 대상 아님**.
+
+**조치 (3단계 필수):**
+1. SCHEMA.md 최소 frontmatter 보강 (`tags` + `related` + `created` + `updated`) — 파일이 `updated:`만 가진 채로 오면 lint 위반
+2. index.md 해당 섹션에 PAT A로 등록 (python 인서트, 기준 행 prefix 복사 — P18 회피)
+3. **같은 커밋에 `git add`** — 미등록 + 미추적 상태는 `git status`를 영구 dirty로 만들고 REAL MISSING으로 계속 보고됨
+
+**교훈:** "새 루트 페이지를 만드는 크론"이 wiki에 파일을 쓰면 그 크론은 index 등록 + git add를 해야 한다. wiki-auto-refresh는 그 잔재를 **인수인계**하는 시점이다.
+
 ### P32. "새 월 섹션 존재 확인"은 로그 등록 전에 반드시 — 그리고 anchor 행은 직전 날짜 (2026-11-04 추가)
 
 **증상/배경:** logs/index.md는 월 단위 `### <Month>` 섹션 아래에 `|| MM-DD HH:MM | ... |` 행을 쌓는 구조다.
@@ -1448,6 +1512,7 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **updated: auto-fill**: `scripts/auto-fill-dates.py` (2026-07-21 — batch `updated:` frontmatter 채움, P16/P14/immutable 안전 장치 내장)
 - **logs index 링크 무결성 양방향 감사**: `scripts/logs-index-link-audit.py` (2026-10-21 — P25; BROKEN(등록된 링크의 대상 없음) + NOTREF(미등록 파일) + wildcard 커버 판정. 기존 2c-ter bash 루프는 NOTREF 한 방향만 잡음)
 - **stale / 날짜없음 census**: `scripts/stale-audit.py` (2026-11-03 — P16 인코딩; updated: > created: > inline Last updated 우선순위, git fallback 없음. STALE 30d+ / NO DATE(operational·immutable) 별도 집계. 인라인 재작성 금지)
+- **중복 `updated:` frontmatter 키 감사**: `scripts/dup-updated-audit.py` (2026-11-05 — P33; auto-fill-dates.py v1.15.0 잔재. YAML last-wins라 유효값 불변 → 의미 보존적 제거. `--fix` 후 **수정 전/후 yaml.safe_load 전수 비교로 semantic diff 0건 확인 필수**)
 - **세션 노트 (누적)**: `references/session-notes.md` — 일자별 발견/적용/커밋 해시
 - **Weekly cleanup 기록**: `references/weekly-cleanup-2026-08-23.md` — Lint ② broken wikilink 7건, Tag taxonomy 누락 2개, memory 비활성화 환경 정보
 - **2026-10-21 실행 기록**: `references/run-2026-10-21.md` — P19 26회 연속(working-tree) + **P25 logs/index.md BROKEN 12건 유형별 표** + P24 역방향 부작용(submodule 내 parent 경로 금지) + credential.helper는 서브모듈 repo-local 설정
@@ -1457,3 +1522,4 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **2026-10-27 실행 기록**: `references/run-2026-10-27.md` — P19 30회 연속(working-tree, 66건) + **10-26 committed 변형 → 10-27 working-tree 변형 전환 사례(연속 이틀 서로 다른 변형 → 판별은 매 실행 독립)** + logs/index.md 행 추가 patch 절차(`old_string`=형제 행 전체 보존) + **인라인 orphan 스캔 59건은 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) — orphan 판정은 bundled audit 결과만 신뢰**
 - **2026-11-03 실행 기록**: `references/run-2026-11-03.md` — **P31 no-op 실행에서 무의미한 커밋 금지(위키 본문 변경 0건이면 wiki repo 커밋 안 함, 로그는 항상 생성)** + **scripts/stale-audit.py 신규**(stale/날짜없음 census를 bundled로 승격 — 인라인 재작성 금지) + P19 재감염 0건 2일 연속(35회 연속 종료 유지) + logs/index.md November 섹션 기존 확인 → python 인서트
 - **2026-11-04 실행 기록**: `references/run-2026-11-04.md` — P19 재감염 0건 **3일 연속** + **stale-audit.py 기준선(11-03) 대비 완전 일치 확인으로 스크립트 로직 검증** + **P31 실전: parent 커밋은 submodule pointer bump만, `git add logs`만 스테이징**(무차별 `git add -A` 금지) + 커밋 메시지를 변경 내용으로 기술(`wiki: bump logs submodule (...)`) + logs/index.md python 인서트(기준 행 `|| 11-03 21:00`) + `cat -A`/`git diff --check` 검증
+- **2026-11-05 실행 기록**: `references/run-2026-11-05.md` — **P33 중복 `updated:` frontmatter 24개 페이지**(auto-fill-dates v1.15.0 잔재, YAML last-wins라 의미 보존적 제거 + `yaml.safe_load` 전수 비교 semantic diff 0건) + **scripts/dup-updated-audit.py 신규** + **P34 LOG.md 미등록**(18:00 브리핑 크론 산출물 — frontmatter 보강 + index 등록 + git add 3단계) + **stale 63→62 감소 원인 확인**(04:00 크론의 `infra/neo4j-local.md` 실제 갱신) + P19 재감염 0건 4일 연속

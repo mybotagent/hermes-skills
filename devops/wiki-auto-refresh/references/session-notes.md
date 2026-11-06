@@ -2,6 +2,18 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-05 (21:00 KST) — P19 재감염 0건 (4일 연속) + **중복 updated: frontmatter 24개 페이지 수정** + **LOG.md 신규 등록** + push 성공
+
+- P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git stash list` 비어 있음. `git status -sb` = `## main...origin/main [ahead 1]` (ahead 1은 04:00 크론의 `410f57c docs(neo4j)` — 이번 실행 산출 아님).
+- **재감염 0건 4일 연속(11-02, 11-03, 11-04, 11-05) 유지.** 3단계 판별 매 실행 독립 수행 계속.
+- **신규 발견 1 — 중복 `updated:` frontmatter 키 24개 페이지.** auto-fill-dates.py v1.15.0 잔재(기존 `updated:` 줄 미감지 상태에서 새 줄 삽입). YAML last-wins라 **유효 날짜는 불변** — 의미 보존적 제거 가능. → `scripts/dup-updated-audit.py` 신규 번들 작성(감지 + `--fix`, last-occurrence 유지). 수정 전/후 `yaml.safe_load` 71개 파일 전수 비교 → **semantic diff 0건**. `git diff --check` 통과.
+- **신규 발견 2 — `LOG.md` 미등록.** 2026-11-05 18:00 미국 증시 브리핑 크론(cron id `2916cc9c2ceb`)이 생성한 일일 브리핑 로그가 untracked(`?? LOG.md`) + index.md 미등록 상태. `hermes-trading-log.md`와 중복되지 않음 (Karpathy 패턴의 append-only LOG 역할). → SCHEMA.md 최소 frontmatter(tags/related/created/updated) 보강 + index.md `## 기타` 섹션에 PAT A 등록(python 인서트) + `git add`로 커밋 포함.
+- audit 6종 전항목 통과: wikilink (88 .md, BROKEN_MD/WL 0, CROSSDOM 0, BARENAME 0, MDEXT 0) / markdown-link (P11 0, broken 0) / index-md (**registered 90 = actual 90**, dead 0, missing 0) / tag (taxonomy 152, Unknown 0) / logs-index (broken 0, notref 0, covered 13, ambiguous 0) / **dup-updated (0)** / stale-audit (stale 62 / no_date_operational 0 / no_date_immutable 21).
+- P18 검사: wiki `^|- ` 0건, skill references 0건, logs/index.md triple-pipe(`^|||`) 0건, index.md 내 submodule 경로 링크 0건.
+- **stale 63→62 감소 확인** — 스크립트 버그가 아니라 04:00 크론 커밋 `410f57c`가 `infra/neo4j-local.md`의 `updated:`를 2026-07-01 → 2026-11-05로 갱신한 실제 콘텐츠 갱신(`git show 410f57c` diff로 확인). stale-audit 5회 연속 실행 동일 결과 — 결정론 확인. **기준선 비교 시 "증가"만 이상 징후로 보는 편향 금지 — 감소도 원인을 확인할 것.**
+- logs/index.md: November 섹션 기존 확인 → 월 섹션 신설 불필요(P30). 기준 행 `|| 11-04 21:00` prefix 복사 후 python 인서트로 11-05 행 추가 (삽입 위치 line 12). `cat -A` 형제 행 prefix 일치 확인, triple-pipe 0건, `git diff --check` 통과, logs-index 감사 broken=0/notref=0.
+- 커밋: hermes-logs(master) `a5e7a9a`, hermes-wiki(main) `8c13760` (본문 변경) + `d169664` (submodule pointer bump) → push 완료 (`94d5a3a..d169664`).
+
 ## 2026-11-04 (21:00 KST) — P19 재감염 0건 (3일 연속 유지) + audit 5종 전항목 통과 + 위키 본문 변경 0건 + push 성공
 
 - P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git status -sb` = `## main...origin/main` (clean), `git stash list` 비어 있음.

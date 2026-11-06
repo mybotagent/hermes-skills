@@ -392,8 +392,11 @@ rm ~/.hermes/cron/.tick.lock
 
 **원인**: Polling의 `cr`/`pcv`는 실시간 스냅샷 기준 → `ms='OPEN'` 상태에서는 확정 종가와 어긋남.
 
-**HARD RULE**:
+**HARD RULE**
 - 리포트에 **종가·일변동률·주간수익률**을 쓸 때는 **Naver siseJson** (`api.finance.naver.com/siseJson.naver`) 사용. Polling은 실시간 모멘텀 전용.
+- **🚨 Polling `cr`은 방향 확인용으로 절대 금지 (2026-11-05 실측)**: 삼성전자 polling 원자료가 `+6.88%`로 표시됐으나 siseJson 확정 종가는 **-8.58%** — 하락 종목에서 부호가 반대로 해석됐다. 뉴스 방향과 충돌하면 Polling을 "틀렸다"고 결론내리지 말고 **siseJson으로 재확인**할 것.
+- **🚨 KOSPI/KOSDAQ도 siseJson이 1순위 (2026-11-05 검증)**: `symbol=KOSPI` / `symbol=KOSDAQ`(문자열)로 개별주와 동일 포맷의 일봉을 반환 (KOSPI 5,383.80 / -5.28%, KOSDAQ 678.41 / -5.11%). `symbol=001`은 여전히 garbled. Yahoo `^KS11`/`^KOSDAQ`은 429이므로 의존 금지.
+- **⚠️ siseJson 정규식이 엄격하면 `rows 0`으로 조용히 실패**: 공백/따옴표/선택 소수부를 허용하는 정규식 사용, `rows==0`이면 원문 1KB를 먼저 출력해 파싱 버그인지 확인. 주간수익률 기준일은 `p[-6]`이 아니라 **명시적 날짜**로 고정하고 리포트에 함께 표기.
 - `ms == 'CLOSE'`일 때만 두 소스가 일치 → 값 인용 전 `ms` 확인.
 - siseJson은 `Referer` 헤더 필수(없으면 빈 응답) + EUC-KR. 응답 행:
   `["20261026", 시가, 고가, 저가, 종가, 거래량, 외국인소진율]` → **주간수익률·외국인소진율까지 한 번에**.
@@ -523,6 +526,9 @@ curl -sL --max-time 12 "https://quote.cnbc.com/quote-html-webservice/quote.htm?s
        assert not any(b in n['summary'] for b in BAD), n['summary']
    ```
 4. 손상은 일괄 replace 말고 **항목 단위**로 정상 한국어 재작성
+5. **🚨 검증 전 저장 금지 (2026-11-05 추가)**: `macro_context.json`은 18:35 LangGraph `pipeline.py`가 읽는 경로. 초안 값으로 먼저 저장하면 검증 없이 오염이 소비된다. **순서**: 수집 → /tmp 캐시 → 교차검증 → 본문 작성 → QA → 저장 → 전송.
+6. **🚨 "직전 세션 events"와 "현재 방향"을 분리 (2026-11-05 추가)**: 뉴스 헤드라인은 직전 해외 세션의 events(예: "국제유가 8% 급락")이고 크론 실행 시점 현재가는 그 반대(+0.58%)일 수 있다. 방향성을 쓰기 전 ① 직전 세션 news ② 현재가+change_pct ③ previous_day_closing 을 따로 확인하고 양쪽을 함께 기술. 한쪽만 단정하면 현재가와 모순된 서사가 리포트에 박힌다.
+7. **🚨 정리/선별 스크립트가 수집 결과를 잃지 않게 (2026-11-05 추가)**: 정적 헬퍼 시그니처를 어긋나게 호출하면 `TypeError`로 이미 수집한 73건이 통째로 유실된다. 헬퍼 시그니처를 통일하고 최소 1회 인자 없이 호출해 스모크 테스트. 수집 결과는 먼저 파일로 캐시하고 선별은 그 파일에서만 읽기.
 
 **상세**: `fair-value-portfolio` 스킬의 `references/macro-report-official-source-verification.md`
 
@@ -1095,6 +1101,33 @@ bash ~/.hermes/scripts/self_healing_watchdog.sh
 - `references/cron-mode-korean-stock-series-and-text-qa.md` — 🆕 한국 개별주 확정 종가/주간수익률/외국인소진율(siseJson) + 한국어 리포트 CJK 혼입 QA 정규화 (2026-10-26 신규)
 - `references/hermes-config-sync-bugs.md` — 🚨 hermes_config_sync.sh 2 critical bugs (rsync wipe + config recursion) + fix (2026-07-09 신규)
 - `references/llm-root-cause-analysis.md` — 🧠 재시도 초과 시 LLM 근본 원인 분석 패턴 (3-layer escalation, prompt 템플릿, 캐시 schema, env keys, 2026-07-10 신규)
+- `references/macro-report-data-contamination-incident-2026-11.md` — 🚨 **조용히 틀린 리포트** 사고 기록 (2026-11-05). 수치 소스 우선순위표, 검증→작성→저장→전송 강제 순서, "직전 세션 vs 현재" 분리, 산출물 불변식 검증 — watchdog이 잡지 못하는 오류 종류 (added 2026-11-05)
+
+## 🚨 조용한 오염(silent corruption) — 에러보다 위험한 실패 모드 (2026-11-05 신규)
+
+**watchdog이 잡는 것**: 예외, 타임아웃, 404, 429, 빈 응답, exit code != 0.
+**watchdog이 절대 못 잡는 것**: **조용히 틀린 값**. 파일은 syntactically 완벽하고
+timestamp도 일치하고 status='ok'인데 내용이 틀림.
+
+**실제 사고 (2026-11-05 매크로 크론)**:
+- Naver Polling의 `cr` 필드 부호가 하락 종목에서 반대로 해석 → 삼성전자 `+6.88%`(실제 -8.58%)
+- 정규식 버그로 siseJson 파싱이 `rows 0` → "빈 데이터"를 조용히 통과
+- **검증 전 초안 값으로 `macro_context.json`을 먼저 저장** → 18:35 파이프라인이 그 값을 소비
+  (종목 등락률 6종목 전부 오차, 유가 서사는 방향까지 반대)
+- watchdog: `status=ok`, `last_delivery_error=None` → 어떤 자가치유 장치도 미탐지
+
+**HARD RULE — 산출물 불변식 검증 (invariant check)**:
+저장 직전(또는 cron 프롬프트에 삽입) 반드시 아래를 assert 하고, 위반 시 **저장하지 말고 fail loudly**:
+1. 두 저장 경로의 `timestamp` 일치
+2. 지수 등락률과 개별주 등락률의 **방향 정합성** (코스피 폭락인데 전종목 상승이면 오류)
+3. `news_items` 헤드라인 수치와 `key_macro_data` 수치의 **일치성**
+4. 본문 CJK(`[一-鿿]`) 0건 + 한영혼합어 화이트리스트 violations 0건
+5. 모든 종목 종가가 **siseJson**에서 온 값인지 (Polling `cr` 금지)
+
+**작업 순서 강제**: 수집 → /tmp 캐시 → 교차검증 → 본문 작성 → QA → **그 다음** 저장+전송.
+"일단 저장해 두고 나중에 보정" 금지 (파이프라인이 18:35에 읽는다).
+
+자세한 사고 기록 + 수치 소스 우선순위표: `references/macro-report-data-contamination-incident-2026-11.md`
 
 ## 🚨 `hermes_config_sync.sh` 2 Critical Bugs (2026-07-09 발견+수정, HARD PITFALL)
 

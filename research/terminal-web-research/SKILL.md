@@ -382,6 +382,7 @@ terminal(f'curl -sL -H "User-Agent: Mozilla/5.0" "{rss_url2}" -o /tmp/QUERY2.xml
 
 - `references/google-news-url-resolution.md` — Getting the ORIGINAL publisher URL out of a Google News RSS item: `<source url=...>` gives the publisher domain for free; `data-n-a-ts`/`data-n-a-sg` + `batchexecute` RPC for deep links, including every payload shape that FAILED (Oct 2026). Also the budget rule: ship Google News URLs rather than burn 20 calls decoding (added 2026-10-29)
 - `references/korean-stock-market-data-sources.md` — Korean stock OHLCV via Naver siseJson API, global macro data sources (CNBC S&P500/Nasdaq, exchange-rate APIs), verified working patterns (added 2026-10-08)
+- `references/korean-stock-close-verification-2026-11.md` — 🆕 한국 **지수**(KOSPI/KOSDAQ)도 Naver siseJson이 반환 + `rows 0` 정규식 함정 + 주간수익률 기준일 계산 + 하한가 판정 + Polling `cr` 부호 역전 + Stooq JS PoW 게이트 + "전일 급락 vs 오늘 방향" 분리 + **검증 전 저장 금지 순서** (added 2026-11-05)
 - `references/korean-stock-news-batch-2026.md` — Korean stock news: parallel RSS + Naver News body extraction + outlet code map + causal chain reporting (added 2026-07-13)
 - `references/korean-stock-news-rss-2026-09.md` — Korean stock news via Google News RSS: verified working Python script, `link` field not being a real URL, source extraction from `description` HTML, `urllib.parse.quote()` requirement, Naver search page JS-rendering (added 2026-09-25)
 - `references/yahoo-finance-market-data.md` — Yahoo Finance S&P 500 / 10Y Treasury / ETF fetch via chart API + exchange rate APIs (added 2026-09-22)
@@ -605,11 +606,11 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 
 20. **Yahoo Finance for Korean stocks/indices returns HTTP 429** — Yahoo Finance rate-limits Korean market data aggressively. **Do not use Yahoo Finance for KOSPI, KOSDAQ, or Korean individual stocks.** Verified alternatives:
     - **Individual Korean stocks**: use `api.finance.naver.com/siseJson.naver` — returns OHLCV data (see `references/korean-stock-market-data-sources.md`)
-    - **KOSPI index**: try CNBC KOSPI page (`cnbc.com/quotes/KOSPI` → 404) or NASDAQ API; if all fail, use prior-day data from `macro_context.json`
+    - **KOSPI index**: `api.finance.naver.com/siseJson.naver?symbol=KOSPI` (2026-11-05 verified — same endpoint, string symbol `KOSPI`/`KOSDAQ`). Fallback: CNBC XML `.KS11` / `.KQ11`.
     - **Currency data**: use `open.er-api.com/v6/latest/USD` or `exchangerate-api.com/v4/latest/USD` (both reliable)
     - **S&P500 / Nasdaq**: CNBC quote pages work reliably with `regularMarketPrice` regex extraction
     (Confirmed 2026-10-08: Yahoo Finance for Korean stocks returns 429 consistently.)
-21. **Naver Finance siseJson `symbol=001` for KOSPI index returns garbled data** — the endpoint returns numeric-salvageable content but not the actual index value. Do NOT use it for KOSPI index level. Use it only for individual stock OHLCV. (Confirmed 2026-10-08.)
+21. **Naver Finance siseJson `symbol=001` for KOSPI index returns garbled data** — the endpoint returns numeric-salvageable content but not the actual index value. Do NOT use `symbol=001` for KOSPI index level. **Instead use `symbol=KOSPI` / `symbol=KOSDAQ` (string)** — verified working 2026-11-05: KOSPI 5,383.80 / -5.28%, KOSDAQ 678.41 / -5.11% from the same `siseJson.naver` endpoint. Use `symbol=001` only for individual stock OHLCV. Also: a strict regex without whitespace/quotes tolerance returns **0 rows** — see `references/korean-stock-close-verification-2026-11.md`. (Confirmed 2026-10-08; superseded 2026-11-05.)
 22. **`execute_code` blocked in cron jobs — confirmed again (2026-10-08)** — `execute_code` returns `BLOCKED: execute_code runs arbitrary local Python... Cron jobs run without a user present`. Always use `terminal()` with a pre-written Python script file for any data collection in cron mode.
 23. **Pre-saved ticker codes become stale — always verify against user input**: The reference file `korean-stock-news-batch-2026.md` previously listed 에이피알=052220 and HD현대일렉=267260, but the user uses 에이피알=**352820** and HD현대일렉=**054050**. KRX codes change, companies re-list, and old verifications go stale. **Never assume a pre-saved ticker is still correct** — always use the code the user provides in the current session. (Last verified codes as of 2026-10-09: 현대차=005380, 에이피알=352820, HD현대일렉=054050.)
 
@@ -620,6 +621,14 @@ See `references/youtube-search-via-curl.md` for full details, Korean query handl
 26. **Free fallback for "original media URL": `<source url="...">` attribute (2026-10-29)**: Google News RSS items carry `<source url="https://imnews.imbc.com">MBC 뉴스</source>` — the publisher's own domain, available with zero extra requests. Use it whenever deep-link decoding fails. The `<title>` also ends with " - 매체명", and `<description>` holds 1–3 sibling headlines with their media names in `<font color="#6f6f6f">` (no article body, no original URLs).
 
 - Also **obey "JSON 배열 텍스트로만 출력"** style asks literally: emit the JSON array and nothing else — no preamble, no "수집 결과입니다", no markdown fence, no trailing commentary. When a run is truncated or partially completed, still output a valid JSON array of what was actually collected rather than prose.
+
+27. **🚨 저장 전에 교차검증을 끝내라 — "일단 저장 후 보정"은 금지 (2026-11-05 실측 사고)**: 일일 매크로 리포트 크론에서 초안 수치로 `macro_context.json`을 **먼저 저장**한 뒤 검증하면, 18:35 파이프라인이 검증 전 값을 읽는다. 2026-11-05 실제 차이: 삼성전자 -8.35% → **-8.58%**, 삼성전기 -14.48% → **-15.01%**, HD현대일렉트릭 -9.88% → **-10.21%**, KOSPI 5,383.80은 맞았으나 유가 서사는 "오늘 급락"(실제로는 전일 -8.29%, 오늘 +0.58%)로 완전히 반대. **강제 순서**: ① 수집 → ② /tmp 캐시 → ③ 2개 소스 교차검증 → ④ 검증값으로 본문 작성 → ⑤ 본문 QA(CJK/한영혼합/수치 재확인) → ⑥ 그 다음 두 경로 저장 + timestamp assert + cp → ⑦ Discord 전송.
+
+28. **🚨 "전일 events"와 "오늘 방향"을 분리 (2026-11-05)**: 뉴스 헤드라인은 직전 해외 세션 events(예: "국제유가 8% 급락")를 다루지만, 크론 실행 시점의 현재가는 그 반대 방향일 수 있다(같은 날 +0.58%). 지수/유가/금리 방향성을 리포트에 쓰기 전 ① 직전 세션 news ② 현재가(change_pct + last_time) ③ previous_day_closing 을 **따로** 확인하고 "전일 -8.29% 급락 → 오늘 +0.58% 반등"처럼 양쪽을 함께 기술. 어느 한쪽만 단정하면 현재가와 모순.
+
+29. **🚨 Polish 단계에서 파이썬 헬퍼 시그니처를 어긋나게 호출하지 말 것 (2026-11-05)**: 뉴스 선별 스크립트에서 `newest('키워드', must=(...))`처럼 존재하지 않는 키워드 인자를 넘기면 `TypeError`로 스크립트가 죽고, 이미 수집한 73건이 날아간다. **정적 헬퍼 함수를 여러 개 정의할 때 인자 시그니처를 통일**하고, 최소 한 번은 시그니처 없이 호출해 스모크 테스트할 것. 특히 도구 호출 예산이 남았을 때 "마지막 정리 스크립트"가 전체 결과를 잃게 만드는 것이 가장 흔한 손실 패턴.
+
+30. **🚨 CJK/한영 혼입 QA는 저장 본문 전체에 대해, 그리고 "정정 작업 후"에 다시 (2026-11-05)**: 한자 혼입 검사(`[一-鿿]`)만으로는 절반을 못 잡는다. `re.findall(r'[가-힣]([A-Za-z]{3,})')`로 한영혼합어를 추가 검출하고 화이트리스트(AI·HBM·GDP·CPI·PER·PBR·API·MLCC 등) 외 것은 **항목 단위로 정상 한국어 재작성**(일괄 replace 금지 — 띄어쓰기 깨진 새 결함 발생). 그리고 이 QA는 본문을 **정정 수치로 다시 쓴 뒤**에 수행해야 한다(정정 과정에서 새 오염이 생김).
 
 ## Verification
 
