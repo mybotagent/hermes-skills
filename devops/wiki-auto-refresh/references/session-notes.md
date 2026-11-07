@@ -2,6 +2,19 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-06 (21:00 KST) — P19 재감염 0건 (5일 연속) + audit 7종 전항목 통과 + 위키 본문 변경 0건 + push 성공
+
+- P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git stash list` 비어 있음. `git status -sb` = `## main...origin/main` (clean, ahead/behind 없음).
+- **재감염 0건 5일 연속(11-02 ~ 11-06) 유지** — 외부 자동화 프로세스의 index.md 삽입 동작이 차단된 국면 지속. 재발 배제 아님, 3단계 판별 매 실행 독립 수행 계속.
+- audit 7종 전항목 통과: wikilink (88 .md, BROKEN_MD/WL 0, CROSSDOM 0, BARENAME 0, MDEXT 0) / markdown-link (P11 0, broken 0) / index-md (registered 90 = actual 90, dead 0, missing 0) / tag (taxonomy 152, used 140, registered 140, Unknown 0) / logs-index (broken 0, notref 0, covered 13, ambiguous 0) / dup-updated (0) / stale-audit (stale 62 / no_date_operational 0 / no_date_immutable 21).
+- P18 검사: wiki `^|- ` 0건, skill references 0건, index.md 내 submodule 경로 링크 0건, logs/index.md triple-pipe 0건.
+- stale 62 — 11-05 기준선 62와 **완전 일치** (신규 30일 경과 페이지 없음). stale-audit.py 결정론 6회 연속 확인.
+- **위키 본문 변경 0건** — index.md/SCHEMA.md/AGENTS.md 모두 무수정. `git status --porcelain` = `M logs` 한 줄뿐 → P31에 따라 `git add logs`만 스테이징, 커밋 메시지는 변경 내용으로 기술(`wiki: bump logs submodule (2026-11-06 auto-refresh — no wiki body changes)`).
+- logs/index.md: November 섹션 기존 확인 → 월 섹션 신설 불필요(P30). 기준 행 `|| 11-05 21:00` prefix 복사 후 python 인서트로 11-06 행 추가 (삽입 위치 line 12). `cat -A` 형제 행 prefix 일치 확인, triple-pipe 0건, `git diff --check` 통과, logs-index 감사 broken=0/notref=0.
+- 커밋: hermes-logs(master) `b785a52`, hermes-wiki(main) `f185ee7` (submodule pointer bump) → push 완료 (`d169664..f185ee7`).
+- **관찰 (조치 필요 — 후속 크론 과제)**: 11-06 18:00 미국 증시 브리핑 크론(`2916cc9c2ceb`)이 `completed`로 실행됐으나 `LOG.md` mtime은 여전히 2026-11-05 20:06. 해당 크론 프롬프트에 "LOG.md 기록" 단계가 없어(Discord 전송까지만 정의) LOG.md가 11-05 이후 자동 갱신되지 않음. wiki-auto-refresh 관점에선 untracked/dirty 잔재가 없어 조치 대상 아님. **LOG.md가 일일 append-only 브리핑 로그로 쓰일 거라면 크론 프롬프트에 기록 단계를 추가해야 함.**
+- 참고 (본 스킬 무관): 11-06 크론 실패 2건 — `276405a79d88`(Paper Portfolio 일일 갱신) 18:45 failed, `05bd40b25f6f`(Self-Improving Hermes) 19:40/19:50 failed.
+
 ## 2026-11-05 (21:00 KST) — P19 재감염 0건 (4일 연속) + **중복 updated: frontmatter 24개 페이지 수정** + **LOG.md 신규 등록** + push 성공
 
 - P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git stash list` 비어 있음. `git status -sb` = `## main...origin/main [ahead 1]` (ahead 1은 04:00 크론의 `410f57c docs(neo4j)` — 이번 실행 산출 아님).
