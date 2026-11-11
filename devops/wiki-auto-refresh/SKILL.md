@@ -3,6 +3,7 @@ name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
 version: "1.49.0"
 changelog:
+  - "2026-11-10: **P36 신규 — 브리핑 크론의 파일쓰기 도구 부재(P35 정정)** + **11-09 실행 중단분 인수인계**: P35는 브리핑 크론(`2916cc9c2ceb`) 프롬프트에 'LOG.md 기록' 단계가 없어 갱신이 안 된다고 기술했으나, 실제 원인은 **'기록 단계 미정의 + 파일쓰기 도구 부재'의 조합** — 해당 크론의 `enabled_toolsets`는 terminal/process_manage/web_search/web_extract 4개만 노출하고 `write_file`/`patch`/`read_file`이 전부 없다. **프롬프트에 '기록하라'만 추가해도 파일 쓰기가 불가능**하다. '11-05에 기록이 성공했다'는 사실도 오해였음(LOG.md mtime=20:06 = auto-refresh 구간, 브리핑 출력 파일에는 LOG.md 언급 0건). 주말(11-07/08) 미실행은 `0 18 * * 1-5` 스케줄 정상 동작. **11-09(월) 실행이 도구 한도 소진으로 중단**(분석 완료·커밋 0건) → 이번 실행에서 LOG.md 11-06/11-09/11-10 3거래일 백필 + frontmatter updated 갱신 + 로그 파일 2건 생성 + 커밋·푸시. **stale 기준선 갱신: 63/0/21 → 59/0/22** (11-08 주간 cleanup 산출 raw/archive 2건 + 일부 updated: 실제 갱신 — 스크립트 버그 아님). P19 재감염 0건 **6일 연속**(11-02~11-10, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-08 07:00` prefix 복사 후 python 인서트(삽입 위치 line 12) — **prefix는 앞 2바이트 `||`로 고정**(`index('|',2)` 추출은 기준 행 날짜가 섞여 중복 삽입되는 함정 실전 확인). `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-10.md 추가."
   - "2026-11-06: **P35 신규 — 브리핑 크론이 만든 페이지의 자동 갱신 부재**: `LOG.md`를 만든 18:00 미국 증시 브리핑 크론(`2916cc9c2ceb`) 프롬프트에 'LOG.md 기록' 단계가 없어(Discord 전송까지만 정의) 11-05 생성 이후 **mtime이 고정**되어 자동 갱신되지 않음. wiki-auto-refresh 관점에서는 untracked/dirty 잔재가 없으므로 조치 대상이 아니나 — **페이지가 있는데 갱신되지 않는** 상태는 index 감사(registered N = actual N)로도 잡히지 않는다. cron 실행 로그(`~/.hermes/cron/executions.db`의 `executions` 테이블)에서 해당 job_id의 status/last_run을 교차 확인하면 발견 가능. **P19 재감염 0건 5일 연속**(11-02~11-06). audit 7종 전항목 통과, stale 62 = 11-05 기준선 완전 일치, **위키 본문 변경 0건 → P31에 따라 submodule pointer bump만 커밋**(parent 커밋 메시지 `wiki: bump logs submodule (2026-11-06 auto-refresh — no wiki body changes)`). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-05 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-06.md 추가."
   - "2026-11-05: **P33 신규 — 중복 `updated:` frontmatter 키** (24개 페이지). auto-fill-dates.py v1.15.0 잔재(기존 `updated:` 줄 미감지 상태에서 새 줄 삽입). YAML last-wins라 **유효 날짜는 불변** → 의미 보존적 제거 가능(마지막 줄만 유지). `scripts/dup-updated-audit.py` 신규 번들(감지 + `--fix`). **검증: 수정 전/후 `yaml.safe_load` 전수 비교 → semantic diff 0건 필수** — diff가 안 0이면 폐기. **P34 신규 — 신규 루트 페이지 생성 크론 주의**: `LOG.md`(18:00 미국 증시 브리핑 크론)가 untracked+미등록으로 방치되면 `git status` 영구 dirty + index-md-audit REAL MISSING 지속 → frontmatter 보강(SCHEMA 최소 규격) + index.md 등록 + 같은 커밋에 `git add`. **stale 카운트 감소도 원인을 확인할 것**(이번 실행 63→62 = 04:00 크론이 `infra/neo4j-local.md`의 `updated:`를 실제 갱신 — 스크립트 버그 아님). P19 재감염 0건 **4일 연속**(11-02~11-05). references/run-2026-11-05.md 추가."
   - "2026-11-04: P19 재감염 0건 **3일 연속**(11-02/11-03/11-04) — 종료가 이어지는 국면 실증. stale-audit.py 검증 기준선(11-03: stale=63 / operational=0 / immutable=21) 대비 **11-04도 완전 일치** → 스크립트 로직 정상 확인 (기준선 어긋나면 스크립트 로직 우선 점검). P31 실전 확인 — 위키 본문 변경 0건이면 parent 커밋은 **submodule pointer bump만**, 커밋 메시지는 `auto-sync <날짜>`가 아니라 **변경 내용을 설명**(`wiki: bump logs submodule (...)`). logs/index.md November 섹션 기존 확인 → `|| 11-03 21:00` 기준 행 prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-04.md 추가."
@@ -114,11 +115,13 @@ python3 "$SCRIPTS/stale-audit.py" [WIKI_ROOT] [--days 30]
 # 출력: STALE(명시적 날짜 30d+) N / NO DATE(operational) N / NO DATE(immutable raw 등) N
 # exit 0 (정보성). SUMMARY 줄은 리포트에 그대로 인용 가능.
 # ★ 리포트에서 stale과 날짜 없음을 **반드시 별도 집계** — 섞지 말 것 (P16).
-# ★ 검증 기준선 (2026-11-03 확정): stale=63 / no_date_operational=0 / no_date_immutable=21.
-#   2026-11-04 실행에서 **완전 일치 확인** → 스크립트 로직 정상.
+# ★ 검증 기준선 (2026-11-10 갱신): stale=59 / no_date_operational=0 / no_date_immutable=22.
+#   (이전 기준선 2026-11-03: stale=63 / 0 / 21. 11-08 주간 cleanup이 raw/archive 2건 추가
+#    → immutable 21→22, 일부 페이지 updated: 실제 갱신 → stale 62→59. 스크립트 버그 아님.)
 #   이후 실행에서 이 기준선과 크게 어긋나면 스크립트 로직을 먼저 점검할 것
 #   (stale는 날짜가 흐를수록 1씩 늘어날 수 있음 — 30일 경과 페이지가 새로 생기는 것).
 #   어긋남 폭이 1~2 수준이면 정상(신규 stale 발생). 10 이상이면 스크립트/SSOT 로직 점검.
+#   ★ 감소도 원인을 확인할 것 — "증가"만 이상 징후로 보는 편향 금지 (2026-11-05 사례).
 
 # 4) 누적 세션 노트 읽기 — 직전 실행의 발견/적용/커밋 해시
 #    ⚠ shell `cat >> session-notes.md` 는 Tirith security guard `dotfile_overwrite` 에 의해 차단됨.
@@ -1233,6 +1236,38 @@ for k in set(list(cur)+list(orig)):
 3. python 인서트 후 3중 검증: `cat -A` 인접 행 prefix 일치 / `grep -c '^|||'` = 0 / `git diff --check` 통과 / `logs-index-link-audit.py` 재실행.
 
 **2026-11-04 사례:** November 섹션 이미 존재(11-03 실행이 신설) → 신설 불필요. anchor `|| 11-03 21:00` 복사 후 인서트(삽입 위치 line 12), `cat -A`에서 11-04/11-03/11-02 행 모두 `||` 동일 확인, triple-pipe 0건, `git diff --check` 통과, logs-index 감사 broken=0/notref=0.
+
+### P36. 브리핑 크론의 파일쓰기 도구 부재 — 프롬프트만 고쳐서는 안 된다 (2026-11-09 발견 / 2026-11-10 확정)
+
+**P35 정정.** P35(2026-11-06)는 "18:00 브리핑 크론 프롬프트에 `LOG.md` 기록 단계가 없다"로 기술했다.
+11-09 실행에서 한 단계 더 깊은 원인이 확인되었다: **원인은 "기록 단계 누락" 단독이 아니라
+"기록 단계 미정의 + 파일쓰기 도구 부재"의 조합**이다.
+
+**결정적 제약 (실측):**
+- 브리핑 크론(`2916cc9c2ceb`)의 `enabled_toolsets`는 `terminal`/`process_manage`/`web_search`/`web_extract` **4개만** 노출.
+- `write_file`/`patch`/`read_file`은 **전부 부재**.
+- → 프롬프트에 "LOG.md에 기록하라"만 추가해도 **파일 쓰기가 불가능**하다. `terminal` 경유(heredoc은 Tirith `dotfile_overwrite` 차단 → `python3 -c` 우회) 또는 toolset에 `file` 추가가 필요.
+
+**"11-05에 기록이 성공했다"는 오해의 정정:**
+- `LOG.md` mtime = 2026-11-05 **20:06** — 브리핑 구간(18:08)이 아니라 **auto-refresh 구간(20:01~20:09)**.
+- 브리핑 출력 파일(`~/.hermes/cron/output/2916cc9c2ceb/2026-11-05_18-08-43.md`)에는 `LOG.md` 언급이 **0건**.
+- → 11-05의 "기록"은 브리핑 크론의 행위가 아니라, auto-refresh가 frontmatter를 보강하며 파일을 재작성한 **opportunist 부작용**이었다. 11-06·11-09에는 재현되지 않음.
+
+**주말 공백 해석 (2026-11-09 확인):**
+- 브리핑/auto-refresh 크론 스케줄이 `0 18 * * 1-5` / `0 20 * * 1-5` = **월~금만**.
+- 따라서 11-07(토)·11-08(일) 미실행은 **크론 실패가 아니다.** 원인을 크론 장애로 단정하지 말 것.
+
+**조치 방향:**
+1. 근본 조치(브리핑 크론 toolset에 `file` 추가 + 프롬프트에 기록 단계)는 **wiki-auto-refresh 범위를 넘는다** — 승인 없이 진행하지 말고 보고만 한다.
+2. 그 전까지 wiki-auto-refresh는 **수동 백필**로 대응한다: 원본이 `~/.hermes/cron/output/<job_id>/<날짜>.md`의 `## Response` 섹션에 온전히 있으므로, `LOG.md`에 요약 백필 가능.
+3. 백필 시 frontmatter `updated:`도 함께 갱신하고, 한자 혼입을 제거한다(언어 규칙: 중국어 금지).
+
+**2026-11-10 사례:** 11-06 / 11-09 / 11-10 3거래일 브리핑을 `LOG.md`에 백필, `updated: 2026-11-05` → `2026-11-10`, 신규 로그 파일 2건(`2026-11-09-2100.md` 중단 기록 + `2026-11-10-2100.md`) 생성 후 커밋·푸시.
+
+**참고 — logs/index.md prefix 추출 함정 (2026-11-10 실전):**
+`lines[anchor][:lines[anchor].index('|',2)]`로 prefix를 추출하면 잘못된 위치에서 잘려
+**기준 행의 날짜까지 prefix에 섞여 중복 삽입**된다(실전: `|| 11-08 07:00 11-10 21:00 | ...`).
+→ prefix는 **앞 2바이트 `||`로 고정**하고, 나머지는 새 행을 직접 작성한다.
 
 ### P31. No-op 실행 — 무의미한 커밋을 만들지 말 것 (2026-11-03 추가)
 

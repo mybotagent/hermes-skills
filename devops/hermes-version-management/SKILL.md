@@ -216,6 +216,9 @@ terminal(command="hermes dashboard --port 9199 --host 127.0.0.1 --skip-build --n
 ## 📋 보고 규칙
 
 - **진짜 최신** (upstream 대비 0 behind, doctor 정상) → `[SILENT]`
+- **cron이 paused로 남으면 반드시 `hermes cron resume <id>`** — 게이트웨이 재시작이 중간에
+  끊기면 cron이 "execution unverified"로 자동 pause된다 (2026-11-11 실측). 하루를 통째로
+  건너뛰는 silent failure가 되므로 반드시 복구한다.
 - **새 버전 있음** → 현재/최신 버전, 격차, 업데이트 실행 여부, doctor 상태, 발견 문제 보고
 - **비교 대상 remote 부재** 등 **판정 불가** → "최신" 으로 SILENT 처리 ❌ → 반드시 보고.
   잘못된 SILENT는 가장 나쁜 실패다 (격차가 몇 달간 숨겨진 전례 있음).

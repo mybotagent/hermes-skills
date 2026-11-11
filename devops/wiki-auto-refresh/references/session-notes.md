@@ -2,6 +2,29 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-10 (21:00 KST) — P36 신규 (브리핑 크론 파일쓰기 도구 부재) + 11-09 중단분 인수인계 + LOG.md 백필 + push 성공
+
+- **11-09(월) 21:00 실행이 도구 한도 소진으로 중단**돼 미수행 항목(로그 파일 생성, `logs/index.md` 행 추가, 커밋·푸시, 세션 노트·스킬 갱신)이 남아 있었음. 이번 실행에서 전부 인수인계 수행.
+- P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git stash list` 비어 있음, `git status -sb` = `## main...origin/main`.
+- **재감염 0건 6일 연속** (11-02 ~ 11-10, 주말 제외) — 3단계 판별 매 실행 독립 수행 계속.
+- audit 7종 전항목 통과: wikilink (90 .md, BROKEN_MD/WL 0, CROSSDOM 0, BARENAME 0, MDEXT 0) / markdown-link (P11 0, broken 0) / index-md (registered 92 = actual 92, dead 0, missing 0) / tag (taxonomy 199, used 143, registered 143, Unknown 0) / logs-index (broken 0, notref 0, covered 13, ambiguous 0) / dup-updated (0) / stale-audit (**stale 59 / no_date_operational 0 / no_date_immutable 22**).
+- P18 검사: wiki `^|- ` 0건, skill references 0건, logs/index.md triple-pipe 0건, index.md 내 submodule 경로 링크 0건.
+- **stale 기준선 갱신: 59 / 0 / 22** — 11-08 주간 cleanup이 `raw/archive/` 2건 추가(→ immutable 21→22) + 일부 페이지 `updated:` 실제 갱신(→ stale 62→59). 스킬 본문 기준선 문구 갱신 필요.
+- **P36 신규 — P35 정정**: 11-06 노트(P35)가 지목한 "브리핑 크론 프롬프트에 LOG.md 기록 단계 누락"은 근본 원인의 절반. 실제 제약은 **"기록 단계 미정의 + 파일쓰기 도구 부재"의 조합** — 브리핑 크론(`2916cc9c2ceb`)의 `enabled_toolsets`는 terminal/process_manage/web_search/web_extract 4개만 노출하며 `write_file`/`patch`/`read_file`이 **전부 부재**. → 프롬프트에 "기록하라"만 추가해도 파일 쓰기 불가. toolset에 `file` 추가 필요.
+  - 11-05의 "기록 성공"은 브리핑 크론 행위가 아니라 **auto-refresh(20:01~20:09)가 frontmatter 보강 중 파일 재작성**한 결과 (`LOG.md` mtime = 11-05 20:06 = auto-refresh 구간) — opportunist 행동이었고 11-06·11-09에는 재현되지 않음.
+  - 11-07(토)·11-08(일) 미실행은 크론 실패가 아니라 `0 18 * * 1-5` / `0 20 * * 1-5` 스케줄(월~금) 정상 동작.
+- **위키 본문 변경 1건 — `LOG.md`** (11-09 백필분 + 오늘 브리핑). 11-06 / 11-09 / 11-10 3거래일 브리핑 내용을 원본 크론 출력(`~/.hermes/cron/output/2916cc9c2ceb/*.md`)에서 추출해 백필. frontmatter `updated: 2026-11-05` → `2026-11-10`. 한자 혼입 제거(언어 규칙 준수: 중국어 3건을 한국어/영어로 교체).
+- logs/index.md: November 섹션 기존 확인 → 월 섹션 신설 불필요(P30). 기준 행 `|| 11-08 07:00` prefix(앞 2바이트 `||`) 복사 후 python 인서트 — **주의: `lines[anchor][:index('|',2)]`로 prefix 추출하면 잘못된 값이 나와 prefix가 중복 삽입됨** → `lines[anchor][:2]`로 고정. `cat -A` 형제 행 prefix 일치 확인, triple-pipe 0건, `git diff --check` 통과, logs-index 감사 broken=0/notref=0.
+- 신규 로그 파일 2건: `logs/2026/2026-11-10-2100.md`, `logs/2026/2026-11-09-2100.md`(중단 기록).
+- 커밋: hermes-logs(master) `9a0c5f1`, hermes-wiki(main) `8f2c1a9` (LOG.md 본문 + submodule pointer) → push 완료.
+
+## 2026-11-09 (21:00 KST) — 중단 (도구 한도 소진) — P36 신규 발견
+
+- 11-09 실행은 **분석 단계까지 완료**했으나 도구 한도 소진으로 백필·커밋·푸시·세션 노트 갱신이 미수행됨 (커밋 0건, git status clean).
+- audit 7종 전항목 통과 / P19 재감염 0건 / stale 기준선 59 / 0 / 22 확인.
+- **P36 발견**: 브리핑 크론(`2916cc9c2ceb`)의 `enabled_toolsets`에 `write_file`/`patch`/`read_file`이 전부 부재 → 프롬프트에 "LOG.md 기록하라"만 추가해도 파일 쓰기 불가. P35(기록 단계 누락) 정정 — 원인은 "기록 단계 미정의 + 파일쓰기 도구 부재" 조합.
+- 인수인계: 2026-11-10 실행에서 LOG.md 백필 + 로그 2건 생성 + 커밋·푸시 수행.
+
 ## 2026-11-06 (21:00 KST) — P19 재감염 0건 (5일 연속) + audit 7종 전항목 통과 + 위키 본문 변경 0건 + push 성공
 
 - P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, `git stash list` 비어 있음. `git status -sb` = `## main...origin/main` (clean, ahead/behind 없음).
