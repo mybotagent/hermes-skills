@@ -2,6 +2,20 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-11 (21:00 KST) — P36 2차 재현 (11-11 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
+
+- **P19 재감염 0건 — 7일 연속** (11-02~11-11, 주말 제외). 판별 3단계(working tree / HEAD / origin/main) 모두 `자동 추가` 0건, `git diff HEAD -- index.md` 빈 결과 → 복구 경로 미실행.
+- **P18 오염 0건** — wiki 전체(`--include='*.md'`) + 스킬 `references/` 모두 `^|- ` 0건, `logs/index.md` triple-pipe(`^|||`) 0건.
+- **audit 7종 전항목 통과** — wikilink(MD/WL/CD/BN/MDX 모두 0) / markdown-link(P11 0, broken 0) / index-md(registered 92 = actual 92, REAL MISSING 0) / logs-index-link(broken 0, notref 0, covered 13 오탐) / tag(taxonomy 199, used 143, **Unknown 0**) / dup-updated(pages 180, duplicate 0) / stale(**59 / 0 / 22** — 11-10 기준선 완전 일치 → 스크립트 로직 정상).
+- **P36 2차 재현 — 11-11 브리핑 LOG.md 미기록.** 18:00 크론 `2916cc9c2ceb`이 `2026-11-11_18-26-24.md` 산출(executions.db status=completed)했으나 `LOG.md` mtime은 2026-11-10 20:02 그대로. 원인은 P36 그대로 — 해당 크론 `enabled_toolsets` = `['terminal','search','web']`로 **`write_file`/`patch`/`read_file` 전무**(jobs.json 실측 확인). 프롬프트에 '기록하라'만 추가해도 파일 쓰기 자체가 불가능.
+  - **조치**: `~/.hermes/cron/output/2916cc9c2ceb/2026-11-11_18-26-24.md`의 `## Response`(3711~3804행)을 원본으로 삼아 `LOG.md`에 수동 백필.
+  - **⚠ 원본에 중국어/외국어 혼입**(한자 2자+3자 어구, 폴란드어 1단어) — 언어 규칙(중국어 금지)에 따라 **순수 한국어로 재작성** 필요. 백필 후 CJK 문자 0건 검증.
+  - frontmatter `updated: 2026-11-10` → `2026-11-11`.
+  - **P36 재발 확인**: 11-06/11-09/11-10에 이어 11-11도 동일 패턴 → **매일 반복되는 구조적 결함**이며, wiki-auto-refresh가 매일 수동 백필하지 않으면 LOG.md는 영구히 11-05에 멈춘다.
+- **위키 본문 변경 1건** (LOG.md) → parent 커밋에 반영. logs 서브모듈은 신규 로그 파일 + index.md 행 추가로 커밋.
+- **logs/index.md 행 추가** — November 섹션 기존 확인(월 섹션 신설 불필요), 기준 행 `|| 11-10 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12). `cat -A`로 11-11/11-10/11-09 행 모두 `||` prefix 일치 확인, triple-pipe 0건, `git diff --check` 통과, logs-index 재감사 broken=0/notref=0.
+- **커밋**: logs `120f679` (master) / parent `023e382` (main). 양쪽 push 완료.
+
 ## 2026-11-10 (21:00 KST) — P36 신규 (브리핑 크론 파일쓰기 도구 부재) + 11-09 중단분 인수인계 + LOG.md 백필 + push 성공
 
 - **11-09(월) 21:00 실행이 도구 한도 소진으로 중단**돼 미수행 항목(로그 파일 생성, `logs/index.md` 행 추가, 커밋·푸시, 세션 노트·스킬 갱신)이 남아 있었음. 이번 실행에서 전부 인수인계 수행.

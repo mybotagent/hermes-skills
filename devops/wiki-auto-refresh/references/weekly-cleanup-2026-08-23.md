@@ -9,14 +9,14 @@
 | Wikilink | 분류 | 조치 |
 |:---------|:-----|:-----|
 | `[[harness-engineering-hub]]` | P7 cross-domain 후보 (suffix `-hub`) | 외부 레포 존재 시 submodule 추가, 아니면 제거 |
-| `[[macro-strategy]]` | P7 cross-domain 후보 (suffix `-strategy`) |同上|
-| `[[macro-indicators-hub]]` | P7 cross-domain 후보 (suffix `-hub`) |同上|
-| `[[schedule-calendar-hub]]` | P7 cross-domain 후보 (suffix `-hub`) |同上|
+| `[[macro-strategy]]` | P7 cross-domain 후보 (suffix `-strategy`) |동일|
+| `[[macro-indicators-hub]]` | P7 cross-domain 후보 (suffix `-hub`) |동일|
+| `[[schedule-calendar-hub]]` | P7 cross-domain 후보 (suffix `-hub`) |동일|
 
 ### subagents-library/ (1건)
 | Wikilink | 분류 | 조치 |
 |:---------|:-----|:-----|
-| `[[harness-engineering-hub]]` | P7 cross-domain |同上|
+| `[[harness-engineering-hub]]` | P7 cross-domain |동일|
 
 ### 무시 가능 (2건)
 - `infra/higgsfield-mcp.md`: anchor `#스킬-과적합의-그늘과-매뉴얼-관리법` — anchor 파싱 문제

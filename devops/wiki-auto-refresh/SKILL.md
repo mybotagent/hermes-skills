@@ -3,6 +3,7 @@ name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
 version: "1.49.0"
 changelog:
+  - "2026-11-11: **P37 신규 — P36 2차 재현(매일 반복 확인) + 브리핑 원본의 외국어 혼입**. P36(브리핑 크론 toolset에 write_file/patch/read_file 부재)이 11-06/11-09/11-10에 이어 **11-11도 동일 재현**(18:00 크론은 `2026-11-11_18-26-24.md` 산출·executions.db status=completed이나 LOG.md mtime은 11-10 20:02 고정). jobs.json 실측으로 `enabled_toolsets=['terminal','search','web']` 확인 → **매일 반복되는 구조적 결함**이며, wiki-auto-refresh가 매일 수동 백필하지 않으면 LOG.md는 영구히 11-05에 멈춘다. **P37 — 브리핑 원본에 중국어/외국어가 혼입됨**(한자 2자 + 3자 어구, 폴란드어 1단어): 산출물을 그대로 백필하면 언어 규칙(중국어 금지) 위반 → **순수 한국어로 재작성 후 CJK 문자 0건 검증 필수**. P19 재감염 0건 **7일 연속**(11-02~11-11, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0). stale 59 / no_date 0 / immutable 22 = 11-10 기준선 완전 일치. logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-10 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `120f679` / parent `023e382`. references/run-2026-11-11.md 추가."
   - "2026-11-10: **P36 신규 — 브리핑 크론의 파일쓰기 도구 부재(P35 정정)** + **11-09 실행 중단분 인수인계**: P35는 브리핑 크론(`2916cc9c2ceb`) 프롬프트에 'LOG.md 기록' 단계가 없어 갱신이 안 된다고 기술했으나, 실제 원인은 **'기록 단계 미정의 + 파일쓰기 도구 부재'의 조합** — 해당 크론의 `enabled_toolsets`는 terminal/process_manage/web_search/web_extract 4개만 노출하고 `write_file`/`patch`/`read_file`이 전부 없다. **프롬프트에 '기록하라'만 추가해도 파일 쓰기가 불가능**하다. '11-05에 기록이 성공했다'는 사실도 오해였음(LOG.md mtime=20:06 = auto-refresh 구간, 브리핑 출력 파일에는 LOG.md 언급 0건). 주말(11-07/08) 미실행은 `0 18 * * 1-5` 스케줄 정상 동작. **11-09(월) 실행이 도구 한도 소진으로 중단**(분석 완료·커밋 0건) → 이번 실행에서 LOG.md 11-06/11-09/11-10 3거래일 백필 + frontmatter updated 갱신 + 로그 파일 2건 생성 + 커밋·푸시. **stale 기준선 갱신: 63/0/21 → 59/0/22** (11-08 주간 cleanup 산출 raw/archive 2건 + 일부 updated: 실제 갱신 — 스크립트 버그 아님). P19 재감염 0건 **6일 연속**(11-02~11-10, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-08 07:00` prefix 복사 후 python 인서트(삽입 위치 line 12) — **prefix는 앞 2바이트 `||`로 고정**(`index('|',2)` 추출은 기준 행 날짜가 섞여 중복 삽입되는 함정 실전 확인). `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-10.md 추가."
   - "2026-11-06: **P35 신규 — 브리핑 크론이 만든 페이지의 자동 갱신 부재**: `LOG.md`를 만든 18:00 미국 증시 브리핑 크론(`2916cc9c2ceb`) 프롬프트에 'LOG.md 기록' 단계가 없어(Discord 전송까지만 정의) 11-05 생성 이후 **mtime이 고정**되어 자동 갱신되지 않음. wiki-auto-refresh 관점에서는 untracked/dirty 잔재가 없으므로 조치 대상이 아니나 — **페이지가 있는데 갱신되지 않는** 상태는 index 감사(registered N = actual N)로도 잡히지 않는다. cron 실행 로그(`~/.hermes/cron/executions.db`의 `executions` 테이블)에서 해당 job_id의 status/last_run을 교차 확인하면 발견 가능. **P19 재감염 0건 5일 연속**(11-02~11-06). audit 7종 전항목 통과, stale 62 = 11-05 기준선 완전 일치, **위키 본문 변경 0건 → P31에 따라 submodule pointer bump만 커밋**(parent 커밋 메시지 `wiki: bump logs submodule (2026-11-06 auto-refresh — no wiki body changes)`). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-05 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-06.md 추가."
   - "2026-11-05: **P33 신규 — 중복 `updated:` frontmatter 키** (24개 페이지). auto-fill-dates.py v1.15.0 잔재(기존 `updated:` 줄 미감지 상태에서 새 줄 삽입). YAML last-wins라 **유효 날짜는 불변** → 의미 보존적 제거 가능(마지막 줄만 유지). `scripts/dup-updated-audit.py` 신규 번들(감지 + `--fix`). **검증: 수정 전/후 `yaml.safe_load` 전수 비교 → semantic diff 0건 필수** — diff가 안 0이면 폐기. **P34 신규 — 신규 루트 페이지 생성 크론 주의**: `LOG.md`(18:00 미국 증시 브리핑 크론)가 untracked+미등록으로 방치되면 `git status` 영구 dirty + index-md-audit REAL MISSING 지속 → frontmatter 보강(SCHEMA 최소 규격) + index.md 등록 + 같은 커밋에 `git add`. **stale 카운트 감소도 원인을 확인할 것**(이번 실행 63→62 = 04:00 크론이 `infra/neo4j-local.md`의 `updated:`를 실제 갱신 — 스크립트 버그 아님). P19 재감염 0건 **4일 연속**(11-02~11-05). references/run-2026-11-05.md 추가."
@@ -24,31 +25,7 @@ changelog:
   - "2026-09-29: P18 logs/index.md September section triple-pipe (|||) 변형 추가 — 전체 rewrite로 복구. P19 21일 연속 재발 (62 rogue entries, git restore index.md)."
   - "2026-09-27: P21 memory tool cron fallback + P22 submodule lint false-positive (60 items, ignore)."
   - "2026-09-02: P19 59-row working-tree contamination from self_hermes.py logs/(53) + subagents-library/(5) + raw/(1) 59 items with auto-add label. git diff HEAD check + git restore index.md recovery. All audits pass."
-  - "1.29.0 (2026-08-31): P19 recovery 보강 — rogue 제거 중 정식 수정( W35 등록)이 이미 적용된 상태에서 `git show <parent>:index.md` 복원 시 정식 수정분 유실 방지. 오염 커밋 diff가 rogue 추가분뿐(+정식 수정 0)일 때만 parent 복원 경로 적용, 정식 수정분이 있으면 footer 기준 python truncate로 rogue만 선택적 삭제. 20일 연속 재발 사례 문서화."
-  - "1.28.0 (2026-08-25): P18 self-inflicted 변형 추가 — patch 도구로 테이블 행 추가 시 new_string의 패턴 충돌로 `||` 중복 발생 가능 (logs/index.md August 섹션 사례). 'self_hermes.py만 원인'이라는 기존 전제 수정."
-  - "1.27.0 (2026-08-23):"
-  - "1.24.0 (2026-08-11): (a) 2c-ter logs index wildcard false-positive — logs/index.md의 glob 항목(예: `[2026-05-31-*](2026/)`)이 basename grep으로 매치되지 않아 05-31 배치 13건이 매회 MISSING 오탐, MISSING 판정 전 prefix+glob grep 필수; (b) P18 committed 변형 — `|- ` 오염이 커밋된 채 잔존 (git diff HEAD 미표시 = committed), `git log -S`로 도입 커밋 추적, 복구 시 commit+push 필요; (c) P20 탐지 보강 — 마지막 섹션 뒤 이전 섹션 '감사 결과' 블록 중복 복사 (08-10 뒤 08-07 74=74, 숫자 불일치로 탐지), EOF 중복 블록 제거"
-  - "1.23.0 (2026-08-10): (a) P19 committed+clean-status 변형 — git status clean이어도 HEAD/origin/main이 오염된 케이스 (08-08 오염분 57건이 08-09 weekly cleanup 커밋 55a0768에 편승해 push, 10회 연속 재발); `git restore index.md`는 오염된 HEAD를 복원하므로 무용 → `git show <clean-parent>:index.md > index.md` 복원 경로 추가 (검증: 오염 커밋의 index.md diff가 rogue 추가분뿐 + parent '자동 추가' 0건); (b) P19 탐지 보강 — git status clean ≠ index.md clean, `git show HEAD:index.md` 직접 검사 필수, index-md-audit dead link가 logs/·subagents-library/ 경로에 집중되면 committed P19 의심"
-  - "1.22.0 (2026-08-05): (a) P20 신규 — patch 도구 fuzzy-match mis-anchor: session-notes.md의 근미동일 섹션(매일 같은 감사결과 footer 반복)에서 old_string이 이전 섹션 footer에 잘못 앵커되어 섹션 본문 교체·중복·유실 발생 (실제 사례: 08-05 append 중 08-04 섹션 유실, 3회 patch로 복구). append 시 날짜-유일 판별자 앵커 필수, patch 후 grep 헤더 카운트 검증; (b) P19 빠른 복구 경로 — git diff HEAD가 rogue 추가분뿐이면 patch 대신 `git restore index.md` 원복 (P18/P20 위험 회피); (c) markdown-link-audit.py는 위치 인자([WIKI_ROOT]) 미지원 명시"
-  - "1.21.0 (2026-08-03): (a) P18 스캔 패턴 정정 — find 기반 `^\\|-` broad regex가 markdown 테이블 separator(|--, |-----)와 셀을 false-positive로 잡음, 정확 패턴 `^|- `(pipe-dash-space) 사용; (b) P18 스캔 범위에 스킬 references/(session-notes.md) 추가 — 2026-W29 잔재 오염 발견 사례; (c) P19 5회 연속 재발(07-28~08-03) + committed 오염이 무관 커밋(weekly cleanup/docs)에 편승해 push되는 변형 + origin/main 검증 단계 추가; (d) 2c-ter 새 달 섹션 신설 절차(2026-08 August 사례); (e) tag-audit 1-file 케이스 교체 예시 명시 (`project` → `project-management`)"
-  - "1.20.0 (2026-07-30): (a) P19 복구 절차에 단계 2.5 검증 추가 — working-tree 전용 오염 vs committed 오염 구분 (git diff HEAD + git show HEAD:index.md 검증); (b) P19 3회 연속 재발 사례 문서화 (2026-07-28/29/30)"
-  - "1.19.0 (2026-07-29): (a) P18/P19 수정 — P18 cross-file grep 패턴이 `--include='*.md'` 없이 `*.md` glob만 사용해 서브디렉토리(infra/ 등) .md 파일을 놓치는 버그 수정; (b) P19 복구 단계 3에도 동일 grep 패턴 적용"
-  - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
-  - "1.17.0 (2026-07-27): (a) 2c-ter logs submodule index 검사 강화 — `*.md` glob이 서브디렉토리(예: 2026/)를 놓치는 문제 수정, `find` 재귀 검사 추가; 실제 사례(2026/2026-07-26-0700-weekly-cleanup.md) 문서화"
-  - "1.16.0 (2026-07-22): (a) P18 확장: index.md → 모든 파일로 범위 확대, 세션 노트(2026-07-22) 사례 추가, 발생 원인·탐지 기준·처리 절차 전면 보강; (b) scripts/auto-fill-dates.py P16 위반 버그 수정 — has_updated 감지 regex가 multi-line frontmatter에서 작동하지 않던 문제 (frontmatter block 기반 검사로 개선)"
-  - "1.15.0 (2026-07-21): (a) scripts/tag-audit.py 신규 — Lint ⑧ SCHEMA.md tag audit 자동화 스크립트; (b) scripts/auto-fill-dates.py 신규 — batch updated: auto-fill with P16/P14 안전 장치; (c) Pre-flight 사전 점검에 tag-audit.py 및 auto-fill-dates.py 호출 추가; (d) SKILL.md 2c 및 2c-bis에 신규 스크립트 참조 업데이트; (e) 실제 사례 업데이트 (2026-W30: taxonomy 68→144, updated: 42건 채움)"
-  - "1.14.0 (2026-07-19): (a) 2c-bis 신규 — SCHEMA.md Tag Audit (Lint ⑧) 절차 추가; taxonomy 확장 vs 개별 페이지 수정 판단 프레임워크 명시; (b) 2c-ter 신규 — logs submodule index 일치 확인 절차 추가; (c) SCHEMA.md 테이블 `||` double pipe 형식 patch 위험 경고 보강"
-  - "1.12.0 (2026-07-13): (a) P16 신규 — 명시적 updated/created가 있으면 최근 git commit이 stale 판정을 덮어쓰면 안 됨; git log는 날짜 필드가 없는 페이지에만 fallback; (b) raw/sync/snapshot/archive는 immutable/예외이므로 updated 자동 삽입 금지; (c) `git ls-files -v`의 대문자 H는 정상 tracked/cached, 소문자 h만 assume-unchanged — P1 진단 오류 수정; (d) 날짜 자동 채움 뒤 YAML·diff·3종 audit 재검증 추가; (e) P17 신규 — index-md-audit PAT B+C가 markdown 링크 destination을 재매치해 AGENTS/SCHEMA를 dead link로 오탐하던 문제 수정"
-  - "1.11.0 (2026-07-09): (a) P15 신규 — P14 raw/ false-positive 의심 케이스 중 실제로는 진짜 미등록일 수 있음 (raw/2026-W28-weekly-recap-draft.md 사례); (b) 사전 점검의 `cat >> session-notes.md` 절차가 Tirith guard `dotfile_overwrite`로 차단됨 → `patch` 도구(read → patch)로 append 절차 명시; (c) `git add` 후 commit 전에 `git pull --rebase` 시도 시 'uncommitted changes' 오류 — add → commit → pull 순서 강조"
-  - "1.10.0 (2026-07-08): (a) P14 신규 — index.md plain-text bullet `(- name (raw/...) — desc)` 형식이 markdown-link regex로 안 잡혀 4건 false positive; (b) scripts/index-md-audit.py 신규 — 3종 패턴 통합 audit (markdown link + plain text parens + bare path), exit 0 정보성; (c) 사전 점검에 index-md-audit.py 호출 추가; (d) P13 본문에 'index.md에는 등록되어 있으나 audit regex로 false positive' 가능성 명시"
-  - "1.9.0 (2026-07-07): (a) 사전 점검 단계 신규 — bundled scripts/wikilink-audit.py + markdown-link-audit.py를 직접 호출하고 references/session-notes.md를 먼저 읽도록 명시 (인라인 audit 재작성 사고 방지); (b) execute_code는 cron 모드에서 block됨 → python3 <script> 직접 실행 fallback을 본문에 명시; (c) P13 신규 — multi-page 문서 README는 index되지만 sibling .md 페이지가 누락되는 anti-pattern (how-to-use-hermes/01-09.md 사례); (d) 2a 불일치 체크 강화 — sibling .md 자동 등록 절차"
-  - "1.8.0 (2026-07-06): P12 — cross-domain suffix check must verify local existence FIRST (false-positive on locally-existing suffixed pages); wikilink-audit.py patch"
-  - "1.7.0 (2026-07-03): P11 — sibling README cross-reference (markdown link bare-name in subdir); scripts/markdown-link-audit.py"
-  - "1.6.0 (2026-07-02): P10 — wikilink with explicit `.md` extension (false-negative bug in wikilink-audit.py fixed; auto-fix: strip trailing .md)"
-  - "1.5.0 (2026-07-01): P9 bare-name wikilink class, refined P7 detection (suffix-first), `updated:` auto-fill procedure, scripts/wikilink-audit.py"
-  - 1.4.0 (2026-06-30): P7/P8 pitfalls added — cross-domain wikilink false positives and code-block false positives
-  - 1.3.0 (2026-06-29): P1-P6 pitfalls (git index corruption patterns)
-  - 1.2.0 (2026-06-29: 2a-bis broken markdown link check
+  - "1.2.0~1.29.0 (2026-06~08): 구버전 변경 이력 — references/changelog-archive.md 참조 (본문 P1~P30에 반영됨)"
 author: aiprofit
 platforms: [linux]
 metadata:
@@ -516,7 +493,7 @@ fi
 **⚠ GitHub 인증 — credential.helper fallback (2026-10-19):**
 - SSH key, `.netrc`, `gh auth` 모두 없는 환경에서 `.git-credentials` 파일(`https://mybotagent:ghp_TOKEN@github.com`)만 존재.
 - `git config credential.helper "store --file ~/.git-credentials"` 설정 후 push 성공.
-- Tirith guard가 명령줄의 credential을 scanning하므로, remote URL에 직접 token을 넣지 말고 credential.helper绕回.
+- Tirith guard가 명령줄의 credential을 scanning하므로, remote URL에 직접 token을 넣지 말고 credential.helper 우회.
 
 **⚠ Push 전 verify:** `git status`가 "clean"이고 origin/main이 "up to date"인지 확인 후 종료.
 
@@ -999,7 +976,7 @@ for dir_name, files in candidates.items():
 
 **P18의 범용성:** 이 pitfall은 index.md에 국한되지 않음. session-notes.md, references/, 또는 read_file 출력에서 복사한 old_string으로 patch하는 **모든 파일**에서 발생 가능. 항상 line number + `|` 구분자를 제거했을 것 확인할 것.
 
-**P18 self-inflicted 변형 (2026-08-25):** P18이 반드시 외부 프로세스(`self_hermes.py`)로부터만 오는 것은 아님. patch 도구로 테이블 형식 파일(예: logs/index.md)을 수정할 때 new_string의 테이블 행 패턴이 기존 행과 충돌하거나, patch fuzzy matcher가 의도치 않게 `|` 2개를 생성하는 _self-inflicted_ 케이스가 발생 가능. 실제 사례: logs/index.md August 섹션에 새 행 추가 patch 후 `|| 08-16` (선행 double pipe) 발생 — new_string의 `| 08-16` 패턴이 기존 `| 08-16` 행과 충돌하며 `||` 중복. 복구: 即 재-patch로 `||` → `|` 단일 파이프 수정. **외부 프로세스 오염이 아닌 자체 patch 조작이 원인**이라는 점에서 기존 P18과 구별 — 발견当时的의 처리 방향은 동일하나, "self_hermes.py만 원인"이라고 하는 기존 전제를 수정.
+**P18 self-inflicted 변형 (2026-08-25):** P18이 반드시 외부 프로세스(`self_hermes.py`)로부터만 오는 것은 아님. patch 도구로 테이블 형식 파일(예: logs/index.md)을 수정할 때 new_string의 테이블 행 패턴이 기존 행과 충돌하거나, patch fuzzy matcher가 의도치 않게 `|` 2개를 생성하는 _self-inflicted_ 케이스가 발생 가능. 실제 사례: logs/index.md August 섹션에 새 행 추가 patch 후 `|| 08-16` (선행 double pipe) 발생 — new_string의 `| 08-16` 패턴이 기존 `| 08-16` 행과 충돌하며 `||` 중복. 복구: 즉 재-patch로 `||` → `|` 단일 파이프 수정. **외부 프로세스 오염이 아닌 자체 patch 조작이 원인**이라는 점에서 기존 P18과 구별 — 발견 당시의 처리 방향은 동일하나, "self_hermes.py만 원인"이라고 하는 기존 전제를 수정.
 
 **P18 committed 변형 (2026-08-11):** `|- ` 오염이 **커밋된 채** 잔존할 수 있음 — working tree에서 보여도 `git diff HEAD -- <file>`이 해당 줄 변경을 표시하지 않으면 HEAD에 이미 반영된 상태 (실제 사례: index.md 58-59행, 39f01b2에서 도입·미push). 판별: `git diff HEAD`에서 해당 줄이 안 보이면 committed. 도입 커밋 추적: `git log -S '|- [파일명]' --oneline -- index.md`. committed P18은 working-tree patch 후 반드시 commit + push (미push 상태면 다음 auto-sync 커밋에 편승해 함께 푸시됨 — push 전 `git show origin/main:<file> | grep -c '^|- '`로 원격 오염 여부도 확인).
 
@@ -1269,6 +1246,38 @@ for k in set(list(cur)+list(orig)):
 **기준 행의 날짜까지 prefix에 섞여 중복 삽입**된다(실전: `|| 11-08 07:00 11-10 21:00 | ...`).
 → prefix는 **앞 2바이트 `||`로 고정**하고, 나머지는 새 행을 직접 작성한다.
 
+### P37. 브리핑 산출물의 외국어 혼입 — 백필 시 재작성 필수 (2026-11-11 추가)
+
+**증상:** P36에 따라 cron output 파일(`~/.hermes/cron/output/2916cc9c2ceb/<날짜>.md`)의 `## Response` 섹션을
+`LOG.md`에 백필할 때, **원본 브리핑에 중국어/외국어가 섞여 들어 있다.**
+
+**실제 사례 (2026-11-11):** 원본에 중국어 2자·3자 어구와 폴란드어 1단어가 섞여 있었다(한자 계수 5 + 폴란드어 1).
+이를 그대로 복사하면 언어 규칙(중국어 금지) 위반 + 위키 신뢰도 저하.
+
+**조치:**
+1. 원본은 **요약의 SSOT로만** 사용 (수치·해석은 그대로 인용)
+2. `LOG.md`에 넣는 문장은 **전부 한국어로 재작성**
+3. 백필 후 CJK 문자 0건 검증:
+   ```bash
+   python3 -c "
+   import io
+   s=io.open('/home/ubuntu/.hermes/wiki/LOG.md',encoding='utf-8').read()
+   cj=[c for c in s if '\u4e00'<=c<='\u9fff']
+   print('CJK chars:', len(cj), set(cj))
+   "
+   ```
+
+**P36 재발 확인 (2026-11-11):** 11-06 / 11-09 / 11-10에 이어 11-11도 동일 패턴.
+→ **매일 반복되는 구조적 결함**이며, 근본 조치(브리핑 크론 toolset에 `file` 추가 + 프롬프트에 기록 단계)는
+wiki-auto-refresh 범위를 넘어서므로 **승인 없이 진행하지 말고 보고만** 한다.
+그 전까지는 wiki-auto-refresh가 **매일 수동 백필**로 대응한다. 미백필 시 `LOG.md`는 영구히 마지막 백필일에 멈춘다.
+
+**백필 절차 (확정):**
+1. `grep -n '^## Response'` 로 원본의 Response 섹션 시작 라인 확정
+2. `read_file(offset=그 라인)` 로 원본 끝까지 읽기
+3. `LOG.md`에 한국어로 재작성하여 append + frontmatter `updated:` 갱신
+4. CJK 0건 + `git diff --check` 검증
+
 ### P31. No-op 실행 — 무의미한 커밋을 만들지 말 것 (2026-11-03 추가)
 
 **증상:** audit 5종이 모두 통과하고 위키 본문 변경이 0건인데, "매일 실행이니 뭔가 남겨야 한다"는 이유로
@@ -1383,8 +1392,8 @@ cd ~/.hermes/skills/devops/wiki-auto-refresh && git rev-parse --is-inside-work-t
 # 출력: fatal: not a git repository → skills 디렉토리는 git 아님
 ```
 
-**session-notes 지속策略:**
-1. **권장: wiki repo 내 별도 파일에 기록** — `~/.hermes/wiki/_session-notes.md`를 wiki repo에 포함시키고 다른 파일들과 함께 `git add -A`로 커밋.优点: 세션 기록이 wiki와 함께 version controlled. 단점: wiki repo 오염 (의도치 않은 세션 로그가 wiki에 포함).
+**session-notes 지속 전략:**
+1. **권장: wiki repo 내 별도 파일에 기록** — `~/.hermes/wiki/_session-notes.md`를 wiki repo에 포함시키고 다른 파일들과 함께 `git add -A`로 커밋. 장점: 세션 기록이 wiki와 함께 version controlled. 단점: wiki repo 오염 (의도치 않은 세션 로그가 wiki에 포함).
 2. **파일 시스템 수준 보존** — patch 적용만으로 충분. session-notes.md는 skill 디렉토리에 파일로 존재하며, 각 cron 실행이 시작할 때 `head -100`으로 직전 세션을 읽을 수 있음 (최신순 구조이므로 head 사용 — P26). 다만 에이전트 재시작 시 memory에서 모든 툴 호출 context가 초기화되므로, 완전한 세션 추적이 필요하면 wiki repo 내 파일 사용.
 3. **현재 구조 유지** — cron 실행 간 session-notes.md는 skill 디렉토리 내 파일로 존재하며, 각 cron 실행이 시작할 때 `head -100`으로 직전 세션을 읽음 (P26: prepend 구조). git persistence는 필요 없음 (이미 hermes transcript DB에 세션 기록이 있음).
 
@@ -1457,7 +1466,7 @@ old_string을 **헤더 + 첫 항목**으로 잡았더니, patch가 그 블록을
 
 ### P24. Submodule 내 Wikilink — 부모 위키 루트 기준 resolution의 한계 (2026-10-04 추가)
 
-**증상:** Python wikilink resolver가 전체 위키 트리를 스캔할 때 `subagents-library/multi-agent-systems.md`의 `[[agents-companion-overview]]`를 "broken"으로报了. 파일은 실제로 `subagents-library/` 서브모듈 루트에 존재한다.
+**증상:** Python wikilink resolver가 전체 위키 트리를 스캔할 때 `subagents-library/multi-agent-systems.md`의 `[[agents-companion-overview]]`를 "broken"으로 보고됨. 파일은 실제로 `subagents-library/` 서브모듈 루트에 존재한다.
 
 **원인:** 부모 위키 루트(`~/.hermes/wiki/`)에서 wikilink resolution을 수행하면, `subagents-library/` 내적 링크는 submodule root 기준이지 부모 wiki root 기준이 아니다. 예: `[[agents-companion-overview]]`는 `subagents-library/agents-companion-overview.md`로 존재하지만, 부모 루트에서는 `agents-companion-overview.md`를 찾으므로 실패.
 
@@ -1474,7 +1483,7 @@ old_string을 **헤더 + 첫 항목**으로 잡았더니, patch가 그 블록을
 P24는 "submodule 내 링크가 broken으로 보고됨"의 오탐을 다루지만, 반대 방향의 위험이 있다 — **submodule 내부 파일을 parent wiki 기준으로 고치면 submodule이 깨진다.**
 
 - 실제 사례: `subagents-library/subagents-library-hub.md`의 `related:` frontmatter와 본문 wikilink가 `[[harness-engineering-hub]]` → `[[repos/hermes-wiki-claude-code]]`로 변경돼 있었다. `repos/hermes-wiki-claude-code.md`는 **parent wiki**의 파일이고 submodule에는 없다 → submodule root 기준 resolution에서 broken.
-- `git -C ~/.hermes/wiki/subagents-library status`에 submodule 내부 파일이 modified로 뜨면, 이 변경이 어느 automation의产物인지 확인.
+- `git -C ~/.hermes/wiki/subagents-library status`에 submodule 내부 파일이 modified로 뜨면, 이 변경이 어느 automation의 산출물인지 확인.
 - **판단 규칙:** submodule 내부 링크는 **submodule root 기준**으로만 유효하다. parent 기준 경로(`repos/`, `infra/`, `people/` 등)를 submodule 파일에 넣으면 반드시 깨진다. submodule 내부의 cross-repo 참조가 필요하면 wikilink 대신 plain text로 repo명을 적는 것이 안전.
 - **조치:** submodule 내부의 parent 기준 wikilink 변경은 `git -C <submodule> restore <file>` 로 되돌리고, submodule 커밋도 하지 않는다 (parent wiki는 submodule pointer만 관리).
 
