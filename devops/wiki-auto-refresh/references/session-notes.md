@@ -2,6 +2,19 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-12 (21:00 KST) — P36 3차 재현 + P37 CJK 혼입 (11-12 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
+
+- **P19 재감염 0건 — 8일 연속** (11-02~11-12, 주말 제외). 판별 3단계(working tree / HEAD / origin/main) 모두 `자동 추가` 0건, `git diff HEAD -- index.md` 빈 결과 → 복구 경로 미실행.
+- **P18 오염 0건** — wiki 전체(`--include='*.md'`) `^|- ` 0건, `logs/index.md` triple-pipe(`^|||`) 0건. logs/index.md 인서트는 기준 행 `|| 11-11 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12) → `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과.
+- **audit 7종 전항목 통과** — wikilink(MD/WL/CD/BN/MDX 모두 0) / markdown-link(P11 0, broken 0) / index-md(registered 92 = actual 92, REAL MISSING 0) / logs-index-link(broken 0, notref 0, covered 13 오탐) / tag(taxonomy 199, used 143, **Unknown 0**) / dup-updated(pages 181, duplicate 0) / stale(**57 / 0 / 22** — 11-10 기준선 59/0/22와 2건 차이는 11-11 CJK 제거 실제 편집분으로 설명됨, 스크립트 버그 아님).
+- **P36 3차 재현 — 11-12 브리핑 LOG.md 미기록.** 18:00 크론 `2916cc9c2ceb`이 `2026-11-12_18-07-59.md` 산출했으나 `LOG.md` mtime은 2026-11-11 20:01 그대로. 원인은 P36와 동일(브리핑 크론 toolset에 파일쓰기 도구 부재).
+  - **조치**: `~/.hermes/cron/output/2916cc9c2ceb/2026-11-12_18-07-59.md`의 `## Response`(3711~3801행)을 원본으로 삼아 `LOG.md`에 수동 백필.
+  - **P37 재현 — 원본에 CJK 6자(2자 어구 3개) + 영문 혼입(영문 단어 3개)** → 언어 규칙(중국어 금지)에 따라 **순수 한국어로 재작성**. 수치·해석은 원본 인용.
+  - frontmatter `updated: 2026-11-11` → `2026-11-12`. 검증: CJK 0건 / `yaml.safe_load` OK / `git diff --check` 통과.
+- **위키 본문 변경 1건** (LOG.md) → parent 커밋 반영. logs 서브모듈은 신규 로그 `2026/2026-11-12-2100.md` + index.md 행 추가로 커밋.
+- **커밋**: logs `a663de5` (master) / parent `07ed557` (main). 양쪽 push 완료. `git show origin/main:LOG.md`에 11-12 섹션 반영 확인, `origin/main:index.md` `자동 추가` 0건.
+- **미조치(보고만)**: P36 근본 조치(브리핑 크론 toolset에 `file` 추가 + 프롬프트에 기록 단계)는 범위를 넘어 승인 없이 진행하지 않음. stale 57개는 P16에 따라 자동 갱신 금지. no_date_immutable 22개는 의도된 상태.
+
 ## 2026-11-11 (21:00 KST) — P36 2차 재현 (11-11 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 7일 연속** (11-02~11-11, 주말 제외). 판별 3단계(working tree / HEAD / origin/main) 모두 `자동 추가` 0건, `git diff HEAD -- index.md` 빈 결과 → 복구 경로 미실행.
