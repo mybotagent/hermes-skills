@@ -2,6 +2,19 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-13 (21:00 KST) — P36 4차 재현 + P37 CJK 6자 혼입 (11-13 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
+
+- **P36 4차 재현**: 18:00 브리핑 크론 `2916cc9c2ceb`이 `2026-11-13_18-20-43.md` 산출했으나 `LOG.md` mtime은 11-12 20:01 고정 → 수동 백필 (11-06/09/10/11/12에 이어 5일 연속).
+- **P37 4차**: 원본 `## Response`(3711~3846행)에 **CJK 6자 혼입**(`预`/`期`/`寿`/`险`/`広`/`化`) → 순수 한국어 재작성 후 **CJK 0건 검증**.
+- ★ **재작성 시 주의(이번 실전)**: 원본 `寿险`(생명보험)조차 한국어 표기가 아니라 한자 혼입 형태였음 → 재작성을 기계적 치환이 아니라 **한국어 재진술**로 해야 한다. 1차 재작성에서 `寿险`를 그대로 옮겨 CJK 2자 잔존 → 2차 검증에서 발견·`생명보험`으로 교체. **CJK 0건 검증은 반드시 백필 직후 1회만 하지 말고, 본문 전체(기존 섹션 포함)로 돌려 재확인할 것.**
+- audit 7종 전항목 통과: wikilink 0 / markdown-link P11 0 / index-md registered 92 = actual 92 / tag taxonomy 199·Unknown 0 / logs-index broken 0 notref 0 covered 13 / **stale 57 / no_date_operational 0 / no_date_immutable 22** (11-12 기준선 57/0/22 완전 일치) / dup-updated 0.
+- P18 스캔(`^|- `) wiki 전체 0건. `git diff --check` 통과.
+- **P19 재감염 0건 9일 연속** (11-02~11-13, 주말 제외): working tree / HEAD / origin/main 모두 0, `git diff HEAD --stat -- index.md` 빈 결과, stash 없음 → 복구 경로 불필요.
+- logs/index.md: November 섹션 기존 확인 → 기준 행 `|| 11-12 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12). `cat -A`에서 11-13/11-12/11-11 행 모두 `||` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과 + logs-index 재감사 broken=0/notref=0.
+- 커밋: logs `4d4afe8` (parent `a663de5`) / parent wiki `4625ec4` (parent `07ed557`). push: hermes-logs master, hermes-wiki main 모두 성공.
+- **새 발견 (P37 확장)**: `logs/portfolio/2026-11-12.json`의 `key_risks`에 CJK 혼입 발견 — 18:35 파이프라인 LLM 출력 산출물. 매크로 리포트(`macro_context.json`)는 QA 통과지만 포트폴리오 JSON은 QA 미적용. → 브리핑 크론만 고치는 것으로는 부족하며, **파이프라인 LLM 출력 단계에도 CJK 스캔 QA 적용 필요.**
+- **보고만 (근본 조치 미적용)**: 브리핑 크론 toolset에 `file` 추가 + 프롬프트에 기록 단계 — wiki-auto-refresh 범위 밖이므로 승인 없이 진행하지 않음. 매일 수동 백필 유지.
+
 ## 2026-11-12 (21:00 KST) — P36 3차 재현 + P37 CJK 혼입 (11-12 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 8일 연속** (11-02~11-12, 주말 제외). 판별 3단계(working tree / HEAD / origin/main) 모두 `자동 추가` 0건, `git diff HEAD -- index.md` 빈 결과 → 복구 경로 미실행.
