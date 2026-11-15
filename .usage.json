@@ -96,14 +96,14 @@
     "created_by": "agent",
     "last_patched_at": "2026-10-31T23:07:23.721400+00:00",
     "last_reused_patch_generation": 0,
-    "last_used_at": "2026-11-07T23:01:35.382259+00:00",
-    "last_viewed_at": "2026-11-07T23:01:35.376245+00:00",
+    "last_used_at": "2026-11-14T23:01:08.290127+00:00",
+    "last_viewed_at": "2026-11-14T23:01:08.284816+00:00",
     "patch_count": 55,
     "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 49,
-    "view_count": 49
+    "use_count": 50,
+    "view_count": 50
   },
   "baoyu-infographic": {
     "archived_at": "2026-10-04T07:58:32.934575+00:00",
