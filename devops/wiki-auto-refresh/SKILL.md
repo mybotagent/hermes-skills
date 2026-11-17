@@ -1,33 +1,16 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.49.0"
+version: "1.50.0"
 changelog:
+  - "2026-11-16: **P19 재발(11-02 이후 10일 만) — committed+push 변형** + P36 5차 + P37 5차 + **P38 신규**. 11-02~11-13의 9일 연속 0건 종료 뒤 `hermes-config-sync` 크론 커밋 `60a1708`(13:30)이 `index.md` footer 뒤에 rogue 1건을 삽입하고 **커밋+push까지 완료**. 판별 3단계 working tree 1 / HEAD 1 / origin/main 1 → committed 변형. 오염 커밋 diff는 rogue 2줄뿐(정식 수정 0) → footer truncate + `raw/` 섹션에 **PAT B 정식 재등록**(W46 초안) + 끝 개행 복구. **P38 신규 — (a) 외부 프로세스가 index.md를 수정할 때 파일 끝 개행을 보장하지 않음(`\\ No newline at end of file` 증상), (b) PAT A rogue 항목을 해당 섹션 정식 형식(PAT B)으로 재등록해야 하며 단순 삭제하면 index-md-audit REAL MISSING 유발**. P36 5차(브리핑 크론 toolset에 file 부재 — 근본 미해결, 보고만) + P37 5차(원본 CJK 2자 `租金` → 한국어 재작성, CJK 0건). **P37 확장 실증 — `trade-pipeline/logs/portfolio/2026-11-12.json`의 `key_risks`에 `化` 1자 잔존 → 파이프라인 LLM 출력 단계에도 CJK 스캔 QA 필요**. audit 7종 전항목 통과(index-md registered 93 = actual 93, tag taxonomy 199/Unknown 0, logs-index broken 0/notref 0). stale 57/0/23 (11-13 기준선 57/0/22와 stale 완전 일치, immutable +1 = 신규 raw W46 초안 — 스크립트 버그 아님). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-13 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `57818c2` / parent `d398c73`. references/run-2026-11-16.md 추가."
   - "2026-11-13: **P36 4차 재현 + P37 4차 (11-13 브리핑)**. 11-06/11-09/11-10/11-11/11-12에 이어 11-13도 동일 패턴 — 18:00 크론 `2916cc9c2ceb`이 `2026-11-13_18-20-43.md` 산출했으나 `LOG.md` mtime은 11-12 20:01 고정. 원본 `## Response`(3711~3846행)에 **CJK 6자 혼입**(`预`/`期`/`寿`/`险`/`広`/`化`) → P37 절차대로 **순수 한국어 재작성 후 CJK 0건 검증**. ★ **재작성 함정 실전 발견**: 원본 `寿险`(생명보험)조차 한자 표기였고 1차 재작성을 기계적 치환으로 해 CJK 2자 잔존 → 2차 검증에서 `생명보험`으로 교체. **CJK 검증은 백필 직후 1회가 아니라 본문 전체(기존 섹션 포함)로 재확인할 것.** stale 기준선 57/0/22 유지(11-12와 완전 일치). P19 재감염 0건 **9일 연속**(11-02~11-13, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0, logs-index broken 0/notref 0). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-12 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `4d4afe8` / parent `4625ec4`. **P37 확장 — 파이프라인 LLM 출력 오염 발견**: `logs/portfolio/2026-11-12.json`의 `key_risks`에 CJK 혼입(매크로 리포트는 QA 통과, 포트폴리오 JSON은 QA 미적용) → 브리핑 크론 수정만으로 부족하며 **파이프라인 LLM 출력 단계에도 CJK 스캔 QA 필요**. references/run-2026-11-13.md 추가."
   - "2026-11-12: **P36 3차 재현 + P37 재현 (11-12 브리핑)**. 11-06/11-09/11-10/11-11에 이어 11-12도 동일 패턴 — 18:00 크론 `2916cc9c2ceb`이 `2026-11-12_18-07-59.md` 산출했으나 `LOG.md` mtime은 11-11 20:01 고정. 원본 `## Response`(3711~3801행)에 **CJK 6자 + 영문 단어 3개 혼입** → P37 절차대로 **순수 한국어 재작성 후 CJK 0건 검증**. **stale 기준선 59/0/22 → 57/0/22 갱신** (11-11 CJK 제거 2건 실제 편집분으로 설명됨 — 스크립트 버그 아님). P19 재감염 0건 **8일 연속**(11-02~11-12, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0, logs-index broken 0/notref 0). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-11 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `a663de5` / parent `07ed557`. references/run-2026-11-12.md 추가."
   - "2026-11-11: **P37 신규 — P36 2차 재현(매일 반복 확인) + 브리핑 원본의 외국어 혼입**. P36(브리핑 크론 toolset에 write_file/patch/read_file 부재)이 11-06/11-09/11-10에 이어 **11-11도 동일 재현**(18:00 크론은 `2026-11-11_18-26-24.md` 산출·executions.db status=completed이나 LOG.md mtime은 11-10 20:02 고정). jobs.json 실측으로 `enabled_toolsets=['terminal','search','web']` 확인 → **매일 반복되는 구조적 결함**이며, wiki-auto-refresh가 매일 수동 백필하지 않으면 LOG.md는 영구히 11-05에 멈춘다. **P37 — 브리핑 원본에 중국어/외국어가 혼입됨**(한자 2자 + 3자 어구, 폴란드어 1단어): 산출물을 그대로 백필하면 언어 규칙(중국어 금지) 위반 → **순수 한국어로 재작성 후 CJK 문자 0건 검증 필수**. P19 재감염 0건 **7일 연속**(11-02~11-11, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0). stale 59 / no_date 0 / immutable 22 = 11-10 기준선 완전 일치. logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-10 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `120f679` / parent `023e382`. references/run-2026-11-11.md 추가."
   - "2026-11-10: **P36 신규 — 브리핑 크론의 파일쓰기 도구 부재(P35 정정)** + **11-09 실행 중단분 인수인계**: P35는 브리핑 크론(`2916cc9c2ceb`) 프롬프트에 'LOG.md 기록' 단계가 없어 갱신이 안 된다고 기술했으나, 실제 원인은 **'기록 단계 미정의 + 파일쓰기 도구 부재'의 조합** — 해당 크론의 `enabled_toolsets`는 terminal/process_manage/web_search/web_extract 4개만 노출하고 `write_file`/`patch`/`read_file`이 전부 없다. **프롬프트에 '기록하라'만 추가해도 파일 쓰기가 불가능**하다. '11-05에 기록이 성공했다'는 사실도 오해였음(LOG.md mtime=20:06 = auto-refresh 구간, 브리핑 출력 파일에는 LOG.md 언급 0건). 주말(11-07/08) 미실행은 `0 18 * * 1-5` 스케줄 정상 동작. **11-09(월) 실행이 도구 한도 소진으로 중단**(분석 완료·커밋 0건) → 이번 실행에서 LOG.md 11-06/11-09/11-10 3거래일 백필 + frontmatter updated 갱신 + 로그 파일 2건 생성 + 커밋·푸시. **stale 기준선 갱신: 63/0/21 → 59/0/22** (11-08 주간 cleanup 산출 raw/archive 2건 + 일부 updated: 실제 갱신 — 스크립트 버그 아님). P19 재감염 0건 **6일 연속**(11-02~11-10, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-08 07:00` prefix 복사 후 python 인서트(삽입 위치 line 12) — **prefix는 앞 2바이트 `||`로 고정**(`index('|',2)` 추출은 기준 행 날짜가 섞여 중복 삽입되는 함정 실전 확인). `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-10.md 추가."
   - "2026-11-06: **P35 신규 — 브리핑 크론이 만든 페이지의 자동 갱신 부재**: `LOG.md`를 만든 18:00 미국 증시 브리핑 크론(`2916cc9c2ceb`) 프롬프트에 'LOG.md 기록' 단계가 없어(Discord 전송까지만 정의) 11-05 생성 이후 **mtime이 고정**되어 자동 갱신되지 않음. wiki-auto-refresh 관점에서는 untracked/dirty 잔재가 없으므로 조치 대상이 아니나 — **페이지가 있는데 갱신되지 않는** 상태는 index 감사(registered N = actual N)로도 잡히지 않는다. cron 실행 로그(`~/.hermes/cron/executions.db`의 `executions` 테이블)에서 해당 job_id의 status/last_run을 교차 확인하면 발견 가능. **P19 재감염 0건 5일 연속**(11-02~11-06). audit 7종 전항목 통과, stale 62 = 11-05 기준선 완전 일치, **위키 본문 변경 0건 → P31에 따라 submodule pointer bump만 커밋**(parent 커밋 메시지 `wiki: bump logs submodule (2026-11-06 auto-refresh — no wiki body changes)`). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-05 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-06.md 추가."
   - "2026-11-05: **P33 신규 — 중복 `updated:` frontmatter 키** (24개 페이지). auto-fill-dates.py v1.15.0 잔재(기존 `updated:` 줄 미감지 상태에서 새 줄 삽입). YAML last-wins라 **유효 날짜는 불변** → 의미 보존적 제거 가능(마지막 줄만 유지). `scripts/dup-updated-audit.py` 신규 번들(감지 + `--fix`). **검증: 수정 전/후 `yaml.safe_load` 전수 비교 → semantic diff 0건 필수** — diff가 안 0이면 폐기. **P34 신규 — 신규 루트 페이지 생성 크론 주의**: `LOG.md`(18:00 미국 증시 브리핑 크론)가 untracked+미등록으로 방치되면 `git status` 영구 dirty + index-md-audit REAL MISSING 지속 → frontmatter 보강(SCHEMA 최소 규격) + index.md 등록 + 같은 커밋에 `git add`. **stale 카운트 감소도 원인을 확인할 것**(이번 실행 63→62 = 04:00 크론이 `infra/neo4j-local.md`의 `updated:`를 실제 갱신 — 스크립트 버그 아님). P19 재감염 0건 **4일 연속**(11-02~11-05). references/run-2026-11-05.md 추가."
-  - "2026-11-04: P19 재감염 0건 **3일 연속**(11-02/11-03/11-04) — 종료가 이어지는 국면 실증. stale-audit.py 검증 기준선(11-03: stale=63 / operational=0 / immutable=21) 대비 **11-04도 완전 일치** → 스크립트 로직 정상 확인 (기준선 어긋나면 스크립트 로직 우선 점검). P31 실전 확인 — 위키 본문 변경 0건이면 parent 커밋은 **submodule pointer bump만**, 커밋 메시지는 `auto-sync <날짜>`가 아니라 **변경 내용을 설명**(`wiki: bump logs submodule (...)`). logs/index.md November 섹션 기존 확인 → `|| 11-03 21:00` 기준 행 prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. references/run-2026-11-04.md 추가."
-  - "2026-11-03: **scripts/stale-audit.py 신규** — stale(30d+)/날짜없음 census를 bundled 스크립트로 승격 (매 실행 인라인 재작성 금지, P29 정합). P31 신규 — **audit 5종 전항목 통과 + 위키 본문 변경 0건이면 커밋 금지**(무의미한 empty commit 금지, 단 로그는 생성). P19 재감염 0건 2일 연속(35회 연속 종료 유지). logs/index.md November 섹션 기존 확인 → 월 섹션 신설 불필요(P30), 11-02 행 prefix 복사 후 python 인서트. references/run-2026-11-03.md 추가."
-  - "2026-11-02: **P19 재감염 0건 — 34회 연속 재감염 종료** (외부 자동화 프로세스 동작 변경으로 추정; 재발 배제 아님, 3단계 판별 계속). P10 MDEXT 2건 수정(code/finviz-screener-parsing.md), tag taxonomy 149→152(+finviz/screener/debugging), logs/index.md November 섹션 신설(신규 월 첫 로그 — 삽입 기준은 데이터 행이 아닌 '월 섹션 헤더'!, 순서 역전 주의). audit 5종 전항목 통과, stale 63개 + 날짜 없음 21개(raw immutable). references/run-2026-11-02.md 추가."
-  - "2026-10-30: P19 33회 연속(working-tree, 70건) — git restore fast path, 커밋 불필요. logs/index.md 신규 1건 python 인서트 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0). stale 63개 + 날짜 없음 operational 0개."
-  - "2026-10-29: P19 32회 연속(working-tree, 68건) — git restore fast path, 커밋 불필요. logs/index.md 신규 2건(본 로그 + 매크로 리포트) python 인서트로 등록, triple-pipe 0건. audit 5종 전항목 통과(registered 87 = actual 87, tag Unknown 0, logs-index broken 0 notref 0)."
-  - "2026-10-28: P30 신규 — logs/index.md 행 추가는 python 인서트 방식 권장 (patch보다 P18/P20 리스크 낮음: 기준 행 prefix 복사 → triple-pipe 원천 배제, 삽입 위치 행번호 확정). P19 31회 연속(working-tree, 67건) — 10-26 committed → 10-27/10-28 working-tree 3일 연속 변형 사례 추가(변형이 여러 날 유지될 수 있으므로 판별은 매 실행 독립). references/run-2026-10-28.md 추가."
-  - "2026-10-27: P29 신규 — 인라인 orphan 스캔은 59건 전부 오탐(raw PAT B / P13 multi-page sibling / research sources) → orphan 판정은 bundled wikilink-audit.py + index-md-audit.py 결과만 신뢰, 인라인 수치를 리포트에 싣지 말 것. P19 30회 연속(working-tree, 66건) — 10-26 committed 변형 → 10-27 working-tree 변형 전환 사례 추가(연속 이틀 서로 다른 변형 → 3단계 판별 매 실행 독립 수행, 복구 경로 분기)."
-  - "2026-10-25: P27 신규 — `~/.hermes/scripts/wiki_lint.py`는 태그 taxonomy를 18개 하드코딩 근사한 레거시 스크립트(실제 SCHEMA taxonomy 149개). tag audit에서 'unknown tag: llm/ai/agent/hermes' 오탐 보고 → bundled `scripts/tag-audit.py`(Unknown 0)를 우선할 것, wiki_lint.py 결과는 리포트에 그대로 싣지 말 것. P28 신규 — index.md 섹션 추가 시 patch fuzzy-match가 기존 항목을 삭제할 수 있음(삽입 목적이면 old_string을 고유 앵커 1줄로 잡고 new_string에 앵커 보존, patch 직후 diff로 기존 행 생존 검증). P21 보강 — cron에서 memory tool 차단 시 `MemoryStore.apply_batch()` 드라이버로 원자적 쓰기 가능(직접 파일 편집보다 안전)."
-  - "2026-10-23: P19 판별 3단계(working-tree/HEAD/origin) 공식화 + **rogue 건수 = logs 파일 수에 비례**(신규 로그 1개 추가 → rogue 1건 증가, 정상 패턴 — 10-23 63건) — 건수 증가만으로 오염 확대 추측 금지. logs/index.md 행 추가 후 `cat -A` 파이프 정합성 검증 절차 추가 (형제 행과 `||` prefix 일치, 육안 판별보다 확실). P26 부분 읽기 허용 예외 — 날짜-유일 헤더 앵커는 partial-view 상태에서도 정상 적용. P19 28회 연속(working-tree, 63건) 복구 — git restore fast path, 커밋 불필요."
-  - "2026-10-22: P26 신규 — session-notes.md는 '최신순 = 맨 위'(prepend) 구조인데 사전 점검 4단계/P20/P23가 '파일 끝 append + tail -100'을 안내하고 있었음 (실제 순서 10-22→10-21→10-19→10-13). 절차 정정: 첫 번째 '## ' 헤더 바로 위 삽입, head -100으로 읽기, P20 앵커 = 다음 섹션의 날짜 헤더 전체. P19 27회 연속(working-tree, 62건) 복구 — git restore fast path로 커밋 불필요."
-  - "2026-10-21: P25 신규 — logs/index.md 링크 무결성 양방향 감사 (BROKEN 12건 발견). scripts/logs-index-link-audit.py 신규. 2c-ter는 NOTREF 한 방향만 검사하므로 '루프 0건 보고'를 '깨진 게 없다'로 해석하면 안 됨. P24 역방향 부작용 추가 — submodule 내부에 parent 기준 wikilink 넣으면 submodule이 깨짐 (git restore로 되돌림)."
-  - "2026-10-19: P19 25회 연속 재감염 (18a8f1c, 2026-10-18 05:30). Parent c121efb로 복원. W42 등록. GitHub push: .git-credentials + credential.helper store 사용 (SSH/.netrc/gh 모두 없을 때)."
-  - "2026-10-12: P19 — 62개 rogue committed 재감염 (hermes-config-sync 04:00+05:30 재삽입). commit c121efb."
-  - "2026-10-04: P24 — submodule wikilink 오탐 + 3건 수정 (hermes-trading-hub, neo4j-local, subagents-library-hub). commit c6107cb."
-  - "2026-10-01: P23 — session-notes.md git commit 실패 (skills 디렉토리는 git repo 아님)."
-  - "2026-09-29: P18 logs/index.md September section triple-pipe (|||) 변형 추가 — 전체 rewrite로 복구. P19 21일 연속 재발 (62 rogue entries, git restore index.md)."
-  - "2026-09-27: P21 memory tool cron fallback + P22 submodule lint false-positive (60 items, ignore)."
-  - "2026-09-02: P19 59-row working-tree contamination from self_hermes.py logs/(53) + subagents-library/(5) + raw/(1) 59 items with auto-add label. git diff HEAD check + git restore index.md recovery. All audits pass."
-  - "1.2.0~1.29.0 (2026-06~08): 구버전 변경 이력 — references/changelog-archive.md 참조 (본문 P1~P30에 반영됨)"
+
 author: aiprofit
 platforms: [linux]
 metadata:
@@ -1280,6 +1263,41 @@ wiki-auto-refresh 범위를 넘어서므로 **승인 없이 진행하지 말고 
 3. `LOG.md`에 한국어로 재작성하여 append + frontmatter `updated:` 갱신
 4. CJK 0건 + `git diff --check` 검증
 
+### P38. 외부 프로세스의 index.md 수정 — 개행 누락 + 정식 형식 불일치 (2026-11-16 추가)
+
+**증상 (2개가 동시에 나타남):**
+1. `git show <오염커밋> -- index.md`의 diff 끝에 `\ No newline at end of file` 표시
+2. rogue 항목이 PAT A(`[text](path)`) 형식인데, 삽입된 섹션(`raw/`)의 정식 규약은 PAT B plain-text
+
+**원인:** `hermes-config-sync` 크론이 새 파일을 index.md에 자동 등록할 때
+(a) append 시 개행을 보장하지 않고, (b) 섹션별 등록 형식(PAT A/PAT B/PAT C)을 구분하지 않는다.
+
+**실제 사례 (2026-11-16):** `hermes-config-sync` 커밋 `60a1708`이 04:00 크론 산출물
+`raw/2026-W46-weekly-recap-draft.md`를 footer 뒤에 `- [2026 W46 Weekly Recap Draft](raw/...) — 자동 추가 (2026-11-15)`
+로 삽입 + 끝 개행 누락. 11-02 이후 9일 연속 0건이었던 P19 재감염의 재발.
+
+**처리:**
+```bash
+cd ~/.hermes/wiki
+python3 - <<'PYEOF'
+p='index.md'
+lines=open(p,encoding='utf-8').read().split('\n')
+footer_idx=next(i for i,l in enumerate(lines) if l.strip().startswith('*Managed by Hermes Agent'))
+lines=lines[:footer_idx+1]                      # 1) footer 뒤 rogue 블록 제거
+anchor=[k for k,l in enumerate(lines) if '2026-W45-weekly-recap-draft' in l][0]
+lines.insert(anchor+1, '- 2026-W46-weekly-recap-draft (raw/2026-W46-weekly-recap-draft.md) — 🆕 2026-W46 주간 회고 초안 (publish 전 사용자 확인 대기)')
+open(p,'w',encoding='utf-8').write('\n'.join(lines).rstrip('\n')+'\n')   # 2) 끝 개행 복구
+PYEOF
+grep -c '자동 추가' index.md   # → 0
+python3 "$SCRIPTS/index-md-audit.py"   # REAL MISSING 0 확인 (단순 삭제하면 1건 발생)
+```
+
+**핵심 교훈:**
+- **★ rogue 항목을 단순 삭제하면 안 된다** — 파일이 실제로 존재하고 index에 등록돼야 audit이 통과한다. **해당 섹션의 정식 형식으로 재등록**할 것 (`raw/` = PAT B, `research/entities/` = PAT A).
+- **★ 외부 프로세스가 만든 index.md에는 끝 개행이 없을 수 있다** — 복구 시 `rstrip('\n')+'\n'`으로 정리 (다음 append가 같은 줄에 붙는 것을 방지).
+- **★ P19 "0건 N일 연속"은 재발 배제가 아니다** — 9일 연속 종료 국면 뒤에 committed+push 변형으로 재발했다. **3단계 판별(working tree / HEAD / origin/main)은 매 실행 독립 수행**할 것.
+- 새 파일 생성 크론 + index 자동등록 크론이 결합하면 P19(위치 오염) + PAT 형식 불일치가 동시에 발생한다.
+
 ### P31. No-op 실행 — 무의미한 커밋을 만들지 말 것 (2026-11-03 추가)
 
 **증상:** audit 5종이 모두 통과하고 위키 본문 변경이 0건인데, "매일 실행이니 뭔가 남겨야 한다"는 이유로
@@ -1571,3 +1589,4 @@ git log --all --oneline --diff-filter=D -- '2026/<file>.md'
 - **2026-11-04 실행 기록**: `references/run-2026-11-04.md` — P19 재감염 0건 **3일 연속** + **stale-audit.py 기준선(11-03) 대비 완전 일치 확인으로 스크립트 로직 검증** + **P31 실전: parent 커밋은 submodule pointer bump만, `git add logs`만 스테이징**(무차별 `git add -A` 금지) + 커밋 메시지를 변경 내용으로 기술(`wiki: bump logs submodule (...)`) + logs/index.md python 인서트(기준 행 `|| 11-03 21:00`) + `cat -A`/`git diff --check` 검증
 - **2026-11-05 실행 기록**: `references/run-2026-11-05.md` — **P33 중복 `updated:` frontmatter 24개 페이지**(auto-fill-dates v1.15.0 잔재, YAML last-wins라 의미 보존적 제거 + `yaml.safe_load` 전수 비교 semantic diff 0건) + **scripts/dup-updated-audit.py 신규** + **P34 LOG.md 미등록**(18:00 브리핑 크론 산출물 — frontmatter 보강 + index 등록 + git add 3단계) + **stale 63→62 감소 원인 확인**(04:00 크론의 `infra/neo4j-local.md` 실제 갱신) + P19 재감염 0건 4일 연속
 - **2026-11-06 실행 기록**: `references/run-2026-11-06.md` — **P35 신규 — 브리핑 크론이 만든 페이지의 자동 갱신 부재**(`LOG.md`가 11-05 생성 후 mtime 고정 — 해당 크론 프롬프트에 기록 단계 없음. 등록 감사·stale 감사로는 안 잡히므로 cron 실행 기록과 페이지 mtime 교차 확인 필요) + P19 재감염 0건 5일 연속 + **audit 7종 전항목 통과** + **위키 본문 변경 0건 → P31 submodule pointer bump만 커밋** + stale 62 완전 일치
+- **2026-11-16 실행 기록**: `references/run-2026-11-16.md` — **P19 재발(11-02 이후 10일 만, committed+push 변형)** + **P38 신규(외부 프로세스 index.md 수정 시 끝 개행 누락 + PAT A rogue를 섹션 정식 형식(PAT B)으로 재등록 — 단순 삭제 시 REAL MISSING 유발)** + P36 5차 + P37 5차(CJK 2자) + P37 확장 실증(`logs/portfolio/2026-11-12.json`의 `化` 1자 잔존 → 파이프라인 LLM 출력 단계 CJK QA 필요)

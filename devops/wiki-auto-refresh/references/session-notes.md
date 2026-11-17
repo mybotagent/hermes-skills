@@ -2,6 +2,24 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-16 (21:00 KST) — **P19 재발(committed+push 변형)** + P36 5차 + P37 CJK 2자 (11-16 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
+
+- **★ P19 재발 — 11-02 이후 10일 만의 재감염, committed+push 변형.** 판별 3단계: working tree 1 / HEAD 1 / origin/main 1 → 이전 9일(11-02~11-13)과 달리 **커밋+push까지 완료된 변형**. `git diff HEAD --stat -- index.md`는 빈 결과(HEAD와 동일)였고, 오염 커밋 `60a1708`(hermes-config-sync 2026-11-16T05:30:32Z)의 diff는 **rogue 추가분 2줄뿐(정식 수정 0건)**임을 확인.
+  - 오염 내용: `index.md` footer(`*Managed by Hermes Agent...`) 뒤에 `- [2026 W46 Weekly Recap Draft](raw/2026-W46-weekly-recap-draft.md) — 자동 추가 (2026-11-15)` 삽입 + **`\ No newline at end of file`**.
+  - **원인**: `hermes-config-sync` 크론(91059d1e3d31, `30 13 * * *`)이 04:00 크론이 만든 `raw/2026-W46-weekly-recap-draft.md`(커밋 `53a861b`)를 index.md에 등록. `raw/` 섹션 정식 규약은 **PAT B plain-text**인데 rogue는 PAT A + "자동 추가" 레이블 → **형식 불일치 + 잘못된 위치**.
+  - **복구 (mixed-state truncate 경로)**: footer 이후 truncate → `raw/` 섹션 W45 행 바로 아래에 PAT B로 정식 재등록(`- 2026-W46-weekly-recap-draft (raw/2026-W46-weekly-recap-draft.md) — 🆕 2026-W46 주간 회고 초안 (publish 전 사용자 확인 대기)`) → 끝 개행 복구(`rstrip('\n')+'\n'`). `grep -c '자동 추가'` → 0.
+  - **★ 교훈 ①**: P19 "0건 연속"은 재발 배제가 아니다. 9일 연속 종료 국면 뒤에 committed 변형으로 재발했으니 **3단계 판별은 매 실행 독립 수행**해야 한다 (11-14은 토요일, 11-15 일요일이라 cron 미실행 — 주말 공백은 정상).
+  - **★ 교훈 ②**: 외부 프로세스가 index.md를 수정할 때 **파일 끝 개행을 보장하지 않는다**. `\ No newline at end of file` 증상 확인 → 복구 시 개행을 명시적으로 정리할 것.
+  - **★ 교훈 ③**: 새 파일 생성 크론 + index 자동등록 크론이 결합하면 P19 + PAT B 형식 불일치가 동시에 발생. 복구 시 반드시 해당 섹션의 정식 형식으로 재등록 (단순 삭제는 REAL MISSING 유발).
+- **P36 5차 재현**: 18:00 브리핑 크론 `2916cc9c2ceb`이 `2026-11-16_18-07-17.md` 산출했으나 `LOG.md` mtime은 11-13 20:01 고정 → 수동 백필. 브리핑 크론 `enabled_toolsets` = `['terminal','search','web']` (jobs.json 실측) — `write_file`/`patch`/`read_file` 전무 → **근본 조치 미적용(보고만)**.
+- **P37 5차**: 원본 `## Response`(3711~3857행)에 **CJK 2자**(`租金`, 3727행 `(@"租金")`) 혼입 → 순수 한국어 재작성 후 **CJK 0건 검증** (전체 LOG.md 대상).
+- **P37 확장 실증**: `trade-pipeline/logs/portfolio/2026-11-12.json`의 `key_risks`에 `化` 1자 잔존(`장기化による`) — 11-13/11-16 JSON은 CJK 0건. → **파이프라인 LLM 출력 단계에 CJK 스캔 QA 적용 필요** (매크로 리포트는 QA 통과, 포트폴리오 JSON만 미적용).
+- audit 7종 전항목 통과: wikilink 0 (91 .md) / markdown-link P11 0 / index-md **registered 93 = actual 93**, REAL MISSING 0 / tag taxonomy 199·used 143·Unknown 0 / logs-index broken 0 notref 0 covered 13 / **stale 57 / no_date_operational 0 / no_date_immutable 23** (11-13 기준선 57/0/22와 stale 완전 일치, immutable +1 = 신규 `raw/2026-W46` 초안 — 스크립트 버그 아님) / dup-updated 0 (184페이지).
+- P18 스캔(`^|- `) wiki 전체 0건. `git diff --check` 통과.
+- logs/index.md: November 섹션 기존 확인 → 기준 행 `|| 11-13 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12). `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과 + logs-index 재감사 broken=0/notref=0.
+- 커밋: logs `57818c2` (parent `4d4afe8`) / parent wiki `d398c73` (parent `60a1708`). push: hermes-logs master, hermes-wiki main 모두 성공. 원격 검증: `origin/main:index.md` `자동 추가` 0건, `origin/main:LOG.md` `## 2026-11-16` 섹션 + `updated: 2026-11-16` 확인.
+- **참고 (범위 밖)**: `~/trade-pipeline`가 `main` 기준으로 `origin/main`보다 ahead 1 — wiki-auto-refresh는 위키만 다루므로 미조치.
+
 ## 2026-11-13 (21:00 KST) — P36 4차 재현 + P37 CJK 6자 혼입 (11-13 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
 
 - **P36 4차 재현**: 18:00 브리핑 크론 `2916cc9c2ceb`이 `2026-11-13_18-20-43.md` 산출했으나 `LOG.md` mtime은 11-12 20:01 고정 → 수동 백필 (11-06/09/10/11/12에 이어 5일 연속).
