@@ -2,6 +2,18 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-17 (21:00 KST) — P19 재감염 0건 (3단계 판별) + P36 6차 + P37 CJK 7자 (11-17 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
+
+- **P19 재감염 0건 — 11-02 이후 종료 국면 유지.** 11-16에 committed+push 변형으로 재발했으나 **하루 만에 0건으로 복귀**. 판별 3단계: working tree 0 / HEAD(`4f22652`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status --porcelain` 빈 결과, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**.
+  - index.md 내 서브모듈 경로 링크(`(logs/`, `(subagents-library/`) 0건, footer line 144, 파일 끝 개행 정상.
+  - **★ 교훈**: P19는 재발 후 즉시 재차 차단되는 게 아니라 일자 단위로 임의 변동한다. "재발 후 즉시 조치가 원칙"이 아니라 "3단계 판별을 매 실행 독립 수행"이 원칙. 11-16 노트의 재발 사례가 다음 날 0건으로 돌아왔다는 점이 재발 배제 아님을 다시 실증.
+- **P36 6차 재현** (6거래일 연속): 18:00 브리핑 크론 `2916cc9c2ceb`이 `2026-11-17_18-17-59.md` 산출(18:17)했으나 `LOG.md` mtime은 11-16 20:03 고정 → 수동 백필. 브리핑 크론 `enabled_toolsets` = `['terminal','search','web']` — `write_file`/`patch`/`read_file` 전무 → **근본 조치 미적용(보고만)**.
+- **P37 6차**: 원본 `## Response`(3711~3853행)에 **CJK 7자** 혼입 — 3722행 `美国的对中 AI칩 접근`(`对中` 2자), 3782행 `合리적，收获 가능성`(`收获` 2자), 3842행 `AI 버블 估值 재설정 시험대`(`估值` 2자) → 순수 한국어 재작성 후 **CJK 0건 검증** (전체 LOG.md 대상). **★ 교훈: CJK 혼입 건수가 2→7자로 증가** — 원본 오염 크기는 매번 다르므로 1~2자만 검사해선 안 되고 항상 전체 본문 문자 스캔.
+- audit 7종 전항목 통과: wikilink 0 (91 .md) / markdown-link P11 0 / index-md **registered 93 = actual 93**, REAL MISSING 0 / tag taxonomy 199·used 143·Unknown 0 / logs-index broken 0 notref 0 covered 13 / **stale 57 / no_date_operational 0 / no_date_immutable 23** (11-16 기준선과 완전 일치 → 스크립트 로직 정상) / dup-updated 0 (188페이지).
+- P18 스캔(`^|- `) wiki 전체 0건, 스킬 references 0건, `logs/index.md` triple-pipe 0건. `git diff --check` 통과.
+- logs/index.md: November 섹션 기존 확인 → 기준 행 `|| 11-17 06:00` prefix 복사 후 python 인서트(삽입 위치 line 12). `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과 + logs-index 재감사 broken=0/notref=0.
+- 커밋: logs `7b13f31` (parent `f386faf`) / parent wiki `1d173c7` (parent `4f22652`). push: hermes-logs master, hermes-wiki main 모두 성공. 원격 검증: `origin/main:LOG.md` `## 2026-11-17` 1건 + `updated: 2026-11-17` + CJK 0건, `origin/main:index.md` `자동 추가` 0건, `origin/master:index.md` `11-17 21:00` 행 1건 + 신규 로그 파일 확인.
+
 ## 2026-11-16 (21:00 KST) — **P19 재발(committed+push 변형)** + P36 5차 + P37 CJK 2자 (11-16 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
 
 - **★ P19 재발 — 11-02 이후 10일 만의 재감염, committed+push 변형.** 판별 3단계: working tree 1 / HEAD 1 / origin/main 1 → 이전 9일(11-02~11-13)과 달리 **커밋+push까지 완료된 변형**. `git diff HEAD --stat -- index.md`는 빈 결과(HEAD와 동일)였고, 오염 커밋 `60a1708`(hermes-config-sync 2026-11-16T05:30:32Z)의 diff는 **rogue 추가분 2줄뿐(정식 수정 0건)**임을 확인.
