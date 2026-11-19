@@ -213,6 +213,64 @@ terminal(command="hermes dashboard --port 9199 --host 127.0.0.1 --skip-build --n
 `hermes sessions optimize-storage` 는 **게이트웨이 정지 상태**에서만 실행 가능 → cron에서는 금지.
 `doctor` 는 그래도 "state.db is large" 를 계속 Raise한다. 이는 정상 — 단독 세션에서 처리하도록 보고만 한다.
 
+## 🔧 보조 모델 라우팅 404 — `auxiliary.*.api_mode` 누락 (2026-11-19 확인·수정)
+
+**doctor가 잡지 못하지만 daily log에 매일 찍히는 조용한 결함.** doctor 이슈 수만 세면 놓친다.
+
+**증상**: `agent.context_compressor: Failed to generate context summary: 404 page not found`
+
+**근본 원인**: `auxiliary.<task>` 12개 항목에 `api_mode` 키가 없으면 보조 라우터가
+provider 카탈로그 기본값(`minimax` = `anthropic_messages` transport)으로 폴백 →
+base_url `https://api.minimax.io/v1`에 Anthropic Messages POST → `https://api.minimax.io/v1/v1/messages` → **404**.
+`runtime_provider.py`의 가드(#76836)는 main 경로에만 적용되고 **aux 경로에는 적용되지 않는다**.
+
+**판별 (curl로 30초 재현)**:
+```bash
+set -a; . ~/.hermes/.env; set +a
+# Anthropic 스타일 → 404 (결함 재현)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "https://api.minimax.io/v1/v1/messages" \
+  -H "x-api-key: $MINIMAX_API_KEY" -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{"model":"MiniMax-M2.7","max_tokens":16,"messages":[{"role":"user","content":"Say OK"}]}'
+# OpenAI chat/completions → 200 (정상 경로)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "https://api.minimax.io/v1/chat/completions" \
+  -H "Authorization: Bearer $MINIMAX_API_KEY" -H "content-type: application/json" \
+  -d '{"model":"MiniMax-M2.7","max_tokens":16,"messages":[{"role":"user","content":"Say OK"}]}'
+```
+
+**수정**: 12개 전부에 `api_mode: chat_completions` 명시.
+```bash
+for k in vision web_extract compression skills_hub approval mcp \
+         title_generation triage_specifier kanban_decomposer \
+         profile_describer curator session_search; do
+  hermes config set auxiliary.$k.api_mode chat_completions >/dev/null 2>&1
+done
+```
+`hermes config set`이 "not a recognized config key" 경고를 내지만 **저장은 정상** (무시). 경고에 멈추지 말 것.
+
+**검증 (config 확인만으로 부족 — live call 필수)**:
+```bash
+cd ~/.hermes/hermes-agent && ~/.hermes/tools/python-3.14.9+20261021-linux-x64/bin/python3 -c "
+import os,sys
+sys.path.insert(0,'/home/ubuntu/.hermes/hermes-agent')
+os.environ['HERMES_HOME']='/home/ubuntu/.hermes'
+sys.path.insert(0,'/home/ubuntu/.hermes/cache/uv/archive-v0/wDqdwuQIOtb0purK')  # ruamel 위치
+from agent.auxiliary_client import call_llm
+for t in ['title_generation','web_extract','compression']:
+    try:
+        r=call_llm(task=t, messages=[{'role':'user','content':'Reply with exactly: OK'}], max_tokens=16)
+        print(t,'SUCCESS',str(r)[:80])
+    except Exception as e:
+        print(t,'FAIL',type(e).__name__,str(e)[:120])
+"
+```
+`ruamel`은 시스템 Python에 없고 **uv cache 아카이브**(`~/.hermes/cache/uv/archive-v0/*/`)에 있다 → 위 경로 추가 필수.
+
+**함정**:
+- `model.provider`를 `custom:minimax`로 바꿔도 **aux 404는 고쳐지지 않는다** (aux는 `auxiliary.<task>.api_mode`를 별도로 읽는다). 2026-11-19 실측.
+- config는 mtime-keyed 캐시(`config_cache_version`)라 재시작 없이 다음 로드부터 반영됨.
+- `auxiliary.compression`은 실패 시 deterministic fallback marker로 대체 → 세션은 안 죽지만 압축 품질 저하 + 타이틀/web_extract/vision 보조작업 전체 실패로 이어짐.
+
 ## 📋 보고 규칙
 
 - **진짜 최신** (upstream 대비 0 behind, doctor 정상) → `[SILENT]`

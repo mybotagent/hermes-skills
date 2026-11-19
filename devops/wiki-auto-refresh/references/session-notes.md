@@ -2,6 +2,20 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-18 (21:00 KST) — P19 재감염 0건 (3단계 판별) + P36 7차 + P37 CJK 7자 (11-18 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
+
+- **P19 재감염 0건 — 11-16 재발(committed+push 변형) 이후 2일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD(`3ca387c`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**.
+  - index.md 내 서브모듈 경로 링크(`(logs/`, `(subagents-library/`) 0건. P18 스캔(`^|- `) wiki 전체 0건.
+- **P36 7차 재현**: 브리핑 크론(`2916cc9c2ceb`)이 `2026-11-18_18-09-34.md` 산출(18:09)했으나 `LOG.md`에 11-18 브리핑 섹션 미기록 → 수동 백필. 원본 `## Response` = 3711~3865행.
+- **P37 7차**: 원본에 CJK 7자 혼입 — `公用`(3764행 `전력·公用사업`), `拖累`(3814행 `-0.31%p를拖累`), `政策的`(3849행 `피的政策`) → 순수 한국어 재작성.
+  - ★ **검증 함정 재확인**: 1차 재작성 후 CJK 2자(`拖累`) 잔존 → 2차 전체 스캔에서 발견하고 재수정. **CJK 검증은 1회가 아니라 본문 전체 대상으로 재확인할 것** (11-13 사례와 동일 패턴).
+- **P37 확장 실증 후속 확인 (11-16 발견분)**: `trade-pipeline/logs/` 최근 산출물 6건(`full_report_20261118_1953.md`, `2026-11-18.json`, `report_20261118_1951.md`, `full_report_20261117_1845.md`, `report_20261117_1848.md`, `2026-11-17.json`) 전수 CJK 스캔 → **전부 0건**. 11-12 `key_risks`의 `化` 1건은 일시적 LLM 표본 편차로 보임.
+- audit 7종 전항목 통과: wikilink 0 (91 .md) / markdown-link P11 0 / index-md registered **93 = actual 93** (dead 0, REAL MISSING 0) / tag taxonomy 199, used 143, Unknown 0 / logs-index broken 0 notref 0 covered 13 / **stale 57 / no_date_operational 0 / no_date_immutable 23** (11-16 기준선 완전 일치) / dup-updated 0 (189p). `git diff --check` 통과.
+- 조치: `LOG.md` frontmatter `updated: 2026-11-17` → `2026-11-18` + 11-18 브리핑 섹션 추가 (python 인서트, anchor `## 2026-11-18 (수) 19:21` — 18:00 브리핑이 19:21 파이프라인 로그보다 **앞**에 오도록 순서 정정).
+  - ⚠ python 인서트로 CJK 잔존 2자(`拖累`)를 1차 놓쳤으나, **같은 스크립트에서 바로 CJK 검증**하므로 즉각 발견. 이 순서(작성→CJK 검증→수정→재검증)를 계속 유지할 것.
+- 커밋: logs `47565d7` (2026/2026-11-18-2100.md 신규 + index.md 행 추가, 기준 행 `|| 11-18 02:00` prefix 복사, cat -A prefix 일치, triple-pipe 0) / parent `ffc0ccb` (LOG.md + submodule pointer bump). push `3ca387c..ffc0ccb`.
+- 교훈: (1) P19 재발 후 2일 만에 0건 복귀 — 재발/재차 차이는 임의 일자 단위이므로 **판별을 매 실행 독립 수행**하는 것이 원칙. (2) P37 재작성은 1회 검증으로 부족 — 항상 전체 본문 재스캔. (3) P36 7일 연속 구조적 결함 — 근본 조치(toolset에 `file` 추가 + 프롬프트에 기록 단계) 승인 여부 사용자 확인 필요.
+
 ## 2026-11-17 (21:00 KST) — P19 재감염 0건 (3단계 판별) + P36 6차 + P37 CJK 7자 (11-17 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 11-02 이후 종료 국면 유지.** 11-16에 committed+push 변형으로 재발했으나 **하루 만에 0건으로 복귀**. 판별 3단계: working tree 0 / HEAD(`4f22652`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status --porcelain` 빈 결과, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**.
