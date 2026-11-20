@@ -2,6 +2,20 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-19 (21:00 KST) — P19 재감염 0건 (3단계 판별) + P36 8차 + P37 CJK 6자 (11-19 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
+
+- **P19 재감염 0건 — 11-16 재발 이후 3일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD(`e36210b`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**. index.md 내 서브모듈 경로 링크 0건.
+- **P36 8차 재현**: 브리핑 크론(`2916cc9c2ceb`)이 `2026-11-19_18-24-24.md` 산출(18:24, executions.db status=completed)했으나 `LOG.md` mtime은 11-19 09:11 고정 / frontmatter `updated:` = 2026-11-18 → 11-19 브리핑 미백필. 원본 `## Response` = 3711~3858행.
+- **P37 8차**: 원본에 CJK 6자 혼입 — `限韓令`(3730행, 한국 관련 정책 표현 3자), `记忆中`(3840행, 보유 기억 관련 표기 3자) → 순수 한국어 재작성.
+  - ★ **자기 작성 문장에서도 CJK 발생**: 1차 재작성에서 `快报`(상장 규모), `开盘`(예상 개장가) 2건이 **재작성 문장 자체에** 새로 생김 → 2차 검증에서 발견 후 `상장 예정`/`예상 개장가`로 교체. **원본 CJK만 검사하지 말고 "내가 쓴 한국어"까지 전체 본문 스캔** (11-13/11-18 교훈 재확인 — 이번에도 동일한 함정).
+- **P37 확장 확인**: `trade-pipeline/logs/portfolio/*.json` 최근 5건(11-13, 11-16~11-19) CJK 스캔 → **전부 0건**. 11-12 `化` 1자 이후 미재발.
+- audit 7종 전항목 통과: wikilink 0 (91 .md) / markdown-link P11 0 / index-md registered **93 = actual 93** (dead 0, REAL MISSING 0) / tag taxonomy 199, used 143, Unknown 0 / logs-index broken 0 notref 0 covered 13 / **stale 56 / no_date_operational 0 / no_date_immutable 23** / dup-updated 0 (190p). `git diff --check` 통과.
+  - ★ **stale 57 → 56 감소 원인 확인**: `infra/dev-harness-kit-daily-review.md`의 `updated:`가 2026-08-11 → 2026-11-19로 실제 갱신 (dev-harness-kit 일일 리뷰 크론 산출물). 스크립트 버그 아님 (P16 "감소도 원인 확인" 교훈 준수).
+- **위키 본문 변경 2건**: (1) `LOG.md` — 11-19 브리핑 백필(18행) + frontmatter `updated: 2026-11-18` → `2026-11-19` (2) `infra/dev-harness-kit-daily-review.md` — 외부 크론 산출물(PR #969 리뷰) 정상 변경분.
+- logs/index.md: November 섹션 기존 확인 → 기준 행 `|| 11-18 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12). `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과 + logs-index 재감사 broken=0/notref=0.
+- 커밋: logs `beff753` (2026/2026-11-19-2100.md 신규 + index.md 행 추가) / parent `c6357d0` (LOG.md + dev-harness-kit-daily-review.md + submodule pointer bump). push `e36210b..c6357d0` (hermes-wiki main), logs master `47565d7..beff753`.
+- 교훈: (1) P19는 11-16 committed 변형 후 3일 만에 0건 복귀 — 판별 매 실행 독립 수행 원칙 유지. (2) **P37 재작성 시 자기 문장에서도 CJK가 새로 생길 수 있다** — 원본 검사만으로 통과시키지 말고 전체 LOG.md를 스캔할 것. (3) P36 8일 연속 구조적 결함 — 근본 조치(toolset에 `file` 추가) 승인 여부 사용자 확인 필요.
+
 ## 2026-11-18 (21:00 KST) — P19 재감염 0건 (3단계 판별) + P36 7차 + P37 CJK 7자 (11-18 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 11-16 재발(committed+push 변형) 이후 2일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD(`3ca387c`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**.

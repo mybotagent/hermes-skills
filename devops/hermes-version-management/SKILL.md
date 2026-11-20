@@ -86,6 +86,42 @@ git rev-list --count upstream/main..HEAD    # ahead
 **핵심**: `merge-base`가 비어 있으면 shallow 문제. 로컬 HEAD가 upstream의 **직접 조상**
 (behind>0, ahead=0) 이면 fork가 공식과 싱크되지 않은 것 — 업데이트로 복원 가능.
 
+## 🚨 Pitfall #3 — 로컬에 `upstream/main` **태그**가 있으면 ref가 모호해진다 (2026-11-20 발견)
+
+`upstream` remote는 정상적으로 있어도, 로컬에 **`refs/tags/upstream/main`** 태그가 남아있으면
+`git rev-parse upstream/main`이 **경고 없이** 잘못된 대상(태그 = 옛 커밋)으로 resolve된다.
+
+실측 (2026-11-20): `refs/tags/upstream/main` = caafe5389 (옛 커밋), `refs/remotes/upstream/main` = 9f476774 (실제).
+```
+warning: refname 'upstream/main' is ambiguous.   ← stderr로만 나오고 결과는 silent하게 틀림
+git rev-list --count HEAD..upstream/main  → 0   (틀림. 실제 refs/remotes는 99)
+```
+**위험**: 짧은 ref를 쓰는 ad-hoc 검증 스크립트·shell 스니펫이 **behind=0을 보고** "최신"으로 오판한다.
+Hermes 자체 업데이터는 안전하다 — `hermes_cli/update_cmd_git.py`는 `refs/remotes/upstream/main`을
+**전체 ref 이름으로** resolve한다 (`rev-parse -q --verify refs/remotes/upstream/main^{commit}`).
+→ 그래서 `hermes update --check`는 정상 동작하지만, **수동 점검 스크립트는 조용히 틀린다.**
+
+**방지 규칙 — 검증 스크립트에서는 짧은 ref를 쓰지 말 것**:
+```bash
+# ❌ 금지 (모호)
+git rev-list --count HEAD..upstream/main
+# ✅ 항상 전체 ref 사용
+git rev-list --count HEAD..refs/remotes/upstream/main
+git rev-parse refs/remotes/upstream/main^{commit}
+```
+
+**발생 시 정리 (로컬 전용 태그이므로 안전)**:
+```bash
+# ① 로컬 전용인지 확인 — remote에 같은 태그가 없어야 삭제 가능
+git ls-remote --tags upstream | grep 'upstream/main'   # 출력 없으면 로컬 전용
+# ② 커밋이 다른 ref로도 reachable한지 확인 (삭제해도 커밋 유실 없음)
+git for-each-ref --contains <sha> --format='%(refname)'
+# ③ 삭제
+git tag -d upstream/main
+# ④ 검증: 모호성 경고 없이 실제 remote 커밋으로 resolve되는지
+git rev-parse upstream/main   # → refs/remotes/upstream/main과 동일해야 함
+```
+
 ## 📋 대규모 점프 업데이트 리스크 평가 체크리스트
 
 일반 패치와 다른 **majorscale 마이그레이션**은 사전 평가 필수. 아래 항목 모두 확인 후에만 실행.
