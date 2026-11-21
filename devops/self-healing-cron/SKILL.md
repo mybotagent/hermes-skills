@@ -89,6 +89,8 @@ When **any step in this cron job fails**, follow this protocol before reporting 
 
 **예외**: blast-radius가 큰 결정(파일 쓰기, 외부 시스템 변경, 비용 발생)은 명시적 OK 필요 — multi-bot PM 정책 따름. 그 외에는 단독 결정 + 실행.
 
+**언어**: 한국어 또는 영어만 사용한다. 중국어(以及其他 비한국어/비영어 문자)는 어떤 응답·리포트·코드 주석에도 넣지 않는다. 사용자가 "한국어나 영어만" 같은 교정을 하면 이후 세션 전체에 적용되는 상시 규칙이다.
+
 ## 🤖 Self-Healing 통합 시스템 (2026-06-18 업데이트)
 
 **문제**: DeepSeek API `Broken pipe`로 Layer 2(agent healer) 자체가 불안정.
@@ -605,6 +607,68 @@ needs_heal = (status == 'error') or (status == 'ok' and bool(last_delivery_error
 
 **일반화 원칙**: 실행 성공(`status=ok`)과 배달 성공은 **독립적 신호**다. 둘 다 성공해야 사용자에게 도달한 것. 자가 치유는 "사용자에게 도달했는가"로 판정해야지, "내부 실행이 끝났는가"로 판정하면 안 됨.
 
+### 🚨 반대편 Blind Spot — `last_error`를 안 읽으면 진단이 거짓이 된다
+
+`last_delivery_error`만 보면 **실행 자체가 실패한 잡**(`last_status='error'`, `last_delivery_error=None`)은 진단 입력에 traceback이 통째로 빠진다. 실행 traceback은 `last_error`에 있고 `last_delivery_error`는 비어 있으므로, watchdog은 **빈 문자열을 LLM에 넘기고** LLM은 실제 원인을 볼 수 없는데도 원인을 만들어낸다.
+
+**HARD RULE — 진단 입력은 실행오류와 배달오류를 합친 문자열**:
+```python
+delivery_error = j.get('last_delivery_error') or ''
+run_error      = j.get('last_error') or ''
+error_text     = delivery_error or run_error   # 배달오류 우선, 없으면 실행오류
+```
+- `error_text`를 HTTP 코드 분류 / `suggest_auto_fix()` / `call_llm_analyze()` / Discord embed에 **공통으로** 넣는다.
+- 둘 다 비어 있을 때만 "오류 없음"으로 간주.
+
+### 🚨 거짓 RCA가 만드는 자기 강화 루프
+
+거짓 RCA 문구에 `'거짓' / 'cache' / '루프' / '반복'` 키워드가 들어가면 `reset_false_rca_cache` 자동 fix로 매핑되어 이 루프가 생긴다:
+1. 진단 캐시 + retry 카운터 리셋 → 2. 다음 cycle에 **똑같은 입력으로 재진단** → 3. 똑같은 거짓 RCA → ∞
+
+**HARD RULE**:
+- **오류 문자열이 비어 있는데 나온 진단에는 자동 fix를 적용하지 않는다.** 입력 없이 나온 RCA는 가설이지 진단이 아니다.
+- 동일 RCA가 3회 연속 재진단되면 자동 fix를 중지하고 **에스컬레이션**(사람 통보)한다. "원인을 정확히 모르면 고치지 않는다"가 아니라 "원인을 정확히 모르면 되돌린다".
+- 자동 fix는 "원인이 명확한 오류"에만 적용한다.
+
+### 🚨 자기 유발 교착 — 재실행 방식이 실패를 재생산한다
+
+watchdog이 `hermes cron run <jid>`로 재실행할 때, 대상 잡 스크립트가 **다시 CLI를 서브프로세스로 부르면**(예: `hermes cron list`) 바깥 `cron run`의 락/fire-claim과 경합해 timeout이 된다. 재시도 횟수가 늘수록 실패가 반복되고, watchdog은 "고장 난 잡"이 아니라 "내가 만든 교착"을 고치는 데 에너지를 쓴다.
+
+**진단 시그니처**:
+- 실패 지속 시간이 `timeout=N`에 **정확히 맞으면**(예: 15.3초 for `timeout=15`) 중첩 CLI 경합을 먼저 의심한다.
+- `hermes cron list`를 **단독 실행하면 1~3초에 성공**하는 게 정상이다. 단독도 느리면 그건 별개 문제.
+- 실패 시각에 다른 잡이 겹쳐 있는지 확인 → 겹치는 잡이 watchdog의 재실행 대상이면 자기 유발.
+
+**확인 절차**:
+```bash
+# ① 실패 지속 시간이 timeout과 일치하는지
+python3 -c "import sqlite3;db=sqlite3.connect('/home/ubuntu/.hermes/cron/executions.db');print(db.execute(\"select started_at,finished_at,status from executions where job_id='<jid>' order by rowid desc limit 10\").fetchall())"
+# ② 중첩 CLI 호출 지점 찾기 (재실행 대상 스크립트 안)
+grep -n "subprocess.run" ~/.hermes/scripts/<target_script>.py
+# ③ 단독 실행은 빠른지
+time hermes cron list
+```
+
+**Fix 방향**: 재실행 경로의 중첩 CLI 호출을 제거(`cron/jobs.json` 직접 파싱)하거나 timeout을 크게 올린다. watchdog이 `hermes cron run`을 호출할 때와 잡 스크립트가 CLI를 부를 때가 **중첩**된다는 점을 코드 리뷰 시 반드시 확인한다.
+
+**HARD RULE — 재실행은 실패를 재생산할 수 있다**: 재실행 전에 "이 실패는 재실행으로 해소될 성격인가?"를 판단한다. 교착성 timeout이면 재실행은 무의미 → 즉시 에스컬레이션하고 코드를 고친다.
+
+**상세 진단 절차 + SQL**: `references/watchdog-self-contention-diagnosis.md`
+
+### 🚨 관찰 도구와 로컬 상태가 불일치할 때
+
+`cronjob` 계열 도구와 로컬 `hermes cron list` / 로컬 cron 상태 파일이 **같은 job id에 대해 다른 시점의 스냅샷**을 반환할 수 있다. 날짜가 크게 다르면 도구가 다른 인스턴스를 보고 있다는 뜻이다.
+
+**HARD RULE**: cron 상태의 권위 있는 소스는 **로컬 cron 상태 파일 + `hermes cron list` + `cron/executions.db`**다. 외부 도구 반환값이 로컬과 충돌하면 로컬을 신뢰하고 그 차이를 "관찰 도구 문제"로 별도 기록한다 — 실제 원인으로 오진하지 말 것.
+
+### 🚨 API 응답 코드의 의미 분리
+
+`HTTP 401`(키 없음/잘못된 키)과 `HTTP 402`(키는 있으나 **토큰 플랜 사용 한도 도달**)는 원인이 완전히 다르다. 402를 "키가 없어서"라고 진단하지 말 것.
+
+**판별 절차**: 로컬 runtime 키로 같은 엔드포인트에 직접 소규모 요청을 보내 본다. 200이면 키는 유효하고 402는 **해당 호출 컨텍스트의 플랜 한도** 문제다. 프로MPT 크기만의 문제인지도 별도로 확인한다(대용량 프롬프트도 200이면 402는 컨텍스트 문제).
+
+"키 미설정"으로 단정하기 전에 **runtime 실제 소스**(프로세스 환경변수, 에이전트 로컬 환경설정)부터 확인한다. 설정 파일의 빈 `api_key` 필드는 runtime 소스가 아닐 수 있다 — 빈 필드만 보고 "키 없다"고 결론내리지 말 것.
+
 ### 🔀 Discord HTTP 코드별 분류 (자가 치유 의사결정, 2026-07-01)
 
 `last_delivery_error` 문자열에서 Discord HTTP 코드를 추출해 재시도 의미 판단:
@@ -1102,6 +1166,8 @@ bash ~/.hermes/scripts/self_healing_watchdog.sh
 - `references/hermes-config-sync-bugs.md` — 🚨 hermes_config_sync.sh 2 critical bugs (rsync wipe + config recursion) + fix (2026-07-09 신규)
 - `references/llm-root-cause-analysis.md` — 🧠 재시도 초과 시 LLM 근본 원인 분석 패턴 (3-layer escalation, prompt 템플릿, 캐시 schema, env keys, 2026-07-10 신규)
 - `references/macro-report-data-contamination-incident-2026-11.md` — 🚨 **조용히 틀린 리포트** 사고 기록 (2026-11-05). 수치 소스 우선순위표, 검증→작성→저장→전송 강제 순서, "직전 세션 vs 현재" 분리, 산출물 불변식 검증 — watchdog이 잡지 못하는 오류 종류 (added 2026-11-05)
+- `references/ssot-github-token-pattern.md` — 🔑 **GitHub 토큰 SSOT + 갱신 SOP**. 토큰 cascade 순서, 저장소 3곳 동시 갱신, gh CLI env 인증(shell rc 블록 함정), 검증 3종
+- `references/watchdog-self-contention-diagnosis.md` — 🔀 **워치독 자기 유발 교착 + 진단 필드 사각지대** 진단 절차. `last_error` vs `last_delivery_error` 구분, 실패 지속시간=timeout 시그니처, 중첩 CLI 경합 확인 SQL, 거짓 RCA 루프, 도구-인스턴스 스냅샷 불일치 처리
 
 ## 🚨 조용한 오염(silent corruption) — 에러보다 위험한 실패 모드 (2026-11-05 신규)
 
@@ -1283,6 +1349,21 @@ done
 7. **GitHub mirror push** — wiki + hermes-config 모두 push → drift=0 확인
 
 **이 워크플로의 핵심**: "1개 원인 → 1개 fix"가 아니라 "**multi-cause → multi-fix in order**"라는 사용자 선호 패턴. aiprofit 운영 원칙 = "원인 찾아서" = root cause analysis를 모든 가능한 원인으로 확장.
+
+### 🔑 GitHub PAT 갱신 — SSOT 단일 소스, 저장소 3곳 동시 반영 (항상 규칙)
+
+PAT 교체 요청이 오면 **한 곳만 고치면 절반만 동작**한다. 진실의 원천은 `.env` 하나이며, 반영 대상은 3곳:
+
+1. `.env` — primary 키와 fallback 키를 **둘 다** 교체 (fallback을 옛값으로 남기면 만료 토큰으로 되돌아간다)
+2. `~/.git-credentials` — PAT 문자열 regex 치환
+3. `~/.bashrc` — `.env`를 읽어 export 하는 블록 (gh CLI가 여기서 토큰을 인식)
+
+- 쓰기 **전에** GitHub API로 유효성 선검증(200 + oauth scope) → 통과 못 하면 중단.
+- 만료된 키는 `.env`에서 `# ` (hash+space)로 주석 — 주석 라인이 `^NAME=` regex에 매칭돼 다시 읽히는 함정이 있음.
+- `gh auth login --with-token`은 classic PAT에 `read:org` scope가 없어 실패한다 → 토큰 범위 확대가 아니라 **env 주입**으로 해결.
+- shell rc 블록은 heredoc으로 넣지 말 것 (`$(...)`/`${...}` 보존 안 됨) → 파일 편집 도구로 쓰고 `bash -n`으로 확인. 검증은 `bash -lc`가 아니라 `bash -ic` (rc는 interactive 전용).
+- 검증 3종을 실제로 실행: API 200 / `git ls-remote` / `gh api user`.
+- 상세: `references/ssot-github-token-pattern.md`
 
 ### ⚠️ PAT admin scope 부족 — `DELETE /repos/...` 403 (2026-07-09)
 

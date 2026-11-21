@@ -135,6 +135,76 @@ nginx가 9119를 이미 점유 중이면 바인딩 실패 → 반드시 `--port 
 nginx config에서 `proxy_set_header Host 127.0.0.1:9199;` 필수.
 이 헤더가 없으면 dashboard가 Host mismatch로 정적 파일 404 반환.
 
+## "헤르메스 꺼짐? 왜 안됨?" — 게이트웨이 생존 vs 기능 정지 분리 진단
+
+사용자가 "꺼짐/안 됨"이라고 할 때 **게이트웨이가 죽었는지, 살아있는데 기능이
+안 되는지**부터 분리한다. 두 경우는 원인과 조치가 완전히 다르다.
+
+### 1단계: 프로세스 생존 (5초)
+
+```bash
+systemctl --user status hermes-gateway --no-pager | head -6
+# "Active: active (running) since ..." → 프로세스 살아있음. 즉시 "꺼짐" 결론은 기각.
+```
+
+### 2단계: 응답 전달 파이프라인 확인 (핵심)
+
+```bash
+grep -E "response ready|Sending response|inbound message" ~/.hermes/logs/agent.log | tail -12
+# "inbound message" → "response ready" → "Sending response" 3종이 다 있으면 정상.
+```
+
+`response ready`가 있는데 사용자에게 안 보인다면 = 전달 계층 문제(Discord
+flush/rate limit). `response ready` 자체가 없다면 = 모델 호출 단계 문제.
+
+### 3단계: 요청 지연시간으로 "느린 죽음" 감지
+
+```bash
+grep "response ready" ~/.hermes/logs/agent.log | tail -10 | grep -oE "time=[0-9.]+s api_calls=[0-9]+"
+# time=459.0s api_calls=47 → 정상 아님. 30s 이상이면 실용적으로 "안 된다".
+```
+
+### 4단계: 에러 유형 분류
+
+```bash
+# quota/auth
+grep -cE "402|insufficient balance|marking .* unhealthy" ~/.hermes/logs/agent.log
+# iteration 소진 (반복 루프의 최종 증상)
+grep -cE "Iteration budget exhausted|Reached maximum iterations" ~/.hermes/logs/agent.log
+# provider 스트리밍 5xx + tool call 드롭
+grep -E "Streaming failed after partial delivery|Partial stream dropped tool call" ~/.hermes/logs/agent.log | tail -5
+# aux 경로 크래시
+grep -E "Title generation failed" ~/.hermes/logs/agent.log | tail -3
+```
+
+**판정표**:
+
+| 로그 패턴 | 의미 | 조치 |
+|---|---|---|
+| `response ready` 있음 + `Streaming failed...500` | provider 5xx, Hermes가 미재시도 | provider 정합성 curl 확인 → 소스 패치 |
+| `response ready` 있음 + `Title generation failed` | aux provider/base_url 와이어 불일치 | provider 문자열 통일 |
+| `Iteration budget exhausted` | tool call 반복 루프 | 앞선 드롭 원인 해결 |
+| `402` / `insufficient balance` | 잔액 부족 | provider 교체 |
+| `response ready` 자체가 없음 | 모델 호출 단계 사망 | API 키/엔드포인트 확인 |
+
+### 5단계: provider 정합성 분리
+
+provider 문제인지 Hermes 코드 문제인지 **curl로 레벨을 나눈다**. 실패 세션과
+같은 규모(컨텍스트 토큰 + tool 스키마)로 여러 회 재현하는 게 핵심이다 — 작은
+payload는 정상 응답해서 원인이 안 보일 수 있다.
+
+```bash
+# MiniMax 예시는 hermes-config-management 스킬의 ".env sourced smoke test" 참조
+# 큰 payload는 python으로 만들어 curl -d @file 로 전송, 5~6회 반복
+```
+
+provider가 200을 반복 반환하면 = provider 정상이므로 **Hermes 쪽 재시도/와이어
+분류 문제**로 결론 내린다.
+
+**Rule**: "꺼짐" 진단에서 **추측으로 원인을 확정하지 않는다**. 게이트웨이 상태 →
+전달 로그 → 지연시간 → 에러 유형 → provider 레벨까지 내려가서 단계마다 근거를
+확보한 뒤에야 "소스 패치 필요" 같은 결론을 낸다.
+
 ## Discord Gateway 복구 (봇 응답 안 함)
 
 채니봇이 응답 안 할 때 — gateway 자체는 살아있지만 메시지 처리 실패. 두 가지 대표 패턴:

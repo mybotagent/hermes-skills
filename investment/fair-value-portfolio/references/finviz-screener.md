@@ -19,6 +19,34 @@
 - **방식**: no_agent script (`weekly_screener.sh` → auto_expel + finviz_screener 순차 실행)
 - **전송**: origin (현재 채널로 자동 전송)
 
+## 티커 첫글자 중복 버그 (Finviz HTML 구조 변경)
+
+Finviz가 티커 셀 HTML을 바꿔서, `finvizfinance`의 단순 텍스트 추출이 **첫글자를 두 번** 읽는다.
+
+```html
+<span class="company-ticker"><span>Y</span></a><a class="tab-link">YOU</a>
+```
+
+- `.text` 결과: `YYOU` → 실제 티커 `YOU`
+- 증상 패턴: `MMU`(→MU), `SSNDK`(→SNDK), `TTBBK`(→TBBK), `FFSLR`(→FSLR), `YYOU`(→YOU), `AAAPL`(→AAPL)
+
+**원인**: 로고용 첫글자 `<span>`과 실제 티커 `<a>`가 같은 셀 안에 들어감. `finvizfinance`는 두 부분을 이어 붙임.
+
+**해결 — 병합 직후 후처리** (스크리너 2곳 모두에 필요):
+
+```python
+# 첫 두 문자가 같으면 첫 문자 제거
+t = t[1:] if len(t) >= 2 and t[0] == t[1] else t
+```
+
+적용 대상: `scripts/finviz_screener.py`, `scripts/consistent_growth_screener.py`.
+
+**주의 — 실제 티커가 같은 글자로 시작해도 안전**: `AAPL`의 raw `AAAPL`처럼 원래 티커 자체가 AA로 시작하면 raw가 `AAAPL`이 되고, 동일 규칙으로 `AAPL`이 복원된다. `AAA`→`AA`도 같은 규칙으로 맞게 복원됨.
+
+**기존 저장 데이터도 함께 고쳐야 함**: 스크리너만 고치면 `data/screening_candidates.json`에 저장된 50개 중복 티커가 남아 다음 분석을 오염시킨다. 저장 파일을 일괄 보정한다.
+
+**재발 감지**: 스크리너 출력에서 티커를 eyeball 하지 말고, yfinance로 존재 검증하거나 "첫 두 문자 동일" 티커가 남아있으면 자동 실패 처리한다.
+
 ## 설계 결정
 
 ### 왜 적정가를 포함하지 않았나?

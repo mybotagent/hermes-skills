@@ -37,23 +37,20 @@ else:
 
 fair_value_v3.py의 한글/영문 종목명을 analyst_target_collector.py의 ticker 키와 매칭:
 
+> ⛔ **하드코딩 사전을 유지하지 않는다.** 아래 형태의 dict는 watchlist.json과 drift해서 새 종목이 조용히 누락된다.
+> `stocks_config.py`가 watchlist.json에서 동적으로 생성한 `NAME_TO_TICKER`를 import한다.
+> watchlist에 없는 종목/과거 명칭만 `NAME_ALIASES`로 별도 보관한다.
+> 교체 절차: `references/ticker-maintenance.md` §1 4단계.
+
 ```python
-NAME_TO_TICKER = {
-    # US
-    "엔비디아": "NVDA", "마이크론": "MU", "램리서치": "LRCX",
-    "시게이트": "STX", "샌디스크": "SNDK", "TSMC": "TSM",
-    "AMD": "AMD", "테라다인": "TER", "브로드컴": "AVGO",
-    "루멘텀": "LITE", "마블테크": "MRVL", "HPE": "HPE",
-    "Celestica": "CLS", "알파벳": "GOOGL", "애플": "AAPL",
-    "마이크로소프트": "MSFT", "델": "DELL", "일라이릴리": "LLY",
-    # KR
-    "삼성전자": "005930.KS", "SK하이닉스": "000660.KS",
-    "삼성전기": "009150.KS", "현대차": "005380.KS",
-    "에이피알": "278470.KQ", "HD현대일렉": "267260.KS",
-}
+from stocks_config import NAME_TO_TICKER as _WATCH_NAME_TO_TICKER
+
+# watchlist 밖 종목 / 과거 명칭만
+NAME_ALIASES = {"HD현대일렉트릭": "267260.KS", "HPE": "HPE", "구글": "GOOGL"}
+NAME_TO_TICKER = {**_WATCH_NAME_TO_TICKER, **NAME_ALIASES}
 ```
 
-> **주의**: fair_value_v3.py의 종목명 출력 형식이 변경되면 이 매핑도 함께 업데이트 필요.
+> **주의**: fair_value.py의 종목명 출력 형식이 변경되면 watchlist.json의 `name` 필드도 함께 맞춰야 매칭이 유지된다.
 
 ## 참고
 

@@ -5,7 +5,8 @@
 ## 데이터 소스
 
 - **포트폴리오 스냅샷**: `~/trade-pipeline/logs/portfolio/YYYY-MM-DD.json`
-  - Phase 3 `portfolio_allocation.py`가 매일 18:35 생성
+  - Phase 3 `portfolio_allocation.py`가 **매월 1일 18:35** 생성 (월간 리밸런싱)
+  - 그 외 날짜는 `scripts/carry_forward_snapshot.py`가 직전 스냅샷을 복사해 생성 (`carry_forward: true`)
   - 각 종목의 `name`, `weight`, `decision`, `reason`, `moat_score` + `cash_ratio`
 - **가격 데이터**: yfinance 백필 (캐시: `data/paper_price_cache.json`)
 - **성과 지표**: `data/paper_tracker_metrics.json`
@@ -153,6 +154,44 @@ mcp_servers:
 7. **파일 권한 (2026-07-17 경험)**: `portfolio_dashboard.html`이 `-rw-------`(600)이면 HTTP 서버가 읽지 못할 수 있음. `chmod 644` 권장.
 8. **🔴 main() 지역변수를 render()가 접근 (2026-07-17 경험)**: `render()` 함수가 `main()`의 `const H = {}`, `const MK = {}`에 접근하면 ReferenceError: `H is not defined`. **`H`와 `MK`는 반드시 전역으로 선언** (`let page = 0, PGS = 30, ALL = [], H = {}, MK = {};`), main() 내부에서는 `H = {};`, `MK = {};`로 재할당만 할 것 (`const H = {};` 금지).
 9. **🔴 다중 patch 누적 시 코드 중복 (2026-07-17 경험)**: 여러 번 patch/edit하면 old code가 완전히 제거되지 않고 그대로 남을 수 있음. 특히 try/catch 리팩토링 시 기존 참조 코드가 블록 밖에 잔존 → ReferenceError. **수정 후 반드시 `grep -c`로 중복/잔여 확인.**
+10. **🔴 매크로 플롯 인덱스는 하드코딩 — 새 차트는 뒤에 붙일 것**: 대시보드가 `macro_plots/plot_N.png`를 `<img src>`로 직접 참조한다. 서브플롯을 **중간에 삽입**하면 기존 plot 번호가 전부 밀려 모든 차트가 깨진다. → 새 차트는 반드시 마지막 인덱스+1로 추가.
+11. **🔴 필터 검증은 "빈 결과"를 성공으로 오인하지 말 것**: 필터 검증 스크립트가 잘못된 JSON 키를 읽으면 목록이 비어 보이고 "필터 정상"으로 오판한다. `portfolio_target.json`의 종목 배열 키는 `stocks`가 아니라 **`target_allocation`**이다. → 검증 시 (a) 배열 키가 실제 존재하는지 먼저 assert 하고 (b) 결과 개수를 stdout에 함께 출력할 것. 빈 배열 + "제외됨 ✅" 출력은 검증 실패 신호다.
+12. **🔴 stdout 출력 ≠ 디스크 반영**: 스크립트가 "제거했다"고 출력해도 조기 return 이후에 저장 코드가 오면 디스크는 그대로다. 데이터 변경 스크립트는 stdout을 믿지 말고 **파일을 다시 읽어** 확인한다.
+13. **🔴 데이터 변경 스크립트의 조기 return 위쪽에 저장 로직을 둘 것**: `return` 윗쪽에서 계산만 하고 저장하지 않으면 아무 효과가 없다. 제거/가공 결과를 반영할 때 즉시 JSON에 write-back 하고 그 사실을 로그에 남길 것.
+14. **🔴 "차트가 안 보인다"는 보고의 1순위 원인은 파일이 아니라 렌더 크기다**: HTTP 200 + DOM에 `<img>` 존재 + `naturalWidth>0` 이어도 2열 그리드에 밀린 차트는 351×102px로 축소되어 축 라벨이 판독 불가하다. → 차트 추가 시 `grid-column:1/-1` 전체폭을 명시하고, **라이브에서 `getBoundingClientRect()` 렌더 크기**를 확인할 것. 파일 존재 여부로 "보인다"고 결론내리지 말 것.
+15. **🔴 새 차트는 그리드 맨 아래가 아니라 상단에 배치할 것**: 그리드에 차트가 9개 넘으면 사용자가 스크롤을 멈추는 위치(상단)에 새 차트가 없다. → 새 지표 차트는 전용 섹션으로 분리해 상단 카드 근처에 배치.
+16. **🔴 개별 플롯 PNG 추출 시 twin axis 막대와 axhline이 유실된다**: `ax.get_lines()`는 선만 반환하므로 bar 컬렉션(twin axis)은 복사되지 않고, `axhline`은 xdata가 axes 좌표(0~1)라 그대로 복사하면 좌측으로 잘린다(전체 폭의 ~49%). → 해당 요소를 개별 플롯 생성 루프에서 명시적으로 다시 그릴 것.
+17. **🔴 스냅샷이 없는 날은 실패가 아니라 정상이다 (월간 리밸런싱)**: 종목선별이 매월 1일에만 돌면 그 외 날짜에는 스냅샷이 없다. `scripts/carry_forward_snapshot.py`가 직전 스냅샷을 복사해 채운다 → 상세는 `references/monthly-rebalancing.md`.
+18. **🔴 carry-forward는 paper_tracker보다 먼저 실행해야 한다**: 순서가 바뀌면 당일 스냅샷이 없어 그날 수익률이 0으로 처리된다.
+19. **🔴 healthcheck의 HTML 참조 검사는 DATA_DIR 기준이다**: 대시보드가 참조하는 JSON은 반드시 `data/` 아래에 두어야 한다. `logs/portfolio/` 아래 두면 즉시 "심각" 오류로 잡힌다.
+20. **🔴 대시보드가 "가장 최근 스냅샷"을 가리킬 단일 파일이 필요하다**: 정적 HTML+fetch 구조라 디렉터리 목록을 열거할 수 없다. `data/portfolio_latest.json` 미러를 paper_tracker가 생성하고, 미러 파일은 스냅샷 로더에서 skip 해야 날짜순 정렬이 깨지지 않는다.
+
+## 매크로 플롯 & 배포 검증 절차
+
+### 플롯 생성
+```bash
+cd ~/trade-pipeline/scripts
+~/trade-pipeline/venv/bin/python3 generate_macro_plots.py
+# → macro_plots/plot_0.png ... plot_N.png 생성 (DATA_DIR/macro_plots/)
+```
+플롯 스크립트는 **PNG만 저장**한다. 수치 검증은 `data/macro_regime_history.csv`를 읽는다
+(플롯용 CSV는 별도로 없음 — `macro_plots_data.csv` 같은 파일을 찾지 말 것).
+
+### 배포 후 검증 (push 만 하고 끝내지 말 것)
+```bash
+curl -s -o /dev/null -w "HTTP %{http_code}\n" https://hermes-paper-portfolio.vercel.app/
+curl -s -o /dev/null -w "HTTP %{http_code} (%{size_download} bytes)\n" \
+  https://hermes-paper-portfolio.vercel.app/macro_plots/plot_8.png
+curl -s https://hermes-paper-portfolio.vercel.app/ | grep -o "macro_plots/plot_[0-9]*.png" | sort -u
+```
+- HTTP 200 **만으론 부족** — 바이트 크기가 0이거나 이전 파일이면 검증 실패다.
+- `index.html`에 새 plot 참조가 실제로 들어갔는지 grep으로 확인한다.
+- 데이터 JSON은 원격에서 직접 파싱해 값까지 확인 (`macro_dashboard_data.json`, `portfolio_target.json`).
+- 재사용 가능한 프로브: `scripts/verify_paper_deploy.sh` (이 스킬).
+
+### 대시보드가 읽지 않는 잔여 파일
+`data/macro_plots_status.json`은 대시보드가 읽지 않는다 (healthcheck만 참조). 오래된 값이 남아 있어도
+라이브 표시에 영향 없음 — 새 지표 추가 시 이 파일을 갱신 대상으로 착각하지 말 것.
 
 ## 2026-07-17 검증 결과
 

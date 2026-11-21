@@ -39,6 +39,29 @@ curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/user | py
 
 5. 수동 트리거: `hermes cron run a79d072b2447`
 
+## ⚠ 401 ≠ "GitHub 업데이트가 안 된다"
+
+토큰 만료를 발견했다고 곧바로 "저장소가 구버전이라 문제"라고 진단하면 틀린다.
+인증 소스가 여러 개라 **어느 것이 실제 push에 쓰이는지** 먼저 확인한다.
+
+```bash
+# credential store에 유효한 토큰이 있는지 (값은 절대 출력하지 말 것 — 접두/길이만)
+git credential fill <<< "protocol=https
+host=github.com" | sed 's/^password=.*/password=<present>/'
+
+# 실제 push 경로 생존 여부 — 이것이 되면 저장소는 정상
+cd <repo> && git ls-remote origin HEAD
+```
+
+**판정 기준**:
+| `.env` 토큰 | `git ls-remote` | 결론 |
+|---|---|---|
+| 401 | 성공 | 저장소·push 정상. 실패한 것은 그 토큰으로 API를 직접 호출하는 **cron 잡**뿐 |
+| 401 | 실패 | credential store까지 정리 필요 |
+
+즉 "배포/표시 계층(예: Vercel 사이트)이 안 갱신된다"는 complaint가 별도로 있다면
+**token 문제가 아니라 배포 단계를 먼저 의심**한다.
+
 ## 재발 방지
 
 `hermes-config-sync` cron (job `91059d1e3d31`, KST 22:30)이 `.env` 변경을 감지하면 GitHub token 유효성 검증 단계 추가 권장.

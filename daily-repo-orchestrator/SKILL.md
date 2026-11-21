@@ -349,6 +349,41 @@ GitHub는 다음 경우 본인에게 알림 메일을 보내지 않습니다:
 
 자세한 transcript → `references/github-notification-policy.md`.
 
+## 🚨 Vercel Hobby 배포 BLOCKED (private repo) — 2026-11-21 실측
+
+**Vercel Hobby 팀은 private repo의 collaboration을 지원하지 않는다.**
+커밋 저자(author email)가 팀 소유자의 GitHub 계정 이메일과 일치하지 않으면 배포가 `BLOCKED`가 되고, production alias가 갱신되지 않아 **사이트가 옛 데이터로 멈춘다**(GitHub push는 정상 — repo는 갱신되지만 사이트만 멈춤).
+
+- Vercel 팀 소유자: `sangheelee2222-5404` / `sanghee.lee2222@gmail.com`
+- GitHub 계정: `mybotagent` (private repo `hermes-paper-portfolio` 소유자)
+- **커밋 전 반드시 `git config user.email "sanghee.lee2222@gmail.com"`**
+  global 설정은 `aiprofit@users.noreply.github.com`(noreply)이라 repo-local로 덮어써야 한다.
+- 차단 시작 시점과 규칙: noreply 이메일로 바꿾� 첫 커밋과 BLOCKED 배포 시작이 정확히 일치 (2026-09-16).
+
+**진단**: `mcp__vercel__list_deployments` → 최신 배포 state가 `BLOCKED`, `errorLink`가 `docs/deployments/troubleshoot-project-collaboration#account-configuration`.
+
+**복구**: 해당 repo에서 `git config user.email`을 소유자 이메일로 → 빈 커밋 push → 새 배포가 `INITIALIZING`으로 뜨고 `READY`가 된다.
+
+**방어 코드**: `~/.hermes/scripts/paper_tracker_daily.sh` 6단계에서 매 실행마다 `git config user.email`을 덮어쓴다 (재클론 시 repo-local 설정 소실 대비).
+
+**⚠️ git push 성공 = 사이트 갱신이 아님**: GitHub push는 정상인데 Vercel 배포가 BLOCKED면 **repo는 갱신됐지만 사이트만 옛 데이터로 멈춘다.** 배포 상태를 API로만 확인하지 말고 **라이브 HTTP로 실제 콘텐츠를 확인**한다:
+
+```bash
+# 1) 사이트 응답
+curl -s -o /dev/null -w "HTTP %{http_code}\n" https://hermes-paper-portfolio.vercel.app/
+# 2) 새 에셋이 실제로 나갔는지 (바이트 크기까지)
+curl -s -o /dev/null -w "HTTP %{http_code} (%{size_download} bytes)\n" \
+  https://hermes-paper-portfolio.vercel.app/macro_plots/plot_8.png
+# 3) index.html에 참조가 실렸는지
+curl -s https://hermes-paper-portfolio.vercel.app/ | grep -o "macro_plots/plot_[0-9]*.png" | sort -u
+```
+
+HTTP 200만으로는 부족하다 — **200이지만 0바이트/구버전 파일**이면 배포 미완료다. 바이트 크기와 참조까지 확인할 것.
+재사용 프로브: `fair-value-portfolio` 스킬의 `scripts/verify_paper_deploy.sh`.
+
+**커밋 저자 이메일 회수**: `git log -1 --format="%ae | %an"` 으로 push된 커밋의 author를 확인한다.
+`aiprofit@users.noreply.github.com`이 나오면 BLOCKED가 재발한다.
+
 ## Anti-patterns (DO NOT)
 
 | ❌ Anti-pattern | ✅ Fix |

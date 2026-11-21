@@ -14,14 +14,14 @@ Hermes 모델(provider/model) 설정 관리. **현재 정책: MiniMax-M2.7 단�
 
 | 항목 | 값 |
 |------|-----|
-| Primary | `MiniMax-M2.7` (provider: `minimax`, `https://api.minimax.io/v1`) |
+| Primary | `MiniMax-M2.7` (provider: `custom:minimax`, `https://api.minimax.io/v1`) |
 | Fallback chain | **비어있음** (`fallback_providers: []`) |
 | providers | `minimax` **하나만** (deepseek 삭제됨) |
-| auxiliary 12종 | 전부 `minimax` / `MiniMax-M2.7` |
-| delegation | `minimax` / `MiniMax-M2.7` |
+| auxiliary 12종 | 전부 `custom:minimax` / `MiniMax-M2.7` |
+| delegation | `custom:minimax` / `MiniMax-M2.7` |
 | auth credential_pool | `minimax`만 (deepseek/custom:deepseek 삭제) |
 | `.env` | `MINIMAX_API_KEY`만 (DEEPSEEK_API_KEY 삭제) |
-| cron job pins | 12개 전부 `minimax` / `MiniMax-M2.7` |
+| cron job pins | 12개 전부 `custom:minimax` / `MiniMax-M2.7` |
 
 **전환 금지**: deepseek를 다시 fallback에 넣지 말 것. 잔액 없음 → 402로 방해만 됨.
 
@@ -36,8 +36,8 @@ Hermes 모델(provider/model) 설정 관리. **현재 정책: MiniMax-M2.7 단�
 ## MiniMax 단독으로 고정/검증하기
 
 ```bash
-# 1) Primary
-hermes config set model.provider minimax
+# 1) Primary — provider는 `custom:minimax` (base_url이 OpenAI `/v1` 경로이므로)
+hermes config set model.provider custom:minimax
 hermes config set model.default MiniMax-M2.7
 hermes config set model.base_url https://api.minimax.io/v1
 
@@ -52,25 +52,27 @@ cfg['providers'] = {'minimax': cfg['providers']['minimax']}
 p.write_text(yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
 EOF
 
-# 3) auxiliary 12종 일괄
+# 3) auxiliary 12종 일괄 — provider는 `custom:minimax` (bare `minimax` 아님! 아래 참조)
 for k in vision web_extract compression skills_hub approval mcp \
          title_generation triage_specifier kanban_decomposer \
          profile_describer curator session_search; do
-  hermes config set auxiliary.$k.provider minimax
+  hermes config set auxiliary.$k.provider custom:minimax
   hermes config set auxiliary.$k.model MiniMax-M2.7
   hermes config set auxiliary.$k.base_url https://api.minimax.io/v1
 done
 
-# 4) delegation
-hermes config set delegation.provider minimax
+# 4) delegation — main과 동일한 provider 문자열
+hermes config set delegation.provider custom:minimax
 hermes config set delegation.model MiniMax-M2.7
 hermes config set delegation.base_url https://api.minimax.io/v1
 
-# 5) 검증
+# 5) 검증 — main + aux 양쪽
 hermes config show | grep -A2 "◆ Model"
 hermes fallback list        # "No fallback providers configured" 이 맞음
 hermes auth list            # minimax만 남아야 함
-hermes -z "ok" -m MiniMax-M2.7 --provider minimax
+hermes -z "ok" -m MiniMax-M2.7 --provider custom:minimax
+# aux 경로 검증: title_generation 실패 로그가 없어야 함
+grep -c "Title generation failed" ~/.hermes/logs/agent.log
 ```
 
 ## ⚠️ `hermes config set fallback_providers` 함정
@@ -85,12 +87,69 @@ hermes config set fallback_providers '["deepseek"]'
 
 **리스트 항목 4필드 필수**: provider, model, base_url, api_mode.
 
+## ⚠️ provider 이름은 base_url 경로와 일치시켜라 — `minimax` vs `custom:minimax`
+
+**MiniMax는 provider 이름에 따라 전송 와이어가 통째로 바뀐다.** OpenAI-compat
+base_url(`https://api.minimax.io/v1`)을 쓸 때는 반드시 `custom:minimax`를 쓸 것.
+
+| provider 값 | base_url | 전송 와이어 | 결과 |
+|---|---|---|---|
+| `minimax` | `.../v1` (OpenAI) | **Anthropic Messages로 오인** | ❌ 깨짐 (아래) |
+| `custom:minimax` | `.../v1` (OpenAI) | OpenAI chat.completions | ✅ 정상 |
+| `minimax` | `.../anthropic` | Anthropic Messages | ✅ 정상 |
+
+**메커니즘**: built-in `minimax`은 `_ANTHROPIC_COMPAT_PROVIDERS`에 하드코딩돼 있어
+`auxiliary_client`이 provider 이름만 보고 Anthropic 와이어로 판정한다. OpenAI
+클라이언트에 Anthropic 전용 private kwarg(`_reasoning_config`)를 넘겨
+`Completions.create() got an unexpected keyword argument '_reasoning_config'`로
+크래시한다.
+
+**Rule**: OpenAI-compat base_url(`/v1`)에는 `custom:<name>`, Anthropic 와이어
+base_url(`/anthropic`)에는 built-in 이름을 쓴다. **provider 이름과 base_url 경로가
+다르면 와이어 판정이 뒤집힌다.**
+
+**Rule 2**: `model.*`와 `auxiliary.*`의 provider 문자열은 **전부 동일**하게 맞춘다.
+main이 `custom:minimax`인데 auxiliary만 `minimax`면 aux 경로만 조용히 깨진다
+(메인 대화는 정상 → "뭐가 안 되지?" 증상).
+
+**Rule 3**: provider 전환 후 aux 경로까지 검증한다. 메인 스모크 테스트
+(`hermes -z`)는 main 경로만 지나므로 aux가 깨졌는지 알려주지 않는다.
+title_generation 실패 로그가 aux 경로의 유일한 신호다.
+
+**증상 → 원인 매핑**:
+- `Title generation failed: ... unexpected keyword argument '_reasoning_config'`
+  → auxiliary provider가 bare `minimax`. `custom:minimax`로 통일.
+- 대화가 느리다 / tool call이 씹힘 / iteration budget 소진
+  → 아래 "MiniMax 5xx 미재시도" 참조.
+
+## ⚠️ MiniMax 5xx는 Hermes가 transient로 분류하지 않는다
+
+MiniMax가 스트리밍 중 `HTTP 500 Internal server error`를 반환하면 Hermes가
+**재시도 없이 tool call을 버린다**:
+
+```
+Streaming failed after partial delivery, not retrying: Internal server error
+Partial stream dropped tool call(s) ['skill_manage'] after 118 chars of text
+```
+
+`_is_transient`가 timeout/conn_err/sse_conn_err/stream_parse_err만 판정하기 때문.
+tool call이 드롭되면 에이전트가 같은 호출을 반복 → 60/60 iteration budget 소진 →
+사용자 체감상 "꺼졌다/안 된다".
+
+**Rule**: MiniMax 500이 반복되면 provider 문제로 단정하지 말고 Hermes 재시도
+분류 문제로 본다. provider 정합성은 API 레벨 curl 재현으로 먼저 확인하고
+(curl 샘플은 `hermes-config-management` 스킬의 `.env sourced smoke test` 참조),
+provider가 정상이면 소스 수정이 필요한 단계임을 보고한다 — config만으로는 해결 불가.
+
+**MiniMax 컨텍스트 한계**: 460k 토큰 이상은 `HTTP 400 context window exceeds
+limit (2013)`. 140k는 정상. 긴 세션에서 400이 뜨면 컨텍스트 폭축이 먼저 필요.
+
 ## auxiliary (보조 모델) 12종 목록
 
 vision, web_extract, compression, skills_hub, approval, mcp, title_generation, triage_specifier, kanban_decomposer, profile_describer, curator, session_search
 
 `provider: auto`면 글로벌 상속하지만, `nous`/`openrouter`가 auth에 남아 있으면 게이트웨이 로그에
-`marking X unhealthy (payment / credit error)`가 반복됨 → 전부 명시적으로 minimax 고정.
+`marking X unhealthy (payment / credit error)`가 반복됨 → 전부 명시적으로 `custom:minimax` 고정.
 
 ## 크레덴셜 정리 (provider 제거 시)
 

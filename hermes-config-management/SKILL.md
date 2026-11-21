@@ -76,6 +76,26 @@ source ~/.hermes/.env && curl -s -X POST https://api.minimax.io/v1/chat/completi
 
 ## Pitfalls
 - ❌ `patch` / `write_file` on `~/.hermes/config.yaml` → BLOCKED, no workaround from inside agent
+
+### 🔒 쓰기 차단 파일 — 우회 시도 금지, 사용자에게 넘겨라
+
+credential 성격의 파일(예: 환경변수 파일, token 저장소)은 hermes가 `patch`/`write_file`/
+`execute_code` 전부 거부한다 ("protected system/credential file").
+
+**한 번 차단되면 그 파일은 이번 세션에서 끝.** 다른 도구로 같은 목적을 달성하려 하지 않는다
+(쓰기 도구를 갈아끼우면 차단만 반복되고 사용자는 "쓸데없는짓 하지말고 / 그만 손대지말라고"로 끊는다).
+읽기(`read_file`/grep)만 허용된다고 기억할 것 — 검증·조사에 읽기는 문제없다.
+
+**올바른 처리 (3단계)**:
+1. 읽기로 상태/유효성만 확인.
+2. 수정이 필요하다면 **변경 명령을 사용자에게 제시하고 끝낸다** — 승인 프롬프트를 여러 번 띄우지 않고
+   "이 명령 실행 후 알려주세요"로 마무리.
+3. 되돌릴 수 없는 부수효과(token 교체, 파일 쓰기, push)는 **승인 없이 실행하지 않는다.**
+   조사 중 발견했더라도 먼저 물어본다.
+
+**사용자가 명시적으로 중단 지시한 경우**("그만", "손대지말라고", "쓸데없는짓 하지말고"):
+- 즉시 모든 시도를 멈추고 **진단 결과만** 보고. 추가 도구 호출 금지.
+- 사용자는 원인을 원한 것이지 수정이 필요한 것은 아니다. 원인 제시 후 한 줄로 끝낸다.
 - ❌ Editing `.env` while loaded → may not propagate; restart gateway or re-run `hermes setup`
 - ❌ Editing `auth.json` directly → credential pool has its own locking; use `hermes auth` CLI
 - ✅ `hermes config set <key.path> <value>` is the **only** in-agent path
@@ -233,6 +253,36 @@ delegate_task(
 Leaf는 게이트웨이 프로세스 외부에서 실행되므로 SIGTERM 자기 종료 문제 없음.
 
 **no_agent cron의 `systemctl restart`는 안전** — LLM 에이전트 프로세스가 아니라 systemd가 직접 호출하므로 self-restart 제약 없음.
+
+## ⚠️ provider 이름과 base_url 경로는 반드시 일치시킬 것
+
+provider 문자열은 단순 라벨이 아니라 **전송 와이어를 결정**한다. OpenAI-compat
+base_url(`/v1`)에는 `custom:<name>`, Anthropic 와이어 base_url(`/anthropic`)에는
+built-in 이름을 쓴다. 둘이 어긋나면 Hermes가 provider 이름만 보고 와이어를
+오인한다.
+
+| provider 값 | base_url | 판정된 와이어 | 결과 |
+|---|---|---|---|
+| `minimax` | `.../v1` | Anthropic Messages (오인) | ❌ OpenAI 클라이언트에 Anthropic private kwarg를 넘겨 크래시 |
+| `custom:minimax` | `.../v1` | OpenAI chat.completions | ✅ |
+
+**Rule**: `model.provider`와 `auxiliary.*.provider`는 **전부 같은 문자열**로
+통일한다. main만 `custom:minimax`이고 aux만 `minimax`면 aux 경로만 조용히 깨진다.
+
+**Rule 2**: `hermes -z` 스모크 테스트는 main 경로만 지나므로 aux가 깨졌는지
+확인해 주지 않는다. provider 전환 후에는 `agent.log`의 aux 경로 에러
+(`Title generation failed` 등)를 별도로 확인한다.
+
+세부 메커니즘과 증상 매핑은 `model-switcher` 스킬 참조.
+
+## ⚠️ `hermes config show`는 오래 걸릴 수 있다
+
+provider가 credential pool을 조회하면서 수십 초 이상 걸릴 때가 있다. 무한정
+기다리지 말고 timeout을 건다:
+```bash
+timeout 60 hermes config show | head -40
+```
+타임아웃돼도 `~/.hermes/config.yaml`을 Python yaml로 직접 읽으면 상태는 확인된다.
 
 ## Backup before major edits
 ```bash

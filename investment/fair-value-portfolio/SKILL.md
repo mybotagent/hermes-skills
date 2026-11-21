@@ -10,6 +10,51 @@ description: 적정 PER 기반 포트폴리오 밸류에이션 분석 + 글로�
 
 ## 🧠 사용자 선호 (반드시 준수)
 
+### 📡 리포트 전달 검증 (HARD RULE)
+
+리포트가 사용자에게 **도달했는지**를 확인할 때 `cron/deliveries.db`의 `content` 길이를 보지 말 것.
+gateway가 Discord에 직접 전송하면 로컬 큐 레코드의 본문은 비어 있다(`content` 길이 0) — 정상 상태다.
+
+**유일하게 신뢰할 검증**: 대상 Discord 스레드/채널의 **실제 메시지를 fetch**해서 내용·파트 수를 확인한다.
+여러 파트로 나뉘는 리포트는 **파트 개수까지** 확인한다(예: 4파트면 4개 메시지).
+
+로컬 CLI(`hermes cron run <jid>`)로 수동 실행했을 때도 동일하게 실제 메시지를 fetch해야 한다.
+"exit 0 / completed / 파일 생성됨"은 **생성 성공**일 뿐 **전달 성공** 증거가 아니다.
+
+### 🗣️ 언어 규칙 (HARD RULE)
+
+리포트 본문·요약·헤드라인은 **한국어 또는 영어만** 사용한다. 중국어 등 다른 문자 체계의 텍스트는 어떤 산출물에도 넣지 않는다.
+사용자가 "한국어나 영어만" 식으로 교정하면 이후 모든 산출물·대응에 적용되는 상시 규칙이다.
+
+### 🚫 국내주식(KR) 제외 (HARD RULE)
+
+포트폴리오 목표 비중·후보 분석에서 **국내 상장주식을 완전히 제외**한다. 제외분 비중은 현금으로 귀속시킨다.
+
+- 판별: watchlist `market == "KR"` / 티커·이름 일치 / `.KS`·`.KQ` 접미사 (3중 체크)
+- **예외 — US ADR은 편입 유지**: watchlist에서 `market: "US"`·USD 거래인 종목(예: `SK하이닉스ADR`/SKHY)은
+  한국 기업명이어도 미국 상장 ADR이므로 제외 대상이 아니다. 이름만 보고 제외하지 말 것.
+- **과거 스냅샷은 건드리지 말 것**: 기존 `logs/portfolio/*.json`의 KR 종목은 원본 보존 (누적수익률·MDD 이력 재작성 방지).
+  KR 제거는 신규 생성 스냅샷부터 적용한다.
+- 프롬프트 규칙만으로 의존하지 말고 **코드 필터로도 강제**한다.
+
+상세 절차·적용 4지점 → `references/kr-exclusion-and-macro-unemployment.md`
+CJK 혼입 검사(`[一-鿿]`)는 저장 직전에 assert하고, 위반 시 저장하지 말고 fail loudly 할 것.
+
+### 📅 월간 리밸런싱 (HARD RULE)
+
+종목선별(Phase 1~3)은 **매월 1일에만** 실행한다. 나머지 날짜에는 **직전 비중을 그대로 유지**한다.
+
+- LangGraph cron `afebf6cb0ab1` schedule = `35 18 1 * *` (평일 일일이 아니라 매월 1일 18:35)
+- **일일 스냅샷 연속성은 별도 장치로 유지한다**: `scripts/carry_forward_snapshot.py`가 오늘 스냅샷이 없으면
+  직전 스냅샷을 **복사만** 해 만든다(원본 절대 수정 금지). 이 스텝이 `paper_tracker_daily.sh`에서
+  **paper_tracker.py 실행보다 먼저** 돌아야 당일 수익률이 계산된다.
+- carry-forward 스냅샷은 `carry_forward: true` / `carry_forward_from: <YYYY-MM-DD>` 메타데이터를 갖는다.
+  비중 복원·KR 제거 같은 "구성 변경" 로직은 carry-forward 스냅샷을 **건너뛴다**(복사본을 고치면 원본과 이력이 어긋난다).
+- 리밸런싱일 스냅샷에는 `rebalance: true` / `rebalance_date`를 기록하고, 대시보드는 이를 "비중 유지 중" 배지로 표시한다.
+- 일일 성과 추적 cron(`276405a79d88`)과 월간 검증 리포트(`18510b01362d`)는 **그대로 유지**한다.
+
+상세 절차·carry-forward 계약 → `references/monthly-rebalancing.md`
+
 ### 포트폴리오 비중 = t1_gap × Moat 점수 곱셈식 (2026-06-08 v2)
 - 사용자: "Gap과 해자만 활용" → "LLM이 추정하기"
 - **규칙**: `가중값 = max(0, t1_gap) × moat_점수` → `기본_비중 = (가중값 / 총_가중값) × (100% - 현금비중)`
@@ -798,7 +843,7 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 | **08:10 (매월 1일)** | **📈 월간 성과 검증 리포트 — LLM prompt** | **18510b01362d** | **OFF** |
 | 18:00 (평일) | 🇺🇸 미국 증시 브리핑 | 2916cc9c2ceb | OFF |
 | 18:30 (평일) | 🌍 매크로 전략 리포트 | b96583fa9d27 | OFF |
-| **18:35 (평일)** | **🧠 LangGraph 파이프라인 — LLM prompt** | **afebf6cb0ab1** | **OFF** |
+| **18:35 (매월 1일)** | **🧠 LangGraph 파이프라인 (월간 리밸런싱) — LLM prompt** | **afebf6cb0ab1** | **매월 1일만** |
 
 > ⚠️ 주말(토/일) 모든 크론 OFF. `1-5` = 평일만 실행.
 >
@@ -819,6 +864,9 @@ cd ~/trade-pipeline && python3 langgraph/pipeline.py --phase 3
 - **스크립트**: `scripts/paper_tracker.py`
 - **대시보드**: `data/portfolio_dashboard.html`
 - **참조**: `references/paper-portfolio-tracker.md`
+- **참조**: `references/kr-exclusion-and-macro-unemployment.md` — 국내주식(KR) 제외 정책 + 실업률/Sahm 지표 추가 (2026-11-21)
+- **참조**: `references/monthly-rebalancing.md` — 월간 리밸런싱 (carry-forward 스냅샷 계약, 배치 순서, 대시보드 표시)
+- **검증 스크립트**: `scripts/verify_paper_deploy.sh` — push 후 라이브 배포 자동 검증 (플롯 접근·바이트 크기·JSON 값·KR 유입 검사)
 - **실행**: `cd ~/trade-pipeline && python3 scripts/paper_tracker.py`
 - **출력 CSV**: daily.csv(일일/누적), holdings.csv(종목별 상세), market.csv(시장분위기), sp500.csv(S&P 비교)
 
@@ -1099,7 +1147,7 @@ delegate_task(
 - **종목 추가/변경은 watchlist.json만 수정하면 됨**
 - 상세: `references/watchlist-data-contract.md`
 - **watchlist.json을 수정한 후 `git commit -m "watchlist: 종목 변경" && git push` 할 것**
-- ⚠️ watchlist.json은 `.gitignore`에 의해 git 추적 제외 → cron/스크립트가 로컬에서 참조. 동기화 불요.
+- ⚠️ 단, `data/watchlist.json`은 `.gitignore`(`data/*.json`)에 의해 git 추적 제외 → watchlist.json 자체는 커밋되지 않고 로컬 단일 진실로 남는다. **코드 측 변경**(`stocks_config.py`, `fair_value.py`, 소비 스크립트)만 커밋·push 대상이다. 강제 추가(`git add -f`)는 저장소 정책 확인 후 사용자에게 물을 것.
 
 #### 26b. 🔴 수정 전 필수 진단: 중복 소스 grep (2026-07-02 신규)
 
@@ -1192,6 +1240,43 @@ Pitfall 26 / 26b / 26c는 "단일소스 + 중복 통합"의 정합성 문제였�
 4. `git commit -m "watchlist: {name} 코드 정정 {old} → {new}"` (선택, watchlist.json은 .gitignore 대상이지만 변경 이력은 보존 가능)
 
 **왜 SKILL 본체 pitfall로 보존하나**: 단일소스 원칙은 코드 구조의 정합성 (Pitfall 26). 이 pitfall은 **데이터 무결성** — 등록 시점에 한 번 잡으면 이후 18:30 매크로 + 18:35 파이프라인 전체에 silent corruption 전파. references/cron-mode-data-verification.md의 Ticker Code Verification 섹션에 **상세 워크플로우 + 코드 예시** 기록. SKILL 본체는 **pitfall 신호등** 역할.
+
+#### 26e. 🔴 관심종목 추가 — 5단계 체크리스트 (2026-11-21 신규)
+
+watchlist.json에 종목 하나 넣는 행위는 watchlist.json만 고치는 일이 아니다. 하드코딩 사전 drift, sector_base 미동기화, suffix 중복이 동시에 터진다.
+
+**규칙 — 추가 요청 시 반드시 아래 5단계를 순서대로 수행**:
+
+1. **티커 실재 검증** — 등록 전에 yfinance로 조회. 404면 등록 금지:
+   ```bash
+   python3 -c "
+   import yfinance as yf
+   for t in ['APPL','AAPL']:
+       try: print(t, yf.Ticker(t).info.get('longName'))
+       except Exception as e: print(t, 'ERR', e)"
+   ```
+   - 오타로 추정된 티커는 **추측으로 등록하지 말고** 사용자에게 "실제 심볼은 X입니다"를 확인받는다.
+2. **중복 확인** — 이미 등록된 종목은 재추가하지 않는다. 요청 목록과 watchlist의 교집합을 먼저 뺀 뒤 신규만 추가/보고한다.
+3. **sector_base 이중 동기화** — 새 섹터를 쓰면 **watchlist.json의 `sector_base` 와 fair_value.py의 `SECTOR_BASE` 양쪽**에 넣는다. 한쪽만 넣으면 적정PER이 sector_base fallback(기본값)으로 계산되어 조용히 틀린다.
+4. **하드코딩 이름→티커 사전 제거** — 새 종목이 name→ticker 하드코딩 사전을 쓰는 소비자에게서 누락된다. 추가 전 반드시 grep:
+   ```bash
+   grep -rn 'NAME_TO_TICKER\s*=\s*{' ~/trade-pipeline/{scripts,langgraph}/ --include=*.py | grep -v __pycache__
+   ```
+   발견된 사전은 watchlist.json에서 동적으로 생성하도록 교체한다(사전 유지 = watchlist 밖 종목/과거 명칭 alias만 별도 dict로 분리). 소비자가 fair_value.py, collect_consensus.py, paper_tracker.py, collect_recent_targets.py 등 여러 곳에 흩어져 있으면 **전부** 교체한다 — 하나만 고치면 나머지가 조용히 누락된다.
+5. **suffix 중복 확인** — ticker에 이미 `.KS`가 들어있는데 `yahoo_suffix`도 `.KS`면 `267260.KS.KS`로 터진다. `yahoo_suffix`는 ticker에 접미사가 없을 때만 채운다. 소비 코드(`yahoo_ticker()`)에는 `if ticker.endswith(suffix): return ticker` 방어 로직을 넣는다.
+
+**검증 (수정 후 반드시 실제 실행)**:
+```bash
+cd ~/trade-pipeline/scripts && python3 -c "import stocks_config as sc; print(len(sc.ALL_STOCKS)); print(sc.yahoo_ticker('267260.KS'))"
+cd ~/trade-pipeline && python3 langgraph/src/fair_value.py      # 신규 종목이 적정가 표에 뜨는지
+cd ~/trade-pipeline && python3 scripts/collect_consensus.py    # 소비 스크립트 정상 동작
+cd ~/trade-pipeline && python3 scripts/paper_tracker.py       # 포트폴리오 성과 추적 정상
+```
+→ fair_value 출력에서 **신규 종목이 적정PER·T1 목표가와 함께 정상 출력되는지** 확인. 미노출이면 매핑 누락.
+
+**왜 이 순서인가**: 검증(1·2)을 안 하면 잘못된 티커가 관심종목에 박혀 이후 18:30 매크로 + 18:35 파이프라인 전체에 silent corruption을 전파한다. 동기화(3·4·5)를 안 하면 코드는 조용히 틀린 값을 계산한다.
+
+**상세 절차**: `references/ticker-maintenance.md`
 
 ### 27. ⚠️ import os 누락 주의 (2026-06-07 신규)
 - 하드코딩 STOCKS 리스트에서 watchlist.json 로드로 변경 시 `import os`와 `import json`이 필요

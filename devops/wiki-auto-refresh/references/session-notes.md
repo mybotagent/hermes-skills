@@ -2,6 +2,24 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-20 (21:00 KST) — P19 재감염 0건 (4일 연속) + P36 9차 + P37 CJK 6자 + **기존 섹션 CJK 잔존 발견** + SCHEMA taxonomy `version` 확장 + audit 7종 통과 + push 성공
+
+- **P19 재감염 0건 — 11-16 재발 이후 4일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD(`c6357d0`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**. index.md 내 서브모듈 경로 링크 0건, P18(`^|- `) wiki 전체 0건.
+- **P36 9차 재현**: 브리핑 크론(`2916cc9c2ceb`)이 `2026-11-20_18-30-40.md` 산출(18:30)했으나 `LOG.md` frontmatter `updated:` = 2026-11-19 → 11-20 브리핑 미백필. 원본 `## Response` = 3711~3837행.
+- **P37 9차**: 원본에 CJK 6자 — `典型`(리스크 오프 전형 조합), `陡峭`(기울기 급격화), `获利`(수익 실현) 각 2자 → 순수 한국어 재작성.
+  - ★ **자기 작성 문장에서도 CJK 발생 (11-13/11-18/11-19에 이어 4회 연속)**: "언어 규칙" 메모 줄에서 원본 한자를 예시로 적으려다 CJK 6자가 그대로 재삽입 → 서술형("한자 3어구")으로 교체 후 재검증.
+- **★ 신규 발견 — 기존 섹션의 CJK 잔존 (백필 이전 섹션 오염)**: 백필 후 LOG.md 전체 스캔에서 **11-20 09:24 버전체크 크론 섹션**의 `所致` 2자 잔존 발견. P37 교훈의 연장 — "원본만 검사"가 아니라 "**기존 섹션 포함 본문 전체**"를 스캔해야 함. `exit)所致.` → `exit) 때문.`로 교체 → LOG.md 전체 CJK 0건.
+  - ★ 이건 **P37 검증 범위를 LOG.md 전체로 확장**해야만 잡히던 유형 — 이전 실행들은 신규 백필분만 스캔해서 통과시켰다.
+- **신규 — 미등록 태그 `version` (tag-audit Unknown 1건)**: `infra/hermes-version-management.md`(11-20 09:24 버전체크 크론 산출물)의 tags에 `version`이 있으나 taxonomy 미등록 → **SCHEMA.md infra 행에 `version` 추가**(taxonomy 199 → 200). 개별 페이지 수정 대신 taxonomy 확장.
+- **index-md registered 93 → 94**: 신규 `infra/hermes-version-management.md`가 09:24 크론에 의해 index.md 등록됨 (11-19 실행 이후 신규).
+- **P37 확장 확인**: `trade-pipeline/logs/portfolio/*.json` 최근 5건(11-05, 11-17~11-20) CJK 0건, `trade-pipeline/logs/*.md` 최근 4건(11-19~11-20) CJK 0건.
+- audit 7종 전항목 통과: wikilink 0 / markdown-link P11 0 / index-md registered **94 = actual 94** (dead 0, REAL MISSING 0) / tag taxonomy **200**, used 144, Unknown 0 / logs-index broken 0 notref 0 covered 13 / **stale 56 / no_date_operational 0 / no_date_immutable 23** (11-19 기준선 완전 일치) / dup-updated 0 (193p). `git diff --check` 통과.
+- **위키 본문 변경 3건**: (1) `LOG.md` — 11-20 브리핑 백필(18줄) + frontmatter `updated: 2026-11-19` → `2026-11-20` + 기존 09:24 섹션 CJK 2자 제거 (2) `SCHEMA.md` — infra 행에 `version` 태그 추가 (3) `analysis/orbit-valuation.md` — self-healing-cron 산출물(SNDK 분할 조정 가드, 커밋 `a775413`).
+- logs/index.md: November 섹션 기존 확인 → 기준 행 `|| 11-19 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12). `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과 + logs-index 재감사 broken=0/notref=0.
+- 커밋: logs `2db0e81` (parent `beff753`) / parent `a192a1b` (parent `328491c`). push `328491c..a192a1b` (hermes-wiki main), logs master `beff753..2db0e81`.
+- 원격 검증: `origin/main:index.md` `자동 추가` 0건, `origin/main:LOG.md` CJK 0건 + `## 2026-11-20 (금) 18:00` 1건 + `updated: 2026-11-20`, `origin/main:SCHEMA.md` `version` 반영, `origin/master:index.md` `11-20 21:00` 행 1건.
+- 교훈: (1) P37 검증 범위는 **LOG.md 전체(기존 섹션 포함)** — 외부 크론이 만든 과거 섹션도 CJK를 잔존시킬 수 있다. (2) 새 파일 생성 크론이 taxonomy 미등록 태그를 쓰면 Unknown으로 잡힘 → infra 성격 태그는 taxonomy 확장이 적절. (3) P36 9거래일 연속 구조적 결함 — 근본 조치(toolset에 `file` 추가) 승인 여부 사용자 확인 필요.
+
 ## 2026-11-19 (21:00 KST) — P19 재감염 0건 (3단계 판별) + P36 8차 + P37 CJK 6자 (11-19 브리핑 LOG.md 백필) + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 11-16 재발 이후 3일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD(`e36210b`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**. index.md 내 서브모듈 경로 링크 0건.
