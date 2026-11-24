@@ -307,6 +307,26 @@ for t in ['title_generation','web_extract','compression']:
 - config는 mtime-keyed 캐시(`config_cache_version`)라 재시작 없이 다음 로드부터 반영됨.
 - `auxiliary.compression`은 실패 시 deterministic fallback marker로 대체 → 세션은 안 죽지만 압축 품질 저하 + 타이틀/web_extract/vision 보조작업 전체 실패로 이어짐.
 
+## 🔎 upstream/main behind 카운트를 경보로 오해하지 말 것 (2026-11-24 실측)
+
+`git rev-list --count HEAD..refs/remotes/upstream/main` 은 **미출시 개발 커밋**을 센다.
+stable 릴리스 태그는 훨씬 적게 advanced다 (실측 11-24: behind 1133이지만 stable 최대 태그는 여전히 v0.23.3).
+
+→ **판정 기준은 항상 `hermes update --check`의 stable 태그 비교.** behind가 1000대여도
+stable 릴리스가 안 나왔으면 업데이트 불필요. 반대로 behind=0이라도 stable 태그가 로컬보다
+오래된 경우(예: canary만 발행됨)에만 그때그때 재확인.
+
+진짜 릴리스 신호: GitHub Releases의 `prerelease=false` 항목 (canary는 prerelease=true).
+
+## ⚠️ config의 알 수 없는 provider 키 경고 (2026-11-24 발견)
+
+```
+WARNING hermes_cli.config: providers.minimax: unknown config keys ignored: available_models_json, model_display_name, protocol
+```
+`~/.hermes/config.yaml`의 provider 블록에 이전 버전 전용 키가 남으면 **매 config 로드마다** 경고가 찍힌다.
+doctor는 이걸 잡지 못하고, `errors.log`에만 남아 조용하다.
+→ provider 전환(`model-switcher`) 시 불필요해진 키를 같이 정리한다. Harmless하지만 누적되면 무시하기 쉬워 오판 위험.
+
 ## 📋 보고 규칙
 
 - **진짜 최신** (upstream 대비 0 behind, doctor 정상) → `[SILENT]`

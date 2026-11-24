@@ -2,6 +2,21 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-23 (21:00 KST) — P19 재발 (committed+push 변형) + P36 10차 (11-23 브리핑 백필, CJK 0건) + logs NOTREF 1건 해소 + audit 7종 통과 + push 성공
+
+- **P19 재발 — committed+push 변형.** 11-16 재발 이후 11-17~11-20 4일 연속 0건이었고 11-21에 재발. 판별 3단계: working tree 1 / HEAD(`6191e94`) 1 / origin/main 1 → committed 변형. 오염 커밋 = `b878d58 hermes-config-sync: 2026-11-21T05:30:13Z (wiki)` (index.md footer 뒤 rogue 1건 `raw/2026-W47-weekly-recap-draft.md` 삽입 + 끝 개행 누락). parent(`b878d58~1`) 청정(0건) 확인.
+  - ★ **오염 커밋 diff에 정식 수정분 포함** (`analysis/portfolio-policy-kr-and-macro.md` PAT A 등록도 같은 커밋) → **parent 복원 경로 사용 불가** → **footer 기준 python truncate**로 rogue만 선택적 삭제 후 `raw/` 섹션에 PAT B 정식 재등록. (P19 mixed-state edge case 재확인.)
+  - 복구 후 `자동 추가` 0건, 끝 개행 복구, index-md registered 96 = actual 96 (dead 0, REAL MISSING 0).
+- **P36 10차**: 브리핑 크론(`2916cc9c2ceb`)이 `2026-11-23_18-04-19.md` 산출(18:04)했으나 LOG.md frontmatter `updated:` = 2026-11-20 → 미백필. 원본 `## Response` = 3877~3959행. **CJK 0건**(원본) → 한국어 재작성 후 LOG.md 전체 CJK 0건 재검증. 11-21(토)·11-22(일)은 주말 스케줄(`0 18 * * 1-5`)로 미실행 — 크론 실패 아님.
+- **logs NOTREF 1건 해소**: `2026/2026-11-23-0200.md`(Neo4j 증분 인덱서)가 index 미등록 → November 섹션에 등록 + 본 실행 로그 `2026-11-23-2100.md` 신규 생성·등록. 재감사 broken=0/notref=0/covered=13.
+- audit 7종 전항목 통과: wikilink 0 / markdown-link P11 0 / index-md **registered 96 = actual 96** / tag taxonomy 200·used 144·Unknown 0 / logs-index broken 0 notref 0 / **stale 55 / no_date_operational 0 / no_date_immutable 24** / dup-updated 0 (197p).
+  - ★ stale 56 → 55 감소 원인: `infra/hermes-version-management.md`의 `updated:`가 11-23으로 실제 갱신(버전체크 크론 산출물). immutable 23 → 24 증가: 신규 raw W47 초안. 스크립트 버그 아님.
+- **위키 본문 변경 2건**: (1) `index.md` — P19 rogue 제거 + W47 PAT B 재등록 + 개행 복구 (2) `LOG.md` — 11-23 브리핑 백필(14줄) + frontmatter `updated: 2026-11-23`.
+- logs/index.md: November 섹션 기존 확인 → 기준 행 `|| 11-22 02:00` prefix 복사 후 python 인서트(삽입 위치 line 12, 2행). `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과.
+- 커밋: logs `034ac23` (parent `90d3653`) / parent `4cef5c8` (parent `6191e94`). push `6191e94..4cef5c8` (hermes-wiki main), logs master `90d3653..034ac23`.
+- 원격 검증: `origin/main:index.md` `자동 추가` 0건 / `2026-W47` 1건, `origin/main:LOG.md` `## 2026-11-23 (월) 18:00` 1건 + CJK 0건.
+- 교훈: (1) P19 "0건 N일 연속"은 재발 배제가 아님 — 3단계 판별 매 실행 독립 수행. (2) 외부 프로세스 커밋에 정식 수정이 섞여 있으면 parent 복원 금지 — footer truncate만. (3) P36 10거래일 연속 구조적 결함 — 근본 조치(toolset에 `file` 추가) 승인 여부 사용자 확인 필요.
+
 ## 2026-11-20 (21:00 KST) — P19 재감염 0건 (4일 연속) + P36 9차 + P37 CJK 6자 + **기존 섹션 CJK 잔존 발견** + SCHEMA taxonomy `version` 확장 + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 11-16 재발 이후 4일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD(`c6357d0`) 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**. index.md 내 서브모듈 경로 링크 0건, P18(`^|- `) wiki 전체 0건.
