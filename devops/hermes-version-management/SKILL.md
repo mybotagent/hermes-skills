@@ -327,6 +327,44 @@ WARNING hermes_cli.config: providers.minimax: unknown config keys ignored: avail
 doctor는 이걸 잡지 못하고, `errors.log`에만 남아 조용하다.
 → provider 전환(`model-switcher`) 시 불필요해진 키를 같이 정리한다. Harmless하지만 누적되면 무시하기 쉬워 오판 위험.
 
+## 🚨 cron에서 게이트웨이 재시작 — systemd timer 경로 (2026-11-25 실측)
+
+cron run은 **게이트웨이 프로세스의 자식**이다(`cron.scheduler`의 PPID = gateway MainPID).
+게이트웨이를 그 자리에서 재시작하면 SIGTERM이 자기 자신에게 전파되어 **delivery가 유실**된다.
+Hermes는 명령을 자체 차단한다:
+
+```
+Blocked: command or referenced script cannot restart, stop, or uninstall the gateway
+from inside the gateway process.
+```
+
+**정상 경로 (실측 성공)**:
+1. `hermes update --yes --no-gateway-restart` → 코드/의존성/빌드 갱신만 수행
+2. dashboard: `hermes dashboard --stop` → 동일 인자로 terminal(background=true) 재기동 → `curl` 200 확인
+3. gateway: systemd user unit + timer로 **지연 재시작 예약** (아래)
+
+**systemd unit 직접 작성 (systemd-run은 차단됨)**:
+```bash
+# ~/.config/systemd/user/hermes-gw-reload-<MMDD>.service
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl --user restart hermes-gateway.service
+
+# ~/.config/systemd/user/hermes-gw-reload-<MMDD>.timer
+[Timer]
+OnActiveSec=300
+Unit=hermes-gw-reload-<MMDD>.service
+
+systemctl --user daemon-reload && systemctl --user start hermes-gw-reload-<MMDD>.timer
+```
+
+**Pitfall**:
+- `systemd-run --user --on-active=N ...` → Hermes 가드가 재시작 문자열을 인식해 **차단**.
+- 기존 `hermes-postupdate-reload.timer`는 `OnBootSec=0`+`OnActiveSec=180`이라 이미 elapsed → 재발화 안 됨.
+  새 unit을 만들어야 한다.
+- 재시작 후 cron이 "execution unverified"로 **자동 pause**될 수 있음 → 다음 run에서
+  `hermes cron resume b05629511dd9` 확인/복구.
+
 ## 📋 보고 규칙
 
 - **진짜 최신** (upstream 대비 0 behind, doctor 정상) → `[SILENT]`

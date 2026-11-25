@@ -404,6 +404,30 @@ rm ~/.hermes/cron/.tick.lock
   `["20261026", 시가, 고가, 저가, 종가, 거래량, 외국인소진율]` → **주간수익률·외국인소진율까지 한 번에**.
 - 📄 상세 + 코드: `references/cron-mode-korean-stock-series-and-text-qa.md`
 
+### 🚨 KRX 정규장 종가는 news/HTML 일별표가 1순위 — siseJson·Polling은 당일치 신뢰 불가 (2026-11-24 신규)
+
+**실측 (2026-11-24 장 마감 후)**: 같은 당일(2026-11-24) 종가가 출처별로 3~4가지 값으로 갈렸다.
+
+| 출처 | 삼성전자 | SK하이닉스 | 판정 |
+|:-----|---------:|----------:|:-----|
+| Naver `siseJson.naver` | 183,500 | 1,116,000 | ❌ NXT/장후 혼합 |
+| Naver Polling (`ms='OPEN'`) | 183,800 | 1,118,000 | ❌ 실시간 스냅샷 |
+| **news 다수 + 한국경제 차트(장마감)** | **189,400 (+6.70%)** | **1,158,000 (+6.73%)** | ✅ KRX 정규장 |
+| Investing.com 과거데이터 | 189,600 (+6.82%) | 1,174,000 (+8.20%) | ≈ 근접 (지연 quote) |
+
+**근본 원인**: `siseJson`/`Polling`의 당일 행은 **NXT(nextrade) 장후 거래가 반영된 값**이며, 정규장 종가와 다를 수 있다. 종가·등락률을 리포트에 쓸 때 당일 행만 단독 신뢰하면 오염된다.
+
+**HARD RULE — 당일 종가 확정 우선순위**:
+1. **Reuters/연합뉴스/한경/아주경제 등 "마감" 기사 인용값** (여러 매체 일치 시 채택)
+2. **한국경제 차트 페이지** `https://markets.hankyung.com/stock/{code}/chart` → `YYYY.MM.DD 장마감` 행
+3. **Naver 금융 HTML 일별표** `finance.naver.com/item/main.naver?code={code}` → `26. 11. 24.` 행 (web_search로 페이지 content를 읽으면 파싱 가능 — HTML regex 파싱은 실패해도 web_search snippet 추출이 훨씬 견고)
+4. Investing.com 과거데이터 (403 발생 시 web_search snippet으로 대체)
+5. `siseJson`/`Polling` — **당일 행은 교차검증용으로만** 사용
+
+**교차검증 규칙**: 같은 당일에 값이 2개 이상 나오면 **"마감"으로 명시된 값 + 복수 매체 일치값**을 우선하고, 리포트 본문에 "정규장 종가"와 "장후 거래 시간대 가격"을 반드시 구분해 표기한다. 단일 출처 값만 남기면 안 된다.
+
+**학계 출처 주의**: `Naver sise_day` HTML URL(410), `siseJson` Referer 필수, 대체 chart API(400), Investing.com 직접 요청(403)이 모두 실패 → **web_search로 해당 페이지 content를 읽어 표를 추출**하는 우회가 실제로 동작한다.
+
 ### 🚨 저장 전 한국어 텍스트 CJK 혼입 QA (2026-10-26 신규)
 
 긴 한국어 리포트를 생성·저장하면 **중국어/일본어 토큰이 섞여 저장**되는 것이 반복적으로 발생함
