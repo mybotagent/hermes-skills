@@ -2,6 +2,22 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-25 (21:00 KST) — P19 재감염 0건 (4일 연속) + P36 12차 (11-25 브리핑 백필, CJK 0건) + logs/index.md CJK 잔존 1건 추가 제거 + stale 57 유지 + audit 7종 통과 + push 성공
+
+- **P19 재감염 0건 — 11-21 재발 이후 4일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**. index.md 내 서브모듈 경로 링크 0건, 끝 개행 정상.
+- **P36 12차**: 브리핑 크론(`2916cc9c2ceb`)이 `2026-11-25_18-27-39.md` 산출(18:27)했으나 LOG.md frontmatter `updated:` = 2026-11-24 → 11-25 브리핑 미백필. 원본 `## Response` = 3901~4021행. 원본 CJK 6자 혼입 → 순수 한국어 재작성 후 **LOG.md 전체 CJK 0건** 검증.
+  - ★ 11-19/11-20/11-23/11-24에 이어 5회 연속 **자기 작성 문장에서 CJK가 새로 생기는** 패턴 → 1차 재작성 후 LOG.md 전체 재검증으로 0건 확인. 언어 규칙 메모는 서술형으로만 기술(감지된 한자 예시 인용 금지) — 11-13/11-18/11-19/11-20 패턴 계속 적용.
+- **★ P37 신규 확장 — `logs/index.md`에도 CJK 잔존 1줄 발견.** 11-20 실행분 행(`|| 11-20 21:00`)에 **감지된 한자를 예시 인용**한 문장이 남아 있었음(2자 어구) → "기존 섹션의 한자 2자 잔존도 제거"로 서술형 재작성. **P37의 CJK 스캔 범위는 LOG.md뿐이 아니라 logs/index.md까지 확장해야 함** (로그 파일 본문도 포함 권장).
+- **P37 확장 확인**: `trade-pipeline/logs/portfolio/*.json` 최근 6건(11-19~11-25) CJK 0건, `trade-pipeline/logs/*.md` 최근 5건(11-18~11-20) CJK 0건. 11-12 이후 재발 없음.
+- audit 7종 전항목 통과: wikilink 0 (94 .md) / markdown-link P11 0 / index-md **registered 96 = actual 96** (dead 0, REAL MISSING 0) / tag taxonomy 200·used 144·Unknown 0 / logs-index broken 0 notref 0 covered 13 / **stale 57 / no_date_operational 0 / no_date_immutable 24** / dup-updated 0 (199p). `git diff --check` 통과.
+  - ★ stale 57 / 0 / 24 = 11-24 기준선과 **완전 일치** (신규 30일 경과 페이지 없음 → 증가 0). immutable 24 유지(신규 raw 초안 없음).
+- P18 스캔(`^|- `) wiki 전체 0건, 스킬 references 0건, logs/index.md triple-pipe 0건.
+- **위키 본문 변경 1건**: `LOG.md` — 11-25 브리핑 섹션 추가(한국어 재작성) + frontmatter `updated: 2026-11-24` → `2026-11-25`.
+- logs/index.md: November 섹션 기존 확인 → 기준 행 `|| 11-24 21:00` prefix 복사 후 python 인서트(삽입 위치 line 13). `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과 + logs-index 재감사 broken=0/notref=0.
+- 커밋: logs `745de9a` (parent `ff52374`) / parent `7021ebd` (parent `89a584b`). push `89a584b..7021ebd` (hermes-wiki main), logs master `ff52374..745de9a`.
+- 원격 검증: `origin/main:LOG.md` `## 2026-11-25 (수) 18:00` 1건 + `updated: 2026-11-25` + CJK 0건, `origin/main:index.md` `자동 추가` 0건, `origin/master:index.md` `11-25 21:00` 1건 + CJK 0건.
+- 교훈: (1) P37의 CJK 검증 범위를 **LOG.md + logs/index.md + 신규 로그 파일**로 확장. (2) P19 "0건 N일 연속"은 재발 배제 아님 — 3단계 판별 매 실행 독립 수행. (3) P36 12거래일 연속 구조적 결함 — 근본 조치(toolset에 `file` 추가) 승인 여부 사용자 확인 필요.
+
 ## 2026-11-24 (21:00 KST) — P19 재감염 0건 (3일 연속) + P36 11차 (11-24 브리핑 백필, CJK 0건) + stale 55→57 신규 2건 + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 11-21 재발 이후 3일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**. index.md 내 서브모듈 경로 링크 0건, 끝 개행 정상.

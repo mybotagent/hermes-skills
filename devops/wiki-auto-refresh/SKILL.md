@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.50.0"
+version: "1.51.0"
 changelog:
+  - "2026-11-25: **P37 10차 + P37 항목 7 추가 — CJK 검증 범위를 logs/index.md까지 확장**. P19 재감염 0건 (11-21 재발 이후 4일 연속, working tree / HEAD / origin/main 모두 0). P36 12차 — 브리핑 크론 `2916cc9c2ceb`이 `2026-11-25_18-27-39.md` 산출(18:27)했으나 LOG.md frontmatter `updated:` = 2026-11-24 → 11-25 브리핑 미백필 → 원본 `## Response`(3901~4021행) 한국어 재작성 백필. 원본 CJK 6자 혼입. **★ P37에 항목 7 추가**: '언어 규칙' 메모 줄이 CJK 재삽입의 주요 원인이므로(11-13/11-18/11-19/11-20에 이어 5회 연속) 감지된 한자는 서술형으로만 기술하고, **CJK 검증 범위를 LOG.md뿐 아니라 `logs/index.md`(및 신규 로그 파일)까지 확장** — 11-20 실행분 행에 한자 2자 예시 인용이 잔존해 있어 LOG.md 스캔만으로는 놓쳤음 → 서술형 재작성 후 CJK 0건 확인. stale 57/0/24 = 11-24 기준선 완전 일치(신규 30일 경과 없음). audit 7종 전항목 통과(index-md registered 96 = actual 96, tag taxonomy 200·Unknown 0, logs-index broken 0/notref 0, dup-updated 0/199p). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-24 21:00` prefix 복사 후 python 인서트(line 13), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `745de9a` / parent `7021ebd`. references/session-notes.md 11-25 섹션 추가."
   - "2026-11-20: **P37 9차 + 신규 — 기존 섹션 CJK 잔존 발견**. P19 재감염 0건 (11-16 재발 이후 4일 연속, working tree / HEAD / origin/main 모두 0). P36 9차 — 브리핑 크론 `2916cc9c2ceb`이 `2026-11-20_18-30-40.md` 산출(18:30)했으나 LOG.md frontmatter `updated:` = 2026-11-19 → 11-20 브리핑 미백필 → 원본 `## Response`(3711~3837행) 한국어 재작성 백필(18줄). **P37 9차 — 원본 CJK 6자**(`典型` 리스크 오프 전형 조합 / `陡峭` 기울기 급격화 / `获利` 수익 실현, 각 2자). **★ P37에 2개 항목 추가**: (a) **'언어 규칙' 메모 줄이 CJK 재삽입의 주요 원인** — 감지된 한자를 예시로 적은 문장 자체가 CJK가 되어 11-13/11-18/11-19에 이어 **4회 연속** 재발 → 서술형('한자 3어구')으로만 작성, (b) **기존 섹션에 잔존한 CJK도 잡아야 함** — 백필 대상이 아닌 과거 섹션(같은 날 다른 크론이 만든 09:24 버전체크 섹션)에 `所致` 2자가 잔존해 있었음 → 검증 범위를 LOG.md 전체(신규+기존+frontmatter)로 확장. **신규 — 미등록 태그 `version`** (tag-audit Unknown 1건): `infra/hermes-version-management.md`(11-20 09:24 버전체크 크론 산출물)의 tags → SCHEMA.md infra 행에 `version` 추가(taxonomy 199 → 200). index-md registered 93 → 94. audit 7종 전항목 통과(index-md registered 94 = actual 94, tag Unknown 0, logs-index broken 0/notref 0, stale 56/0/23 — 11-19 기준선 완전 일치, dup-updated 0/193p). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-19 21:00` prefix 복사 후 python 인서트(line 12), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `2db0e81` / parent `a192a1b`. references/session-notes.md 11-20 섹션 추가."
   - "2026-11-16: **P19 재발(11-02 이후 10일 만) — committed+push 변형** + P36 5차 + P37 5차 + **P38 신규**. 11-02~11-13의 9일 연속 0건 종료 뒤 `hermes-config-sync` 크론 커밋 `60a1708`(13:30)이 `index.md` footer 뒤에 rogue 1건을 삽입하고 **커밋+push까지 완료**. 판별 3단계 working tree 1 / HEAD 1 / origin/main 1 → committed 변형. 오염 커밋 diff는 rogue 2줄뿐(정식 수정 0) → footer truncate + `raw/` 섹션에 **PAT B 정식 재등록**(W46 초안) + 끝 개행 복구. **P38 신규 — (a) 외부 프로세스가 index.md를 수정할 때 파일 끝 개행을 보장하지 않음(`\\ No newline at end of file` 증상), (b) PAT A rogue 항목을 해당 섹션 정식 형식(PAT B)으로 재등록해야 하며 단순 삭제하면 index-md-audit REAL MISSING 유발**. P36 5차(브리핑 크론 toolset에 file 부재 — 근본 미해결, 보고만) + P37 5차(원본 CJK 2자 `租金` → 한국어 재작성, CJK 0건). **P37 확장 실증 — `trade-pipeline/logs/portfolio/2026-11-12.json`의 `key_risks`에 `化` 1자 잔존 → 파이프라인 LLM 출력 단계에도 CJK 스캔 QA 필요**. audit 7종 전항목 통과(index-md registered 93 = actual 93, tag taxonomy 199/Unknown 0, logs-index broken 0/notref 0). stale 57/0/23 (11-13 기준선 57/0/22와 stale 완전 일치, immutable +1 = 신규 raw W46 초안 — 스크립트 버그 아님). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-13 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `57818c2` / parent `d398c73`. references/run-2026-11-16.md 추가."
   - "2026-11-13: **P36 4차 재현 + P37 4차 (11-13 브리핑)**. 11-06/11-09/11-10/11-11/11-12에 이어 11-13도 동일 패턴 — 18:00 크론 `2916cc9c2ceb`이 `2026-11-13_18-20-43.md` 산출했으나 `LOG.md` mtime은 11-12 20:01 고정. 원본 `## Response`(3711~3846행)에 **CJK 6자 혼입**(`预`/`期`/`寿`/`险`/`広`/`化`) → P37 절차대로 **순수 한국어 재작성 후 CJK 0건 검증**. ★ **재작성 함정 실전 발견**: 원본 `寿险`(생명보험)조차 한자 표기였고 1차 재작성을 기계적 치환으로 해 CJK 2자 잔존 → 2차 검증에서 `생명보험`으로 교체. **CJK 검증은 백필 직후 1회가 아니라 본문 전체(기존 섹션 포함)로 재확인할 것.** stale 기준선 57/0/22 유지(11-12와 완전 일치). P19 재감염 0건 **9일 연속**(11-02~11-13, 주말 제외). audit 7종 전항목 통과(index-md registered 92 = actual 92, tag taxonomy 199/Unknown 0, logs-index broken 0/notref 0). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-12 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `4d4afe8` / parent `4625ec4`. **P37 확장 — 파이프라인 LLM 출력 오염 발견**: `logs/portfolio/2026-11-12.json`의 `key_risks`에 CJK 혼입(매크로 리포트는 QA 통과, 포트폴리오 JSON은 QA 미적용) → 브리핑 크론 수정만으로 부족하며 **파이프라인 LLM 출력 단계에도 CJK 스캔 QA 필요**. references/run-2026-11-13.md 추가."
@@ -1258,6 +1259,18 @@ for k in set(list(cur)+list(orig)):
    → 언어 규칙 메모는 **서술형으로만** 쓴다 ("한자 3어구(○○/△△/□□) 혼입"). 원본 한자를 코드백틱으로 인용하지 말 것.
 6. **★ 기존 섹션에 잔존한 CJK도 함께 잡아야 한다 (2026-11-20 신규 발견).** 백필 대상이 아닌 **과거 섹션**(예: 같은 날 다른 크론이 만든 09:24 버전체크 섹션)에 CJK 2자가 잔존해 있을 수 있다. 신규 백필분만 스캔하면 통과시켜버린다.
    → 백필 후 검증은 **LOG.md 전체 파일** 대상으로. 신규 작성분·기존 섹션·frontmatter 전부 포함.
+7. **★ CJK 검증 범위는 LOG.md뿐이 아니라 `logs/index.md`까지 확장할 것 (2026-11-25 신규 발견).** `logs/index.md`의 데이터 행은 런타임에 **감지된 한자를 예시 인용**한 문장을 담는 경우가 있다 (11-20 실행분 행이 2자 어구를 인용한 형태). LOG.md 스캔만 하면 이 잔존을 놓친다.
+   → 검증 명령 예:
+   ```bash
+   python3 -c "
+   import io
+   for p in ['/home/ubuntu/.hermes/wiki/LOG.md', '/home/ubuntu/.hermes/wiki/logs/index.md']:
+       s=io.open(p,encoding='utf-8').read()
+       cj=[c for c in s if '\u4e00'<=c<='\u9fff']
+       print(p, len(cj), sorted(set(cj)))
+   "
+   ```
+   → remediation: 해당 행의 예시 인용을 **서술형**으로 재작성("한자 2자 잔존도 제거") 후 재검증. 신규 로그 파일(`logs/2026/*.md`) 본문도 같은 방식으로 스캔 권장.
 
 **P36 재발 확인 (2026-11-11):** 11-06 / 11-09 / 11-10에 이어 11-11도 동일 패턴.
 → **매일 반복되는 구조적 결함**이며, 근본 조치(브리핑 크론 toolset에 `file` 추가 + 프롬프트에 기록 단계)는
