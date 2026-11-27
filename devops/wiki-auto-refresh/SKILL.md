@@ -1,8 +1,9 @@
 ---
 name: wiki-auto-refresh
 description: "매일 21:00 KST SOP Wiki 자동 갱신 — kanban 태스크 생성 → 위키 헬스 체크 → auto-fix → git push → 완료 보고"
-version: "1.51.0"
+version: "1.52.0"
 changelog:
+  - "2026-11-26: **P36 13차 + P37 13차 + P39 신규 — write_file의 인코딩 손실(U+FFFD)**. P19 재감염 0건 (11-02 이후 5일 연속, working tree / HEAD / origin/main 모두 0). P36 13차 — 브리핑 크론 `2916cc9c2ceb`이 `2026-11-26_18-13-43.md` 산출(18:13)했으나 LOG.md frontmatter `updated:` = 2026-11-25 → 11-26 브리핑 미백필 → 원본 `## Response`(3901~4047행) 한국어 재작성 백필. P37 13차 — 원본 CJK 6자(3개 어구: 3933·3964·3972행) 혼입 → 한국어 재작성. **★ P39 신규 — `write_file`이 `verified:true`를 반환해도 인코딩 손실이 발생할 수 있음**: 신규 로그 파일(`logs/2026/2026-11-26-2100.md`)에 '감사'의 일부가 U+FFFD(replacement character) 3자로 기록됨 → `grep`/CJK 스캔으로는 **탐지 불가**(CJK 0건이어도 깨진 바이트 존재) → **신규 파일 작성 후에는 `\ufffd` 검사 필수**. stale 57/0/24 = 11-24 기준선 완전 일치. audit 7종 전항목 통과(index-md registered 96 = actual 96, tag taxonomy 200·Unknown 0, logs-index broken 0/notref 0, dup-updated 0/202p). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-25 21:00` prefix 복사 후 python 인서트(line 14), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `1c8167e` / parent `dabf6dd`. references/session-notes.md 11-26 섹션 추가."
   - "2026-11-25: **P37 10차 + P37 항목 7 추가 — CJK 검증 범위를 logs/index.md까지 확장**. P19 재감염 0건 (11-21 재발 이후 4일 연속, working tree / HEAD / origin/main 모두 0). P36 12차 — 브리핑 크론 `2916cc9c2ceb`이 `2026-11-25_18-27-39.md` 산출(18:27)했으나 LOG.md frontmatter `updated:` = 2026-11-24 → 11-25 브리핑 미백필 → 원본 `## Response`(3901~4021행) 한국어 재작성 백필. 원본 CJK 6자 혼입. **★ P37에 항목 7 추가**: '언어 규칙' 메모 줄이 CJK 재삽입의 주요 원인이므로(11-13/11-18/11-19/11-20에 이어 5회 연속) 감지된 한자는 서술형으로만 기술하고, **CJK 검증 범위를 LOG.md뿐 아니라 `logs/index.md`(및 신규 로그 파일)까지 확장** — 11-20 실행분 행에 한자 2자 예시 인용이 잔존해 있어 LOG.md 스캔만으로는 놓쳤음 → 서술형 재작성 후 CJK 0건 확인. stale 57/0/24 = 11-24 기준선 완전 일치(신규 30일 경과 없음). audit 7종 전항목 통과(index-md registered 96 = actual 96, tag taxonomy 200·Unknown 0, logs-index broken 0/notref 0, dup-updated 0/199p). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-24 21:00` prefix 복사 후 python 인서트(line 13), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `745de9a` / parent `7021ebd`. references/session-notes.md 11-25 섹션 추가."
   - "2026-11-20: **P37 9차 + 신규 — 기존 섹션 CJK 잔존 발견**. P19 재감염 0건 (11-16 재발 이후 4일 연속, working tree / HEAD / origin/main 모두 0). P36 9차 — 브리핑 크론 `2916cc9c2ceb`이 `2026-11-20_18-30-40.md` 산출(18:30)했으나 LOG.md frontmatter `updated:` = 2026-11-19 → 11-20 브리핑 미백필 → 원본 `## Response`(3711~3837행) 한국어 재작성 백필(18줄). **P37 9차 — 원본 CJK 6자**(`典型` 리스크 오프 전형 조합 / `陡峭` 기울기 급격화 / `获利` 수익 실현, 각 2자). **★ P37에 2개 항목 추가**: (a) **'언어 규칙' 메모 줄이 CJK 재삽입의 주요 원인** — 감지된 한자를 예시로 적은 문장 자체가 CJK가 되어 11-13/11-18/11-19에 이어 **4회 연속** 재발 → 서술형('한자 3어구')으로만 작성, (b) **기존 섹션에 잔존한 CJK도 잡아야 함** — 백필 대상이 아닌 과거 섹션(같은 날 다른 크론이 만든 09:24 버전체크 섹션)에 `所致` 2자가 잔존해 있었음 → 검증 범위를 LOG.md 전체(신규+기존+frontmatter)로 확장. **신규 — 미등록 태그 `version`** (tag-audit Unknown 1건): `infra/hermes-version-management.md`(11-20 09:24 버전체크 크론 산출물)의 tags → SCHEMA.md infra 행에 `version` 추가(taxonomy 199 → 200). index-md registered 93 → 94. audit 7종 전항목 통과(index-md registered 94 = actual 94, tag Unknown 0, logs-index broken 0/notref 0, stale 56/0/23 — 11-19 기준선 완전 일치, dup-updated 0/193p). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-19 21:00` prefix 복사 후 python 인서트(line 12), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `2db0e81` / parent `a192a1b`. references/session-notes.md 11-20 섹션 추가."
   - "2026-11-16: **P19 재발(11-02 이후 10일 만) — committed+push 변형** + P36 5차 + P37 5차 + **P38 신규**. 11-02~11-13의 9일 연속 0건 종료 뒤 `hermes-config-sync` 크론 커밋 `60a1708`(13:30)이 `index.md` footer 뒤에 rogue 1건을 삽입하고 **커밋+push까지 완료**. 판별 3단계 working tree 1 / HEAD 1 / origin/main 1 → committed 변형. 오염 커밋 diff는 rogue 2줄뿐(정식 수정 0) → footer truncate + `raw/` 섹션에 **PAT B 정식 재등록**(W46 초안) + 끝 개행 복구. **P38 신규 — (a) 외부 프로세스가 index.md를 수정할 때 파일 끝 개행을 보장하지 않음(`\\ No newline at end of file` 증상), (b) PAT A rogue 항목을 해당 섹션 정식 형식(PAT B)으로 재등록해야 하며 단순 삭제하면 index-md-audit REAL MISSING 유발**. P36 5차(브리핑 크론 toolset에 file 부재 — 근본 미해결, 보고만) + P37 5차(원본 CJK 2자 `租金` → 한국어 재작성, CJK 0건). **P37 확장 실증 — `trade-pipeline/logs/portfolio/2026-11-12.json`의 `key_risks`에 `化` 1자 잔존 → 파이프라인 LLM 출력 단계에도 CJK 스캔 QA 필요**. audit 7종 전항목 통과(index-md registered 93 = actual 93, tag taxonomy 199/Unknown 0, logs-index broken 0/notref 0). stale 57/0/23 (11-13 기준선 57/0/22와 stale 완전 일치, immutable +1 = 신규 raw W46 초안 — 스크립트 버그 아님). logs/index.md November 섹션 기존 확인 → 기준 행 `|| 11-13 21:00` prefix 복사 후 python 인서트(삽입 위치 line 12), `cat -A` prefix 일치 + triple-pipe 0건 + `git diff --check` 통과. 커밋 logs `57818c2` / parent `d398c73`. references/run-2026-11-16.md 추가."
@@ -1317,6 +1318,41 @@ python3 "$SCRIPTS/index-md-audit.py"   # REAL MISSING 0 확인 (단순 삭제하
 - **★ 외부 프로세스가 만든 index.md에는 끝 개행이 없을 수 있다** — 복구 시 `rstrip('\n')+'\n'`으로 정리 (다음 append가 같은 줄에 붙는 것을 방지).
 - **★ P19 "0건 N일 연속"은 재발 배제가 아니다** — 9일 연속 종료 국면 뒤에 committed+push 변형으로 재발했다. **3단계 판별(working tree / HEAD / origin/main)은 매 실행 독립 수행**할 것.
 - 새 파일 생성 크론 + index 자동등록 크론이 결합하면 P19(위치 오염) + PAT 형식 불일치가 동시에 발생한다.
+
+### P39. `write_file`의 인코딩 손실 — U+FFFD replacement character (2026-11-26 추가)
+
+**증상:**
+`write_file`로 신규 파일을 만들었는데, 도구가 `verified: true`를 반환하고 YAML/lint 검사도 통과했는데도
+특정 한 단어의 일부 글자가 **U+FFFD(replacement character)** 로 기록됨.
+
+**실제 사례 (2026-11-26):** `logs/2026/2026-11-26-2100.md` 작성 시 "감사"의 "사" 1자가
+U+FFFD 3연속으로 기록됨 (단어 끝 1자 손실). write_file 응답은 `verified: true`, `lint: skipped`였음.
+
+**왜 놓치기 쉬운가:**
+- **CJK 스캔으로는 탐지 불가** — 한자가 0건이어도 깨진 바이트는 존재함 (P37 검증 통과해도 별개 결함)
+- `git diff --check`는 바이트 손실을 잡지 못함 (공백/-trailing whitespace만 검사)
+- 파일 내용 리뷰 시 눈에 띄지 않을 수 있음 (짧은 단어의 1자)
+
+**조치:**
+1. 발견 시 `patch` 도구로 해당 단어만 재작성 (파일 전체 rewrite 불필요)
+2. **★ 신규 파일 작성 후에는 반드시 `\ufffd` 검사**:
+   ```bash
+   python3 -c "
+   import io
+   s=io.open('<파일경로>',encoding='utf-8').read()
+   print('repl:', s.count('\ufffd'))
+   for i,l in enumerate(s.split('\n'),1):
+       if '\ufffd' in l: print(i, l)
+   "
+   ```
+3. CJK 검증과 **병행**할 것 — P37 스캔에 `\ufffd` 카운트를 함께 넣으면 두 결함을 한 번에 잡음
+
+**확장 권장 (검증 스크립트 통합):**
+```python
+cj = [c for c in s if '\u4e00' <= c <= '\u9fff']
+repl = s.count('\ufffd')
+assert len(cj) == 0 and repl == 0
+```
 
 ### P31. No-op 실행 — 무의미한 커밋을 만들지 말 것 (2026-11-03 추가)
 

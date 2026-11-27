@@ -2,6 +2,19 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-26 (21:00 KST) — P19 재감염 0건 (5일 연속) + P36 13차 (11-26 브리핑 백필, 원본 CJK 6자 제거) + stale 57/0/24 완전 일치 + audit 7종 통과 + push 성공
+- P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → **재감염 0건 (11-02 이후 5일 연속)**. stash 비어 있음, branch main, working tree clean
+- audit 7종 전항목 통과: wikilink TOTAL 0(MD/WL/CD/BN/MDX), markdown-link P11 0 / broken 0, index-md registered 96 = actual 96 / dead 0 / REAL MISSING 0, tag taxonomy 200 · Unknown 0, logs-index broken 0 / notref 0 / covered 13 / ambiguous 0, **stale 57 / no_date_operational 0 / no_date_immutable 24** (11-24·11-25 기준선과 완전 일치 — 신규 30일 경과 없음), dup-updated 0건 / 202p 스캔
+- P18 파이프 오염(`^|- `) 0건. CJK 최종 검증 3파일(LOG.md / logs/index.md / 신규 로그) 0건, replacement char 0건
+- **P36 13차 — 11-26 브리핑 백필**: 크론 `2916cc9c2ceb`이 `2026-11-26_18-13-43.md` 산출(18:13)했으나 LOG.md frontmatter `updated:`는 11-25에 고정 → 미백필. 원본 `## Response`(3901~4047행) 확인 후 **순수 한국어로 재작성**하여 11-26 섹션 신규 추가 + frontmatter `updated: 2026-11-26` 갱신
+- **P37 — 원본 CJK 6자(3개 어구) 혼입 확인**: 오류 문서 관련 2자(3933행) · 마감 상승 관련 2자(3964행) · 성장 관련 2자(3972행) → 재작성 과정에서 전부 한국어 구어로 대체. **P37 항목 5(감지된 한자를 예시로 인용하면 그 자체가 CJK가 됨) 준수** — 로그 파일에도 "성능 관련 2자" 식으로 서술형으로만 기술
+- 신규 로그 파일 작성 시 **U+FFFD replacement character 3건 발생**(`감사`라는 단어가 일부 깨진 형태로 기록됨 — write_file 응답은 verified:true지만 인코딩 손실이 있었음. patch로 복구 후 재검증(repl 0건) → **신규 파일 작성 후에는 replacement char 검사 필수**
+- trade-pipeline portfolio JSON 2026-11-23~26 4건 CJK 0건 확인 (P37 확장 실증 — 이번엔 오염 없음)
+- logs/index.md November 섹션 존재 확인 → 기준 행 `|| 11-25 21:00` prefix 복사 후 python 인서트(line 14). `cat -A` 형제 행 prefix 일치 / triple-pipe 0건 / `git diff --check` 통과 / 재감사 broken 0 notref 0
+- 커밋: logs `1c8167e` (hermes-logs master, push 성공 `745de9a..1c8167e`) / parent `dabf6dd` (hermes-wiki main, push 성공 `7021ebd..dabf6dd`)
+- 미해결(보고): ① P36 구조적 결함 근본 미해결(브리핑 크론 toolset에 파일쓰기 도구 부재 — toolset에 `file` 추가 필요, 범위 밖이라 승인 없이 진행 안 함) ② trade-pipeline 표준 수집기 429 잔존 파일 2개 → 월 1일 LangGraph 파이프라인이 0종목으로 조용히 실패할 상태, 다음 리밸런싱일 전 복구 필요
+- 신규 로그: `logs/2026/2026-11-26-2100.md`
+
 ## 2026-11-25 (21:00 KST) — P19 재감염 0건 (4일 연속) + P36 12차 (11-25 브리핑 백필, CJK 0건) + logs/index.md CJK 잔존 1건 추가 제거 + stale 57 유지 + audit 7종 통과 + push 성공
 
 - **P19 재감염 0건 — 11-21 재발 이후 4일 연속 0건 유지.** 판별 3단계: working tree 0 / HEAD 0 / origin/main 0 → `git diff HEAD --stat -- index.md` 빈 결과, stash 없음, `git status -sb` = `## main...origin/main` → **복구 경로 미실행**. index.md 내 서브모듈 경로 링크 0건, 끝 개행 정상.
