@@ -2,6 +2,18 @@
 
 누적 세션 노트. 각 항목은 (날짜, 발견, 적용) 형식.
 
+## 2026-11-27 (21:00 KST) — P19 재감염 0건 (6일 연속) + P36 14차 (11-27 브리핑 백필, 원본 CJK 0자) + stale 57/0/24 완전 일치 + audit 7종 통과 + push 성공
+- P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → **재감염 0건 (11-02 이후 6일 연속)**. stash 비어 있음, branch main, working tree clean
+- P18 스캔(`^|- `): wiki 0건 / skill references 0건
+- audit 7종 전항목 통과: wikilink MD/WL/CD/BN/MDX 0 / markdown-link P11 0·broken 0 / index-md registered 96 = actual 96, dead link 0, REAL MISSING 0 / tag taxonomy 200·used 144·Unknown 0 / logs-index broken 0·notref 0·covered 13 / stale 57·no_date_operational 0·no_date_immutable 24 (11-26 기준선 완전 일치) / dup-updated 0건 (pages 202)
+- **P36 14차 — 11-27 브리핑 백필**: 크론 `2916cc9c2ceb`이 `2026-11-27_18-19-12.md` 산출(18:19), LOG.md frontmatter `updated:`는 11-26 고정 → 미백필 상태. 원본 `## Response`(3901~4047행) 한국어 재작성 백필, frontmatter `updated: 2026-11-27`
+  - **P37 — 원본 CJK 0건**: 이번 산출물은 한자 혼입 없음 → 제거 작업 불필요. 원본 CJK 스캔을 백필 **전**에 먼저 수행하면 불필요한 재작성 작업 자체를 줄일 수 있음 (이번이 14차 중 처음으로 원본이 청정)
+  - **P39 검증 — 신규 로그 파일 U+FFFD 0건**: `write_file` 응답 `verified: true`였지만 P39 인코딩 손실 여부를 별도 확인 (`s.count('\ufffd')` = 0) → 이상 없음. write_file 후 U+FFFD 검사는 계속 유지 필요
+  - CJK + U+FFFD 병행 검증: LOG.md 전체 / logs/index.md / 신규 로그 `logs/2026/2026-11-27-2100.md` 모두 0건. `git diff --check` 통과, frontmatter `yaml.safe_load` 정상
+- 로그 생성 및 등록: `logs/2026/2026-11-27-2100.md` 신규 + `logs/index.md` 행 추가 — 기준 행 `|| 11-26 21:00` prefix 복사 후 python 인서트(삽입 위치 line 13), `cat -A` 형제 행 prefix 일치 + triple-pipe 0건 + `git diff --check` 통과 + logs-index 감사 broken 0/notref 0
+- 커밋: logs `dd9e7e4` (master) / parent `1669d25` (main) — 둘 다 push 완료, origin 반영 확인
+- 미해결(보고): P36 구조적 결함(브리핑 크론 toolset에 file 부재 — 근본 미해결, 매일 수동 백필), trade-pipeline 표준 수집기 미커밋 파일 6종 존재(사용자 승인 대기)
+
 ## 2026-11-26 (21:00 KST) — P19 재감염 0건 (5일 연속) + P36 13차 (11-26 브리핑 백필, 원본 CJK 6자 제거) + stale 57/0/24 완전 일치 + audit 7종 통과 + push 성공
 - P19 3단계 판별: working tree 0 / HEAD 0 / origin/main 0 → **재감염 0건 (11-02 이후 5일 연속)**. stash 비어 있음, branch main, working tree clean
 - audit 7종 전항목 통과: wikilink TOTAL 0(MD/WL/CD/BN/MDX), markdown-link P11 0 / broken 0, index-md registered 96 = actual 96 / dead 0 / REAL MISSING 0, tag taxonomy 200 · Unknown 0, logs-index broken 0 / notref 0 / covered 13 / ambiguous 0, **stale 57 / no_date_operational 0 / no_date_immutable 24** (11-24·11-25 기준선과 완전 일치 — 신규 30일 경과 없음), dup-updated 0건 / 202p 스캔

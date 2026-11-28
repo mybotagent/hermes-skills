@@ -446,6 +446,13 @@ for m in re.finditer(r'[一-鿿]+', d['macro_report_summary']):
 - **⚠️ CJK 스캔만으로는 절반의 오염을 못 잡는다 (2026-11-02 추가)** — 한자 없이 섞인 **Hangul-Latin 혼합어**가 정규식을 통과한다.
   실제 검출 사례: `Kyokushia의`, `구program가`, `institutions의`, `marché에`, `라고Speaking하며`, `전서 활성화`, `Kyokushia의 가이던스가不出去내리는`.
   → 보조 검사: `re.findall(r'[가-힣]([A-Za-z]{3,})', body)` 결과에서 화이트리스트(AI·HBM·ASP·GDP·CPI·EPS·PER·PBR·API·IT·MLCC 등) 외 것만 후보로 뽑아 **문맥 확인** → 정상 한국어로 항목 단위 재작성.
+- **🚨 유니코드 이스케이프를 나열할 때 `\ud328` 같은 lone surrogate를 쓰면 매칭이 영구히 실패한다 (2026-11-27 실측)**: `부담`은 `\ubd80\ud328`가 **아니라** `\ubd80\ub2f4`다. `\udxxx`는 surrogate 영역이라 실제 한글과 절대 일치하지 않아 `replace()`가 조용히 no-op이 되고, "왜 안 바뀌지?" 상태에서 수십 회 재시도하게 된다.
+  - **자가치유 규칙**: `\uXXXX` 이스케이프를 손으로 타이핑하지 말고 **실제 문자 리터럴을 그대로 write_file에 쓰거나** `chr(0xXXXX)`로 조합한다. `write_file`은 유니코드 리터럴을 그대로 저장하므로 이스케이프 실수 자체가 사라진다.
+  - **진단법**: 치환이 안 먹으면 `print(repr(s[i-25:i+25]))`로 실제 바이트를 확인하고, `[(c, hex(ord(c))) for c in seg]`로 코드포인트 대조. `0xD328`이 나오면 surrogate 실수로 확정.
+  - **반드시 `print("found:", old in s)` 를 치환 전에 출력**하고, `MISS`가 나오면 즉시 다른 전략(문자 리터럴 / chr() / regex)으로 전환한다. 여러 번 시도가 겹치면 디버깅 난이도가 급격히 올라간다.
+- **🚨 다중 단계 치환 스크립트는 단계마다 재출력해야 한다 (2026-11-27 실측)**: `for old,new in reps:` 루프에서 일부가 MISS여도 나머지는 적용되므로, 중간에 `print` 없이 조용히 넘어가면 "왜 이게 아직도 있나"를 추적하기 어렵다. 각 단계마다 `FIXED/MISS`를 출력하고 마지막에 잔여 토큰 전체를 `count()`로 재확인한다.
+- **🚨 저장 후 반드시 원본 리로드 → 전문 육안 확인 (2026-11-27 추가)**: 정규식 QA는 CJK·한영혼합만 잡는다. `prognostic`, `digest`, `Discount Rate` 같은 **라틴어 단어가 한국어 문장 중간에 삽입된 오염**은 정규식에 안 잡힌다. QA 통과 후에도 `SUMMARY` 문자열을 `read_file`로 통째로 읽어 문장 fluency를 확인하는 단계가 필수.
+  - 검사 패턴: `s.count('prognostic')`, `s.count('digest')` 등 **예상치 0이어야 할 토큰**을 명시적으로 나열해 카운트. "깨끗해 보인다"는 감각 대신 카운트로 판정.
 - **⚠️ `patch` 도구가 CJK가 섞인 old_string을 매칭하지 못할 수 있다 (2026-11-02 추가)** — 파일에 실제로 존재하는 한자 문자열에 `Could not find a match for old_string`가 뜬다.
   → **우회**: `write_file()`로 `/tmp/fix_cjk.py`를 만들고 **유니코드 이스케이프**(`"\u6d3b\u6027\u5316"`)로 replace. 소스가 ASCII만 남겨 보안 스캐너도 통과하고 매칭이 성공한다. 실행 후 `REMAIN`으로 잔여 CJK 1회 확인.
   ```python
